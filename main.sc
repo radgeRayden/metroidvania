@@ -1,20 +1,21 @@
 using import glm
+using import Option
+using import struct
 
 import .raydEngine.use
-import app
-let gfx = (import gfx.webgpu.backend)
+import HID
+import filesystem
+import .renderer
 
-@@ 'on app.update
-fn (dt)
-    ;
+filesystem.init;
+HID.init (HID.WindowOptions (visible? = true)) (HID.GfxAPI.OpenGL)
+renderer.init;
 
-@@ 'on app.draw
-fn (fb-pass)
-    ;
+while (not (HID.window.received-quit-event?))
+    HID.window.poll-events;
 
-@@ 'on app.init
-fn ()
-    gfx.set-clear-color (vec4 0.017 0.017 0.017 1.0)
-    ;
+    renderer.begin-frame (vec4 1.0 0.4 0.4 1.0)
+    renderer.end-frame;
 
-app.run;
+    HID.window.swap-buffers;
+;
