@@ -1,3 +1,6 @@
+# TODO: import as submodule
+using import radlib.core-extensions
+
 using import enum
 using import struct
 using import glm
@@ -116,6 +119,14 @@ gl.BindVertexArray VAO
 struct VertexAttributes plain
     position : vec2
 
+fn gl-make-buffer (kind size)
+    local handle : u32
+    gl.GenBuffers 1 &handle
+    gl.BindBuffer (kind as u32) handle
+    gl.NamedBufferStorage handle (size as i64) null
+        gl.GL_DYNAMIC_STORAGE_BIT
+    deref handle
+
 struct Mesh
     attribute-data : (Array VertexAttributes)
     _attribute-buffer : u32
@@ -132,19 +143,11 @@ struct Mesh
         let attr-store-size = ((sizeof VertexAttributes) * expected-vertices)
         let ibuffer-store-size = ((sizeof u16) * expected-index-count)
 
-        local attr-handle : u32
-        gl.GenBuffers 1 &attr-handle
-        gl.BindBuffer gl.GL_SHADER_STORAGE_BUFFER attr-handle
-        gl.NamedBufferStorage attr-handle attr-store-size null
-            gl.GL_DYNAMIC_STORAGE_BIT
+        let attr-handle =
+            gl-make-buffer gl.GL_SHADER_STORAGE_BUFFER attr-store-size
 
-        local ibuffer-handle : u32
-        gl.GenBuffers 1 &ibuffer-handle
-        gl.BindBuffer gl.GL_ELEMENT_ARRAY_BUFFER ibuffer-handle
-        gl.NamedBufferStorage ibuffer-handle
-            ibuffer-store-size
-            null
-            gl.GL_DYNAMIC_STORAGE_BIT
+        let ibuffer-handle =
+            gl-make-buffer gl.GL_ELEMENT_ARRAY_BUFFER ibuffer-store-size
 
         local attr-array : (Array VertexAttributes)
         'resize attr-array expected-vertices
