@@ -191,15 +191,112 @@ struct Mesh
             _index-buffer = ibuffer-handle
             _index-buffer-size = ibuffer-store-size
 
+
+fn gl-compile-shader (source kind)
+    imply kind i32
+    source as:= rawstring
+
+    let handle = (gl.CreateShader (kind as u32))
+    gl.ShaderSource handle 1 (&local source) null
+    gl.CompileShader handle
+
+    local compilation-status : i32
+    gl.GetShaderiv handle gl.GL_COMPILE_STATUS &compilation-status
+    if (not compilation-status)
+        local log-length : i32
+        local message : (array i8 1024)
+        gl.GetShaderInfoLog handle (sizeof message) &log-length &message
+        print (default-styler 'style-error "Shader compilation error:")
+        print (string &message (log-length as usize))
+    handle
+
+let GPUShaderProgram =
+    make-handle-type 'GPUShaderProgram u32
+        inline __drop (self)
+            gl.DeleteProgram (storagecast (view self))
+
+fn gl-link-shader-program (vs fs)
+    let program = (gl.CreateProgram)
+    gl.AttachShader program vs
+    gl.AttachShader program fs
+    gl.LinkProgram program
+    # could make this less copy pastey by abstracting away error logging
+    local link-status : i32
+    gl.GetProgramiv program gl.GL_LINK_STATUS &link-status
+    if (not link-status)
+        local log-length : i32
+        local message : (array i8 1024)
+        gl.GetProgramInfoLog program (sizeof message) &log-length &message
+        print (default-styler 'style-error "Shader program linking error:")
+        print (string &message (log-length as usize))
+    # because we preemptively delete the shader stages, they are
+        already marked for deletion when the program is dropped.
+    gl.DeleteShader fs
+    gl.DeleteShader vs
+    bitcast program GPUShaderProgram
+
+# RESOURCE INITIALIZATION
+# ================================================================================
+local sprites = (Mesh 3000)
+'update sprites
+
+fn vertex-shader ()
+    using import glsl
+    # buffer attributes :
+    #     struct VertexAttributeArray plain
+    #         data : (array VertexAttributes)
+
+    # local attr = (attributes.data @ gl_VertexID)
+    # gl_Position = (vec4 attr.position 0 1)
+    out vcolor : vec4
+        location = 1
+
+    local vertices =
+        arrayof vec3
+            vec3 -0.5 -0.5 0.0
+            vec3 0.5 -0.5 0.0
+            vec3 0.0 0.5 0.0
+    local colors =
+        arrayof vec3
+            vec3 1.0 0 0
+            vec3 0 1.0 0
+            vec3 0 0 1.0
+
+    gl_Position = (vec4 (vertices @ gl_VertexID) 1)
+    vcolor = (vec4 (colors @ gl_VertexID) 1)
+
+fn fragment-shader ()
+    using import glsl
+    in vcolor : vec4
+        location = 1
+    out fcolor : vec4
+        location = 0
+
+    fcolor = vcolor
+
+let vertex-module =
+    gl-compile-shader
+        static-compile-glsl 450 'vertex (static-typify vertex-shader)
+        gl.GL_VERTEX_SHADER
+let fragment-module =
+    gl-compile-shader
+        static-compile-glsl 450 'fragment (static-typify fragment-shader)
+        gl.GL_FRAGMENT_SHADER
+
+let default-shader = (gl-link-shader-program vertex-module fragment-module)
+gl.UseProgram default-shader
+
 # GAME LOOP
 # ================================================================================
+
 while (not (glfw.WindowShouldClose main-window))
     glfw.PollEvents;
     gl.ClearColor 1.0 0.2 0.2 1.0
     gl.Clear (gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+    gl.DrawArrays gl.GL_TRIANGLES 0 3
     glfw.SwapBuffers main-window
 
 # CLEANUP
 # ================================================================================
 glfw.DestroyWindow main-window
-glfw.Terminate;
+# glfw.Terminate;
