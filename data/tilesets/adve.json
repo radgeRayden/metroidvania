@@ -1,0 +1,14 @@
+{ "columns":24,
+ "image":"..\/assets\/adve\/tiles.png",
+ "imageheight":168,
+ "imagewidth":192,
+ "margin":0,
+ "name":"test",
+ "spacing":0,
+ "tilecount":504,
+ "tiledversion":"1.4.2",
+ "tileheight":8,
+ "tilewidth":8,
+ "type":"tileset",
+ "version":1.4
+}
