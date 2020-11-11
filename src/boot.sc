@@ -135,28 +135,42 @@ fn gl-make-buffer (kind size)
     GPUBuffer (deref handle)
 
 struct Mesh
+    let IndexFormat = u16
+
     attribute-data : (Array VertexAttributes)
     _attribute-buffer : GPUBuffer
     _attribute-buffer-size : usize
-    index-data : (Array u16)
+    index-data : (Array IndexFormat)
     _index-buffer : GPUBuffer
     _index-buffer-size : usize
 
-    fn ensure-storage (self new-attr-size new-ibuffer-size)
+    fn ensure-storage (self)
         """"If store size is not enough to contain uploaded data, destroys the
             attached GPU resources and recreates them with differently sized data stores.
-        self._attribute-buffer =
-            gl-make-buffer gl.GL_SHADER_STORAGE_BUFFER new-attr-size
-        self._attribute-buffer-size = new-attr-size
-        self._index-buffer =
-            gl-make-buffer gl.GL_ELEMENT_ARRAY_BUFFER new-ibuffer-size
-        self._index-buffer-size = new-ibuffer-size
+        let attr-data-size = ((sizeof VertexAttributes) * (countof self.attribute-data))
+        let index-data-size = ((sizeof IndexFormat) * (countof self.index-data))
+        if (self._attribute-buffer-size < attr-data-size)
+            self._attribute-buffer =
+                gl-make-buffer gl.GL_SHADER_STORAGE_BUFFER attr-data-size
+            self._attribute-buffer-size = attr-data-size
+        if (self._index-buffer-size < index-data-size)
+            self._index-buffer =
+                gl-make-buffer gl.GL_ELEMENT_ARRAY_BUFFER index-data-size
+            self._index-buffer-size = index-data-size
         ;
+
+    fn update (self)
+        """"Uploads mesh data to GPU.
+        'ensure-storage self
+        gl.NamedBufferSubData self._attribute-buffer 0 (self._attribute-buffer-size as i64)
+            (imply self.attribute-data pointer) as voidstar
+        gl.NamedBufferSubData self._index-buffer 0 (self._index-buffer-size as i64)
+            (imply self.index-data pointer) as voidstar
 
     inline __typecall (cls expected-vertices)
         let expected-index-count = ((expected-vertices * 1.5) as usize) # estimate
         let attr-store-size = ((sizeof VertexAttributes) * expected-vertices)
-        let ibuffer-store-size = ((sizeof u16) * expected-index-count)
+        let ibuffer-store-size = ((sizeof IndexFormat) * expected-index-count)
 
         let attr-handle =
             gl-make-buffer gl.GL_SHADER_STORAGE_BUFFER attr-store-size
@@ -166,7 +180,7 @@ struct Mesh
 
         local attr-array : (Array VertexAttributes)
         'reserve attr-array expected-vertices
-        local index-array : (Array u16)
+        local index-array : (Array IndexFormat)
         'reserve index-array expected-index-count
 
         super-type.__typecall cls
