@@ -116,6 +116,13 @@ gl.BindVertexArray VAO
 
 # HELPERS AND TYPES
 # ================================================================================
+let GPUBuffer =
+    make-handle-type 'GPUBuffer u32
+        inline __drop (self)
+            local handle : u32 = (storagecast (view self))
+            gl.DeleteBuffers 1 &handle
+            ;
+
 struct VertexAttributes plain
     position : vec2
 
@@ -125,20 +132,19 @@ fn gl-make-buffer (kind size)
     gl.BindBuffer (kind as u32) handle
     gl.NamedBufferStorage handle (size as i64) null
         gl.GL_DYNAMIC_STORAGE_BIT
-    deref handle
+    GPUBuffer (deref handle)
 
 struct Mesh
     attribute-data : (Array VertexAttributes)
-    _attribute-buffer : u32
+    _attribute-buffer : GPUBuffer
     _attribute-buffer-size : usize
     index-data : (Array u16)
-    _index-buffer : u32
+    _index-buffer : GPUBuffer
     _index-buffer-size : usize
 
-    fn resize (self new-attr-size new-ibuffer-size)
-        """"Destroys the attached GPU resources and recreates them with
-            differently sized data stores.
-        '__drop self # deletes the opengl buffers
+    fn ensure-storage (self new-attr-size new-ibuffer-size)
+        """"If store size is not enough to contain uploaded data, destroys the
+            attached GPU resources and recreates them with differently sized data stores.
         self._attribute-buffer =
             gl-make-buffer gl.GL_SHADER_STORAGE_BUFFER new-attr-size
         self._attribute-buffer-size = new-attr-size
@@ -170,11 +176,6 @@ struct Mesh
             index-data = index-array
             _index-buffer = ibuffer-handle
             _index-buffer-size = ibuffer-store-size
-
-    inline __drop (self)
-        gl.DeleteBuffers 2
-            &local (arrayof u32 self._attribute-buffer self._index-buffer)
-        ;
 
 # GAME LOOP
 # ================================================================================
