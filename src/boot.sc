@@ -1,5 +1,7 @@
 using import enum
 using import struct
+using import glm
+using import Array
 
 # DEPENDENCIES
 # ================================================================================
@@ -32,6 +34,7 @@ if (main-window == null)
 glfw.MakeContextCurrent main-window
 
 gl.init;
+run-stage;
 
 enum OpenGLDebugLevel plain
     HIGH
@@ -107,6 +110,54 @@ gl.DebugMessageCallback (make-openGL-debug-callback OpenGLDebugLevel.LOW) null
 local VAO : gl.GLuint
 gl.GenVertexArrays 1 &VAO
 gl.BindVertexArray VAO
+
+# HELPERS AND TYPES
+# ================================================================================
+struct VertexAttributes plain
+    position : vec2
+
+struct Mesh
+    attribute-data : (Array VertexAttributes)
+    _attribute-buffer : u32
+    _attribute-buffer-size : usize
+    index-data : (Array u16)
+    _index-buffer : u32
+    _index-buffer-size : usize
+
+    fn resize (self)
+        ;
+
+    inline __typecall (cls expected-vertices)
+        let expected-index-count = ((expected-vertices * 1.5) as usize) # estimate
+        let attr-store-size = ((sizeof VertexAttributes) * expected-vertices)
+        let ibuffer-store-size = ((sizeof u16) * expected-index-count)
+
+        local attr-handle : u32
+        gl.GenBuffers 1 &attr-handle
+        gl.BindBuffer gl.GL_SHADER_STORAGE_BUFFER attr-handle
+        gl.NamedBufferStorage attr-handle attr-store-size null
+            gl.GL_DYNAMIC_STORAGE_BIT
+
+        local ibuffer-handle : u32
+        gl.GenBuffers 1 &ibuffer-handle
+        gl.BindBuffer gl.GL_ELEMENT_ARRAY_BUFFER ibuffer-handle
+        gl.NamedBufferStorage ibuffer-handle
+            ibuffer-store-size
+            null
+            gl.GL_DYNAMIC_STORAGE_BIT
+
+        local attr-array : (Array VertexAttributes)
+        'resize attr-array expected-vertices
+        local index-array : (Array u16)
+        'resize index-array expected-index-count
+
+        super-type.__typecall cls
+            attribute-data = attr-array
+            _attribute-buffer = attr-handle
+            _attribute-buffer-size = attr-store-size
+            index-data = index-array
+            _index-buffer = ibuffer-handle
+            _index-buffer-size = ibuffer-store-size
 
 # GAME LOOP
 # ================================================================================
