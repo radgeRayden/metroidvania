@@ -135,7 +135,16 @@ struct Mesh
     _index-buffer : u32
     _index-buffer-size : usize
 
-    fn resize (self)
+    fn resize (self new-attr-size new-ibuffer-size)
+        """"Destroys the attached GPU resources and recreates them with
+            differently sized data stores.
+        '__drop self # deletes the opengl buffers
+        self._attribute-buffer =
+            gl-make-buffer gl.GL_SHADER_STORAGE_BUFFER new-attr-size
+        self._attribute-buffer-size = new-attr-size
+        self._index-buffer =
+            gl-make-buffer gl.GL_ELEMENT_ARRAY_BUFFER new-ibuffer-size
+        self._index-buffer-size = new-ibuffer-size
         ;
 
     inline __typecall (cls expected-vertices)
@@ -161,6 +170,11 @@ struct Mesh
             index-data = index-array
             _index-buffer = ibuffer-handle
             _index-buffer-size = ibuffer-store-size
+
+    inline __drop (self)
+        gl.DeleteBuffers 2
+            &local (arrayof u32 self._attribute-buffer self._index-buffer)
+        ;
 
 # GAME LOOP
 # ================================================================================
