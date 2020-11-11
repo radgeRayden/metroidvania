@@ -159,9 +159,9 @@ struct Mesh
             gl-make-buffer gl.GL_ELEMENT_ARRAY_BUFFER ibuffer-store-size
 
         local attr-array : (Array VertexAttributes)
-        'resize attr-array expected-vertices
+        'reserve attr-array expected-vertices
         local index-array : (Array u16)
-        'resize index-array expected-index-count
+        'reserve index-array expected-index-count
 
         super-type.__typecall cls
             attribute-data = attr-array
