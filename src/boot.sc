@@ -308,9 +308,13 @@ gl.UseProgram default-shader
 
 # GAME LOOP
 # ================================================================================
-
 while (not (glfw.WindowShouldClose main-window))
     glfw.PollEvents;
+    local width : i32
+    local height : i32
+    glfw.GetWindowSize main-window &width &height
+    gl.Viewport 0 0 width height
+
     gl.ClearColor 1.0 0.2 0.2 1.0
     gl.Clear (gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
