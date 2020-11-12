@@ -270,6 +270,48 @@ struct ImageData
             height = (h as usize)
             channels = (c as u32)
 
+struct ArrayTexture2D
+    _handle : u32
+
+    inline __typecall (cls filename layer-width layer-height)
+        let img-data = (ImageData filename)
+        local handle : u32
+        # TODO: accomodate more mip levels
+        let mip-count = 1
+        subimg-rows := img-data.width // layer-width
+        subimg-columns := img-data.height // layer-height
+        layer-count := subimg-rows * subimg-columns
+        gl.GenTextures 1 &handle
+        gl.BindTexture gl.GL_TEXTURE_2D_ARRAY handle
+        gl.TexStorage3D gl.GL_TEXTURE_2D_ARRAY mip-count gl.GL_RGBA8 layer-width layer-height (layer-count as i32)
+        gl.PixelStorei gl.GL_UNPACK_ROW_LENGTH (img-data.width as i32)
+        for i in (range layer-count)
+            let subimg-col subimg-row =
+                i % subimg-columns
+                i // subimg-rows
+            let first-texel =
+                +
+                    layer-width * layer-height * subimg-columns * subimg-row
+                    layer-width * subimg-col
+            print first-texel
+
+            gl.TextureSubImage3D
+                handle
+                0 # mip level
+                0 # xoffset
+                0 # yoffset
+                i as i32 # zoffset
+                layer-width
+                layer-height
+                1 # depth
+                gl.GL_RGBA
+                gl.GL_UNSIGNED_BYTE
+                & (img-data.data @ (first-texel * img-data.channels))
+        gl.PixelStorei gl.GL_UNPACK_ROW_LENGTH 0
+
+        super-type.__typecall cls
+            _handle = handle
+
 fn gl-compile-shader (source kind)
     imply kind i32
     source as:= rawstring
