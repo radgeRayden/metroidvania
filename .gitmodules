@@ -1,3 +1,6 @@
 [submodule "raydEngine"]
 	path = raydEngine
 	url = https://github.com/radgeRayden/raydEngine
+[submodule "3rd-party/stb"]
+	path = 3rd-party/stb
+	url = https://github.com/nothings/stb/
