@@ -125,6 +125,7 @@ let GPUBuffer =
 
 struct VertexAttributes plain
     position : vec2
+    color : vec4
 
 fn gl-make-buffer (kind size)
     local handle : u32
@@ -252,32 +253,37 @@ fn gl-link-shader-program (vs fs)
 # RESOURCE INITIALIZATION
 # ================================================================================
 local sprites = (Mesh 3000)
-'update sprites
+do
+    local vertices =
+        arrayof vec2
+            vec2 -0.5 -0.5
+            vec2 0.5 -0.5
+            vec2 0.0 0.5
+    local colors =
+        arrayof vec4
+            vec4 1.0 0 0 1
+            vec4 0 1.0 0 1
+            vec4 0 0 1.0 1
+
+    for i in (range 3)
+        'emplace-append sprites.attribute-data
+            position = (vertices @ i)
+            color = (colors @ i)
+        'append sprites.index-data (i as u16)
+    'update sprites
 
 fn vertex-shader ()
     using import glsl
-    # buffer attributes :
-    #     struct VertexAttributeArray plain
-    #         data : (array VertexAttributes)
+    buffer attributes :
+        struct VertexAttributeArray plain
+            data : (array VertexAttributes)
 
-    # local attr = (attributes.data @ gl_VertexID)
-    # gl_Position = (vec4 attr.position 0 1)
     out vcolor : vec4
         location = 1
 
-    local vertices =
-        arrayof vec3
-            vec3 -0.5 -0.5 0.0
-            vec3 0.5 -0.5 0.0
-            vec3 0.0 0.5 0.0
-    local colors =
-        arrayof vec3
-            vec3 1.0 0 0
-            vec3 0 1.0 0
-            vec3 0 0 1.0
-
-    gl_Position = (vec4 (vertices @ gl_VertexID) 1)
-    vcolor = (vec4 (colors @ gl_VertexID) 1)
+    local attr = (attributes.data @ gl_VertexID)
+    gl_Position = (vec4 attr.position 0 1)
+    vcolor = attr.color
 
 fn fragment-shader ()
     using import glsl
@@ -307,7 +313,10 @@ while (not (glfw.WindowShouldClose main-window))
     glfw.PollEvents;
     gl.ClearColor 1.0 0.2 0.2 1.0
     gl.Clear (gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+
+    gl.BindBufferBase gl.GL_SHADER_STORAGE_BUFFER 0 sprites._attribute-buffer
     gl.DrawArrays gl.GL_TRIANGLES 0 3
+
     glfw.SwapBuffers main-window
 
 # CLEANUP
