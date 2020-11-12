@@ -283,7 +283,11 @@ struct ArrayTexture2D
         layer-count := subimg-rows * subimg-columns
         gl.GenTextures 1 &handle
         gl.BindTexture gl.GL_TEXTURE_2D_ARRAY handle
-        gl.TexStorage3D gl.GL_TEXTURE_2D_ARRAY mip-count gl.GL_RGBA8 layer-width layer-height (layer-count as i32)
+        gl.TexStorage3D gl.GL_TEXTURE_2D_ARRAY mip-count
+            gl.GL_RGBA8
+            layer-width
+            layer-height
+            layer-count as i32
         gl.PixelStorei gl.GL_UNPACK_ROW_LENGTH (img-data.width as i32)
         for i in (range layer-count)
             let subimg-col subimg-row =
@@ -293,7 +297,6 @@ struct ArrayTexture2D
                 +
                     layer-width * layer-height * subimg-columns * subimg-row
                     layer-width * subimg-col
-            print first-texel
 
             gl.TextureSubImage3D
                 handle
