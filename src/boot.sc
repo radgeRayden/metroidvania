@@ -155,7 +155,7 @@ struct Mesh
             if (current == 0)
                 required
             else
-                loop (size = current)
+                loop (size = (deref current))
                     assert (size >= current) # probably an overflow
                     if (size >= required)
                         break size
