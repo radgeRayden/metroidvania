@@ -15,6 +15,8 @@ run-stage;
 
 let glfw = (import .FFI.glfw)
 let gl = (import .FFI.glad)
+let physfs = (import .FFI.physfs)
+let stbi = (import .FFI.stbi)
 
 # WINDOW AND OPENGL INITIALIZATION
 # ================================================================================
@@ -38,6 +40,13 @@ if (main-window == null)
 glfw.MakeContextCurrent main-window
 
 gl.init;
+
+let argc argv = (launch-args)
+if (not (physfs.init (argv @ 0)))
+    error "Failed to initialize PHYSFS."
+physfs.mount "../data" "/" true
+physfs.setWriteDir "."
+
 run-stage;
 
 enum OpenGLDebugLevel plain
@@ -210,6 +219,57 @@ typedef Mesh < Struct
                     _index-buffer = ibuffer-handle
                     _index-buffer-size = ibuffer-store-size
 
+fn load-full-file (filename)
+    let file = (physfs.openRead filename)
+    if (file == null)
+        hide-traceback;
+        error (.. "could not open file " filename)
+
+    let size = (physfs.fileLength file)
+    local data : (Array i8)
+    'resize data size
+    let read = (physfs.readBytes file data (size as u64))
+    assert (read == size)
+
+    data
+
+fn load-image-data (filename)
+    let data = (load-full-file filename)
+    local x : i32
+    local y : i32
+    local n : i32
+    let img-data =
+        stbi.load_from_memory
+            (imply data pointer) as (pointer u8)
+            (countof data) as i32
+            &x
+            &y
+            &n
+            0
+    let data-len = (x * y * n)
+    _
+        Struct.__typecall (Array u8)
+            _items = img-data
+            _count = data-len
+            _capacity = data-len
+        deref x
+        deref y
+        deref n
+
+struct ImageData
+    data : (Array u8)
+    width : usize
+    height : usize
+    channels : u32
+
+    inline __typecall (cls filename)
+        let data w h c = (load-image-data filename)
+        super-type.__typecall cls
+            data = data
+            width = (w as usize)
+            height = (h as usize)
+            channels = (c as u32)
+
 fn gl-compile-shader (source kind)
     imply kind i32
     source as:= rawstring
@@ -255,7 +315,9 @@ fn gl-link-shader-program (vs fs)
 
 # RESOURCE INITIALIZATION
 # ================================================================================
-local sprites = (Mesh 3000)
+let 2DMesh = (Mesh 2DVertex u16)
+print 2DMesh
+local sprites = (2DMesh 3000)
 do
     local vertices =
         arrayof vec2
@@ -279,7 +341,7 @@ fn vertex-shader ()
     using import glsl
     buffer attributes :
         struct VertexAttributeArray plain
-            data : (array VertexAttributes)
+            data : (array 2DVertex)
 
     out vcolor : vec4
         location = 1
