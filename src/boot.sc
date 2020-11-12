@@ -10,6 +10,7 @@ using import Array
 # ================================================================================
 load-library "../lib/libgame.so"
 load-library "../lib/libglfw.so"
+load-library "../lib/libphysfs.so"
 run-stage;
 
 let glfw = (import .FFI.glfw)
