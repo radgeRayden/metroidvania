@@ -149,14 +149,28 @@ struct Mesh
             attached GPU resources and recreates them with differently sized data stores.
         let attr-data-size = ((sizeof VertexAttributes) * (countof self.attribute-data))
         let index-data-size = ((sizeof IndexFormat) * (countof self.index-data))
+
+        # find a size that can hold the amount of data we want by multiplying by 2 repeatedly
+        inline find-next-size (current required)
+            if (current == 0)
+                required
+            else
+                loop (size = current)
+                    assert (size >= current) # probably an overflow
+                    if (size >= required)
+                        break size
+                    size * 2
+
         if (self._attribute-buffer-size < attr-data-size)
+            let new-size = (find-next-size self._attribute-buffer-size attr-data-size)
             self._attribute-buffer =
-                gl-make-buffer gl.GL_SHADER_STORAGE_BUFFER attr-data-size
-            self._attribute-buffer-size = attr-data-size
+                gl-make-buffer gl.GL_SHADER_STORAGE_BUFFER new-size
+            self._attribute-buffer-size = new-size
         if (self._index-buffer-size < index-data-size)
+            let new-size = (find-next-size self._index-buffer-size index-data-size)
             self._index-buffer =
-                gl-make-buffer gl.GL_ELEMENT_ARRAY_BUFFER index-data-size
-            self._index-buffer-size = index-data-size
+                gl-make-buffer gl.GL_ELEMENT_ARRAY_BUFFER new-size
+            self._index-buffer-size = new-size
         ;
 
     fn update (self)
