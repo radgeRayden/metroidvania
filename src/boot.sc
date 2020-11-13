@@ -448,6 +448,9 @@ struct Tileset
             using import radlib.libc
             let image-path =
                 (String "levels/") .. (String image-name (_string.strlen image-name))
+
+            cjson.Delete json-data
+
             super-type.__typecall cls
                 image =
                     Rc.wrap
