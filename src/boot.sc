@@ -319,6 +319,10 @@ struct ArrayTexture2D
                 gl.GL_UNSIGNED_BYTE
                 & (img-data.data @ (first-texel * img-data.channels))
         gl.PixelStorei gl.GL_UNPACK_ROW_LENGTH 0
+        gl.TexParameteri gl.GL_TEXTURE_2D_ARRAY gl.GL_TEXTURE_MIN_FILTER gl.GL_NEAREST
+        gl.TexParameteri gl.GL_TEXTURE_2D_ARRAY gl.GL_TEXTURE_MAG_FILTER gl.GL_NEAREST
+        gl.TexParameteri gl.GL_TEXTURE_2D_ARRAY gl.GL_TEXTURE_WRAP_S gl.GL_CLAMP_TO_EDGE
+        gl.TexParameteri gl.GL_TEXTURE_2D_ARRAY gl.GL_TEXTURE_WRAP_T gl.GL_CLAMP_TO_EDGE
 
         super-type.__typecall cls
             _handle = (GPUTexture handle)
