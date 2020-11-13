@@ -148,6 +148,7 @@ fn gl-make-buffer (kind size)
     GPUBuffer (deref handle)
 
 typedef Mesh < Struct
+    @@ memo
     inline __typecall (cls attributeT indexT)
         struct (.. "Mesh<" (tostring attributeT) "," (tostring indexT) ">")
             let IndexFormat = indexT
