@@ -6,6 +6,8 @@ using import struct
 using import glm
 using import Array
 
+import .math
+
 # DEPENDENCIES
 # ================================================================================
 load-library "../lib/libgame.so"
@@ -320,6 +322,13 @@ struct ArrayTexture2D
         super-type.__typecall cls
             _handle = (GPUTexture handle)
 
+struct Sprite plain
+    position : vec2
+    scale : vec2
+    pivot : vec2
+    layer : u32
+    rotation : f32
+
 fn gl-compile-shader (source kind)
     imply kind i32
     source as:= rawstring
@@ -426,6 +435,58 @@ fn fragment-shader ()
 
 let default-shader = (ShaderProgram vertex-shader fragment-shader)
 gl.UseProgram default-shader._handle
+
+fn sprite-vertex-shader ()
+    using import glsl
+    buffer attributes :
+        struct AttributeArray plain
+            data : (array Sprite)
+
+    uniform transform : mat4
+    uniform layer_size : vec2
+
+    out vtexcoord : vec3
+        location = 2
+
+    local vertices =
+        arrayof vec2
+            vec2 0 0 # top left
+            vec2 1 0 # top right
+            vec2 0 1 # bottom left
+            vec2 1 1 # bottom right
+
+    local texcoords =
+        arrayof vec2
+            vec2 0 1
+            vec2 1 1
+            vec2 0 0
+            vec2 1 0
+
+    let sprites = attributes.data
+    idx         := gl_VertexID
+    sprite      := sprites @ (idx // 4)
+    origin      := sprite.position
+    vertex      := vertices @ (idx % 4)
+    orientation := sprite.rotation
+    pivot       := sprite.pivot
+
+    # TODO: explain what this does in a comment
+    gl_Position =
+        * transform
+            vec4 (origin + pivot + (math.2drotate ((vertex * layer_size) - pivot) orientation)) 0 1
+    vtexcoord = (vec3 (texcoords @ (idx % 4)) sprite.layer)
+
+fn sprite-fragment-shader ()
+    using import glsl
+    in vtexcoord : vec3
+        location = 2
+    out fcolor : vec4
+        location = 0
+
+    uniform sprite-tex : sampler2DArray
+    fcolor = (texture sprite-tex vtexcoord)
+
+let sprite-shader = (ShaderProgram sprite-vertex-shader sprite-fragment-shader)
 
 
 # GAME LOOP
