@@ -343,9 +343,9 @@ struct SpriteBatch
         self._dirty? = true
         local indices =
             arrayof u16 0 2 3 3 1 0
-        idx-offset := (countof self.draw-data.attribute-data) * 6
+        idx-offset := (countof self.draw-data.attribute-data) * 4
         for idx in indices
-            'append self.draw-data.index-data (idx-offset + idx)
+            'append self.draw-data.index-data ((idx-offset + idx) as u16)
         'append self.draw-data.attribute-data sprite
 
     fn draw (self)
@@ -354,7 +354,8 @@ struct SpriteBatch
             self._dirty? = false
         gl.BindBufferBase gl.GL_SHADER_STORAGE_BUFFER 0 self.draw-data._attribute-buffer
         gl.BindBuffer gl.GL_ELEMENT_ARRAY_BUFFER self.draw-data._index-buffer
-        gl.DrawElements gl.GL_TRIANGLES gl.GL_UNSIGNED_SHORT null
+        gl.DrawElements gl.GL_TRIANGLES ((countof self.draw-data.index-data) as i32)
+           \ gl.GL_UNSIGNED_SHORT null
 
 
 fn gl-compile-shader (source kind)
@@ -497,11 +498,12 @@ fn sprite-vertex-shader ()
     vertex      := vertices @ (idx % 4)
     orientation := sprite.rotation
     pivot       := sprite.pivot
+    scale       := sprite.scale
 
     # TODO: explain what this does in a comment
     gl_Position =
         * transform
-            vec4 (origin + pivot + (math.2drotate ((vertex * layer_size) - pivot) orientation)) 0 1
+            vec4 (origin + pivot + (math.2drotate ((vertex * layer_size * scale) - pivot) orientation)) 0 1
     vtexcoord = (vec3 (texcoords @ (idx % 4)) sprite.layer)
 
 fn sprite-fragment-shader ()
@@ -515,7 +517,24 @@ fn sprite-fragment-shader ()
     fcolor = (texture sprite-tex vtexcoord)
 
 let sprite-shader = (ShaderProgram sprite-vertex-shader sprite-fragment-shader)
+gl.UseProgram sprite-shader._handle
 
+let tileset =
+    ArrayTexture2D "tilesets/adve.png" 16 16
+
+local sprites = (SpriteBatch)
+for i in (range 120)
+    let cols rows = (198 // 16) (168 // 16)
+    'add sprites
+        Sprite
+            position =
+                vec2
+                    (i % cols) * (16 + 5) * 2
+                    (i // cols) * (16 + 5) * 2
+            scale = (vec2 2)
+            pivot = (vec2)
+            layer = (i as u32)
+            rotation = 0
 
 # GAME LOOP
 # ================================================================================
@@ -529,8 +548,16 @@ while (not (glfw.WindowShouldClose main-window))
     gl.ClearColor 1.0 0.2 0.2 1.0
     gl.Clear (gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
-    gl.BindBufferBase gl.GL_SHADER_STORAGE_BUFFER 0 sprites._attribute-buffer
-    gl.DrawArrays gl.GL_TRIANGLES 0 3
+    gl.Uniform2f
+        gl.GetUniformLocation sprite-shader._handle "layer_size"
+        16
+        16
+    gl.UniformMatrix4fv
+        gl.GetUniformLocation sprite-shader._handle "transform"
+        1
+        false
+        (&local (math.ortographic-projection width height)) as (pointer f32)
+    'draw sprites
 
     glfw.SwapBuffers main-window
 
