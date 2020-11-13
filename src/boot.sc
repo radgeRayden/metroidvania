@@ -286,8 +286,8 @@ struct ArrayTexture2D
         local handle : u32
         # TODO: accomodate more mip levels
         let mip-count = 1
-        subimg-rows := img-data.width // layer-width
-        subimg-columns := img-data.height // layer-height
+        subimg-columns := img-data.width // layer-width
+        subimg-rows := img-data.height // layer-height
         layer-count := subimg-rows * subimg-columns
         gl.GenTextures 1 &handle
         gl.BindTexture gl.GL_TEXTURE_2D_ARRAY handle
@@ -300,7 +300,7 @@ struct ArrayTexture2D
         for i in (range layer-count)
             let subimg-col subimg-row =
                 i % subimg-columns
-                i // subimg-rows
+                i // subimg-columns
             let first-texel =
                 +
                     layer-width * layer-height * subimg-columns * subimg-row
