@@ -333,6 +333,11 @@ struct SpriteBatch
     draw-data : (Mesh Sprite u16)
     _dirty? : bool
 
+    inline __typecall (cls)
+        super-type.__typecall cls
+            draw-data = ((Mesh Sprite u16) 128)
+            _dirty? = false
+
     fn add (self sprite)
         self._dirty? = true
         local indices =
