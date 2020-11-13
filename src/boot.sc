@@ -5,6 +5,9 @@ using import enum
 using import struct
 using import glm
 using import Array
+using import Rc
+using import Map
+using import String
 
 import .math
 
@@ -21,6 +24,7 @@ let glfw = (import .FFI.glfw)
 let gl = (import .FFI.glad)
 let physfs = (import .FFI.physfs)
 let stbi = (import .FFI.stbi)
+let cjson = (import .FFI.cjson)
 
 # WINDOW AND OPENGL INITIALIZATION
 # ================================================================================
@@ -228,7 +232,7 @@ fn load-full-file (filename)
     let file = (physfs.openRead filename)
     if (file == null)
         hide-traceback;
-        error (.. "could not open file " filename)
+        error (.. "could not open file " (string filename))
 
     let size = (physfs.fileLength file)
     local data : (Array i8)
@@ -423,6 +427,42 @@ struct ShaderProgram
         super-type.__typecall cls
             _handle = (bitcast program GPUShaderProgram)
 
+struct Tileset
+    image : (Rc ArrayTexture2D)
+
+    global tileset-cache : (Map string (Rc this-type))
+    inline __typecall (cls filename)
+        fn load-tiled-tileset (filename)
+            let data = (load-full-file filename)
+            # FIXME: this version doesn't seem to have ParseWithLength, but it would be preferrable.
+            # change it once we use our in-tree version of cJSON.
+            let json-data = (cjson.Parse data)
+            let image-name =
+                cjson.GetStringValue
+                    cjson.GetObjectItem json-data "image"
+            let tile-width =
+                (cjson.GetObjectItem json-data "tilewidth") . valueint
+            let tile-height =
+                (cjson.GetObjectItem json-data "tileheight") . valueint
+
+            using import radlib.libc
+            let image-path =
+                (String "tilesets/") .. (String image-name (_string.strlen image-name))
+            super-type.__typecall cls
+                image =
+                    Rc.wrap
+                        ArrayTexture2D image-path tile-width tile-height
+        try
+            copy
+                'get tileset-cache filename
+        else
+            let new-tileset =
+                Rc.wrap (load-tiled-tileset filename)
+            let result = (copy new-tileset)
+            'set tileset-cache filename new-tileset
+            result
+
+
 # RESOURCE INITIALIZATION
 # ================================================================================
 let 2DMesh = (Mesh 2DVertex u16)
@@ -525,22 +565,10 @@ fn sprite-fragment-shader ()
 let sprite-shader = (ShaderProgram sprite-vertex-shader sprite-fragment-shader)
 gl.UseProgram sprite-shader._handle
 
-let tileset =
-    ArrayTexture2D "tilesets/adve.png" 16 16
+let tileset = (Tileset "tilesets/adve.json")
+    # ArrayTexture2D "tilesets/adve.png" 16 16
 
-local sprites = (SpriteBatch)
-for i in (range 120)
-    let cols rows = (198 // 16) (168 // 16)
-    'add sprites
-        Sprite
-            position =
-                vec2
-                    (i % cols) * 16 * 3
-                    ((119 - i) // cols) * 16 * 3
-            scale = (vec2 3)
-            pivot = (vec2)
-            layer = (i as u32)
-            rotation = 0
+local map-layer = (SpriteBatch)
 
 # GAME LOOP
 # ================================================================================
@@ -569,7 +597,7 @@ while (not (glfw.WindowShouldClose main-window))
         1
         false
         (&local camera-transform) as (pointer f32)
-    'draw sprites
+    'draw map-layer
 
     glfw.SwapBuffers main-window
 

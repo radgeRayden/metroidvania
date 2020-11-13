@@ -1,5 +1,13 @@
 { "columns":24,
- "image":"..\/assets\/adve\/tiles.png",
+ "editorsettings":
+    {
+     "export":
+        {
+         "format":"",
+         "target":"."
+        }
+    },
+ "image":"adve.png",
  "imageheight":168,
  "imagewidth":192,
  "margin":0,

@@ -1,4 +1,3 @@
-load-library "libcjson.so"
 using import radlib.core-extensions
 using import radlib.foreign
 
