@@ -7,6 +7,20 @@ case (v : vec2, angle : f32)
         (rcos * v.x) - (rsin * v.y)
         (rsin * v.x) + (rcos * v.y)
 
+inline... translate (v : vec3)
+    mat4
+        vec4 1   0   0   0
+        vec4 0   1   0   0
+        vec4 0   0   1   0
+        vec4 v.x v.y v.z 1
+
+inline... scale (v : vec3)
+    mat4
+        vec4 v.x   0    0   0
+        vec4 0    v.y   0   0
+        vec4 0     0   v.z  0
+        vec4 0     0    0   1
+
 inline ortho (width height)
     # https://www.scratchapixel.com/lessons/3d-basic-rendering/perspective-and-orthographic-projection-matrix/orthographic-projection-matrix
     # right, top
@@ -17,24 +31,26 @@ inline ortho (width height)
     let f n = 100 -100
     mat4
         vec4
-            (2 / (r - l))
+            2 / (r - l)
             0.0
             0.0
             -((r + l) / (r - l))
         vec4
             0.0
-            (2 / (t - b))
+            2 / (t - b)
             0.0
             0.0
         vec4
             -((t + b) / (t - b))
             0.0
-            (-2 / (f - n))
+            -2 / (f - n)
             -((f + n) / (f - n))
         vec4 0.0 0.0 0.0 1.0
 
 do
     let
         rotate
+        translate
+        scale
         ortho
     locals;

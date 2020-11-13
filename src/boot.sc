@@ -533,9 +533,9 @@ for i in (range 120)
         Sprite
             position =
                 vec2
-                    (i % cols) * (16 + 5) * 2
-                    (i // cols) * (16 + 5) * 2
-            scale = (vec2 2)
+                    (i % cols) * 16 * 3
+                    ((119 - i) // cols) * 16 * 3
+            scale = (vec2 3)
             pivot = (vec2)
             layer = (i as u32)
             rotation = 0
@@ -546,7 +546,7 @@ while (not (glfw.WindowShouldClose main-window))
     glfw.PollEvents;
     local width : i32
     local height : i32
-    glfw.GetWindowSize main-window &width &height
+    glfw.GetFramebufferSize main-window &width &height
     gl.Viewport 0 0 width height
 
     gl.ClearColor 1.0 0.2 0.2 1.0
@@ -556,11 +556,17 @@ while (not (glfw.WindowShouldClose main-window))
         gl.GetUniformLocation sprite-shader._handle "layer_size"
         16
         16
+
+    let camera-transform =
+        *
+            math.translate (vec3 -1 -1 0)
+            math.ortho width height
+
     gl.UniformMatrix4fv
         gl.GetUniformLocation sprite-shader._handle "transform"
         1
         false
-        (&local (math.ortho width height)) as (pointer f32)
+        (&local camera-transform) as (pointer f32)
     'draw sprites
 
     glfw.SwapBuffers main-window
