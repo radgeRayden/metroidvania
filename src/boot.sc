@@ -270,8 +270,13 @@ struct ImageData
             height = (h as usize)
             channels = (c as u32)
 
+let GPUTexture =
+    make-handle-type 'GPUTexture u32
+        inline __drop (self)
+            gl.DeleteTextures 1 (&local (storagecast (view self)))
+
 struct ArrayTexture2D
-    _handle : u32
+    _handle : GPUTexture
 
     inline __typecall (cls filename layer-width layer-height)
         let img-data = (ImageData filename)
@@ -313,7 +318,7 @@ struct ArrayTexture2D
         gl.PixelStorei gl.GL_UNPACK_ROW_LENGTH 0
 
         super-type.__typecall cls
-            _handle = handle
+            _handle = (GPUTexture handle)
 
 fn gl-compile-shader (source kind)
     imply kind i32
@@ -333,11 +338,6 @@ fn gl-compile-shader (source kind)
         print (string &message (log-length as usize))
     handle
 
-let GPUShaderProgram =
-    make-handle-type 'GPUShaderProgram u32
-        inline __drop (self)
-            gl.DeleteProgram (storagecast (view self))
-
 fn gl-link-shader-program (vs fs)
     let program = (gl.CreateProgram)
     gl.AttachShader program vs
@@ -356,12 +356,32 @@ fn gl-link-shader-program (vs fs)
         already marked for deletion when the program is dropped.
     gl.DeleteShader fs
     gl.DeleteShader vs
-    bitcast program GPUShaderProgram
+    program
+
+let GPUShaderProgram =
+    make-handle-type 'GPUShaderProgram u32
+        inline __drop (self)
+            gl.DeleteProgram (storagecast (view self))
+
+struct ShaderProgram
+    _handle : GPUShaderProgram
+    inline __typecall (cls vs fs)
+        let vertex-module =
+            gl-compile-shader
+                static-compile-glsl 450 'vertex (static-typify vs)
+                gl.GL_VERTEX_SHADER
+        let fragment-module =
+            gl-compile-shader
+                static-compile-glsl 450 'fragment (static-typify fs)
+                gl.GL_FRAGMENT_SHADER
+
+        let program = (gl-link-shader-program vertex-module fragment-module)
+        super-type.__typecall cls
+            _handle = (bitcast program GPUShaderProgram)
 
 # RESOURCE INITIALIZATION
 # ================================================================================
 let 2DMesh = (Mesh 2DVertex u16)
-print 2DMesh
 local sprites = (2DMesh 3000)
 do
     local vertices =
@@ -404,17 +424,9 @@ fn fragment-shader ()
 
     fcolor = vcolor
 
-let vertex-module =
-    gl-compile-shader
-        static-compile-glsl 450 'vertex (static-typify vertex-shader)
-        gl.GL_VERTEX_SHADER
-let fragment-module =
-    gl-compile-shader
-        static-compile-glsl 450 'fragment (static-typify fragment-shader)
-        gl.GL_FRAGMENT_SHADER
+let default-shader = (ShaderProgram vertex-shader fragment-shader)
+gl.UseProgram default-shader._handle
 
-let default-shader = (gl-link-shader-program vertex-module fragment-module)
-gl.UseProgram default-shader
 
 # GAME LOOP
 # ================================================================================
