@@ -447,7 +447,7 @@ struct Tileset
 
             using import radlib.libc
             let image-path =
-                (String "tilesets/") .. (String image-name (_string.strlen image-name))
+                (String "levels/") .. (String image-name (_string.strlen image-name))
             super-type.__typecall cls
                 image =
                     Rc.wrap

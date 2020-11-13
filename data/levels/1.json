@@ -23,7 +23,7 @@
  "tilesets":[
         {
          "firstgid":1,
-         "source":"..\/assets\/adve\/tiles.tsx"
+         "source":"adve.json"
         }],
  "tilewidth":8,
  "type":"map",
