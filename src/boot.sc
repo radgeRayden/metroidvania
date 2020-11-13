@@ -288,6 +288,9 @@ struct ArrayTexture2D
     _handle : GPUTexture
 
     inline __typecall (cls filename layer-width layer-height)
+        # had to deref because something was changing the stack, maybe in glTexStorage3D
+        let layer-width = (deref layer-width)
+        let layer-height = (deref layer-height)
         let img-data = (ImageData filename)
         local handle : u32
         # TODO: accomodate more mip levels
