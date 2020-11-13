@@ -13,6 +13,8 @@ import .math
 load-library "../lib/libgame.so"
 load-library "../lib/libglfw.so"
 load-library "../lib/libphysfs.so"
+# TODO: build in project and add to /lib
+load-library "libcjson.so"
 run-stage;
 
 let glfw = (import .FFI.glfw)
