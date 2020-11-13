@@ -1,12 +1,13 @@
 using import glm
 
-fn 2drotate (v angle)
+inline... rotate
+case (v : vec2, angle : f32)
     let rcos rsin = (cos angle) (sin angle)
     vec2
         (rcos * v.x) - (rsin * v.y)
         (rsin * v.x) + (rcos * v.y)
 
-fn ortographic-projection (width height)
+inline ortho (width height)
     # https://www.scratchapixel.com/lessons/3d-basic-rendering/perspective-and-orthographic-projection-matrix/orthographic-projection-matrix
     # right, top
     let r t = (width / 2) (height / 2)
@@ -34,6 +35,6 @@ fn ortographic-projection (width height)
 
 do
     let
-        2drotate
-        ortographic-projection
+        rotate
+        ortho
     locals;

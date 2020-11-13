@@ -507,7 +507,7 @@ fn sprite-vertex-shader ()
     # TODO: explain what this does in a comment
     gl_Position =
         * transform
-            vec4 (origin + pivot + (math.2drotate ((vertex * layer_size * scale) - pivot) orientation)) 0 1
+            vec4 (origin + pivot + (math.rotate ((vertex * layer_size * scale) - pivot) orientation)) 0 1
     vtexcoord = (vec3 (texcoords @ (idx % 4)) sprite.layer)
 
 fn sprite-fragment-shader ()
@@ -560,7 +560,7 @@ while (not (glfw.WindowShouldClose main-window))
         gl.GetUniformLocation sprite-shader._handle "transform"
         1
         false
-        (&local (math.ortographic-projection width height)) as (pointer f32)
+        (&local (math.ortho width height)) as (pointer f32)
     'draw sprites
 
     glfw.SwapBuffers main-window
