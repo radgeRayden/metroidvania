@@ -329,6 +329,28 @@ struct Sprite plain
     layer : u32
     rotation : f32
 
+struct SpriteBatch
+    draw-data : (Mesh Sprite u16)
+    _dirty? : bool
+
+    fn add (self sprite)
+        self._dirty? = true
+        local indices =
+            arrayof u16 0 2 3 3 1 0
+        idx-offset := (countof self.draw-data.attribute-data) * 6
+        for idx in indices
+            'append self.draw-data.index-data (idx-offset + idx)
+        'append self.draw-data.attribute-data sprite
+
+    fn draw (self)
+        if self._dirty?
+            'update self.draw-data
+            self._dirty? = false
+        gl.BindBufferBase gl.GL_SHADER_STORAGE_BUFFER 0 self.draw-data._attribute-buffer
+        gl.BindBuffer gl.GL_ELEMENT_ARRAY_BUFFER self.draw-data._index-buffer
+        gl.DrawElements gl.GL_TRIANGLES gl.GL_UNSIGNED_SHORT null
+
+
 fn gl-compile-shader (source kind)
     imply kind i32
     source as:= rawstring
