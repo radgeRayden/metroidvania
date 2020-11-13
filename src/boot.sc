@@ -288,9 +288,6 @@ struct ArrayTexture2D
     _handle : GPUTexture
 
     inline __typecall (cls filename layer-width layer-height)
-        # had to deref because something was changing the stack, maybe in glTexStorage3D
-        let layer-width = (deref layer-width)
-        let layer-height = (deref layer-height)
         let img-data = (ImageData filename)
         local handle : u32
         # TODO: accomodate more mip levels
@@ -452,12 +449,14 @@ struct Tileset
             let image-path =
                 (String "levels/") .. (String image-name (_string.strlen image-name))
 
+            let tileset-texture =
+                ArrayTexture2D image-path tile-width tile-height
+
             cjson.Delete json-data
 
             super-type.__typecall cls
                 image =
-                    Rc.wrap
-                        ArrayTexture2D image-path tile-width tile-height
+                    Rc.wrap tileset-texture
         try
             copy
                 'get tileset-cache filename
