@@ -462,6 +462,9 @@ struct Tileset
             'set tileset-cache filename new-tileset
             result
 
+    fn clear-cache ()
+        'clear tileset-cache
+
 
 # RESOURCE INITIALIZATION
 # ================================================================================
