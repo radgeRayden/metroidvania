@@ -292,7 +292,7 @@ struct ArrayTexture2D
         gl.GenTextures 1 &handle
         gl.BindTexture gl.GL_TEXTURE_2D_ARRAY handle
         gl.TexStorage3D gl.GL_TEXTURE_2D_ARRAY mip-count
-            gl.GL_RGBA8
+            gl.GL_SRGB8_ALPHA8
             layer-width
             layer-height
             layer-count as i32
