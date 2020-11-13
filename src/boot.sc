@@ -8,6 +8,7 @@ using import Array
 using import Rc
 using import Map
 using import String
+using import itertools
 
 import .math
 
@@ -427,8 +428,21 @@ struct ShaderProgram
         super-type.__typecall cls
             _handle = (bitcast program GPUShaderProgram)
 
+inline json-array->generator (arr)
+    Generator
+        inline "start" ()
+            arr.child
+        inline "valid?" (self)
+            self != null
+        inline "at" (self)
+            self
+        inline "next" (self)
+            self.next
+
 struct Tileset
     image : (Rc ArrayTexture2D)
+    tile-width : u32
+    tile-height : u32
 
     global tileset-cache : (Map String (Rc this-type))
     inline __typecall (cls filename)
@@ -441,9 +455,11 @@ struct Tileset
                 cjson.GetStringValue
                     cjson.GetObjectItem json-data "image"
             let tile-width =
-                (cjson.GetObjectItem json-data "tilewidth") . valueint
+                deref
+                    (cjson.GetObjectItem json-data "tilewidth") . valueint
             let tile-height =
-                (cjson.GetObjectItem json-data "tileheight") . valueint
+                deref
+                    (cjson.GetObjectItem json-data "tileheight") . valueint
 
             using import radlib.libc
             let image-path =
@@ -457,6 +473,8 @@ struct Tileset
             super-type.__typecall cls
                 image =
                     Rc.wrap tileset-texture
+                tile-width = (tile-width as u32)
+                tile-height = (tile-height as u32)
         try
             copy
                 'get tileset-cache filename
@@ -470,6 +488,76 @@ struct Tileset
     fn clear-cache ()
         'clear tileset-cache
 
+struct LevelTilemap
+    tileset : (Rc Tileset)
+    level-width : u32
+    level-height : u32
+    level-data : (Array u32)
+    draw-data : SpriteBatch
+
+    inline __typecall (cls filename)
+        fn load-tiled-level (filename)
+            let data = (load-full-file filename)
+            let json-data = (cjson.Parse data)
+            # we'll assume a single tileset per level atm
+            let tileset =
+                cjson.GetArrayItem
+                    cjson.GetObjectItem json-data "tilesets"
+                    0
+            let basedir = (String "levels/")
+            let tileset-path =
+                cjson.GetStringValue
+                    cjson.GetObjectItem tileset "source"
+
+            using import radlib.libc
+            let tileset-full-path =
+                basedir .. (String tileset-path (_string.strlen tileset-path))
+            let tileset-obj = (Tileset tileset-full-path)
+
+            # NOTE: assuming we only have one layer. Will improve this to handle
+            # multiple layers when it's needed.
+            let level-layer =
+                cjson.GetArrayItem
+                    cjson.GetObjectItem json-data "layers"
+                    0
+
+            # we have to deref since those are references to the json object
+            let level-width level-height =
+                deref
+                    (cjson.GetObjectItem level-layer "width") . valueint
+                deref
+                    (cjson.GetObjectItem level-layer "height") . valueint
+
+            local level-data : (Array u32)
+            let tile-array = (cjson.GetObjectItem level-layer "data")
+            for tile in (json-array->generator tile-array)
+                'append level-data (tile.valueint as u32)
+            local level-sprites = (SpriteBatch)
+            for i x y in (enumerate (dim level-width level-height))
+                let tile = (level-data @ i)
+                if (tile == 0)
+                    continue;
+                'add level-sprites
+                    Sprite
+                        position =
+                            vec2
+                                tileset-obj.tile-width * (x as u32)
+                                # because images go y down but we go y up
+                                tileset-obj.tile-height * ((level-height - 1 - y) as u32)
+                        scale = (vec2 1)
+                        pivot = (vec2)
+                        layer = (tile - 1)
+                        rotation = 0
+
+            cjson.Delete json-data
+
+            super-type.__typecall cls
+                tileset = tileset-obj
+                draw-data = level-sprites
+                level-width = (level-width as u32)
+                level-height = (level-height as u32)
+                level-data = level-data
+        load-tiled-level filename
 
 # RESOURCE INITIALIZATION
 # ================================================================================
@@ -573,10 +661,7 @@ fn sprite-fragment-shader ()
 let sprite-shader = (ShaderProgram sprite-vertex-shader sprite-fragment-shader)
 gl.UseProgram sprite-shader._handle
 
-let tileset = (Tileset "tilesets/adve.json")
-    # ArrayTexture2D "tilesets/adve.png" 16 16
-
-local map-layer = (SpriteBatch)
+local level1 = (LevelTilemap "levels/1.json")
 
 # GAME LOOP
 # ================================================================================
@@ -592,12 +677,13 @@ while (not (glfw.WindowShouldClose main-window))
 
     gl.Uniform2f
         gl.GetUniformLocation sprite-shader._handle "layer_size"
-        16
-        16
+        level1.tileset.tile-width as f32
+        level1.tileset.tile-height as f32
 
     let camera-transform =
         *
             math.translate (vec3 -1 -1 0)
+            math.scale (vec3 2 2 1)
             math.ortho width height
 
     gl.UniformMatrix4fv
@@ -605,7 +691,7 @@ while (not (glfw.WindowShouldClose main-window))
         1
         false
         (&local camera-transform) as (pointer f32)
-    'draw map-layer
+    'draw level1.draw-data
 
     glfw.SwapBuffers main-window
 
