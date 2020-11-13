@@ -430,7 +430,7 @@ struct ShaderProgram
 struct Tileset
     image : (Rc ArrayTexture2D)
 
-    global tileset-cache : (Map string (Rc this-type))
+    global tileset-cache : (Map String (Rc this-type))
     inline __typecall (cls filename)
         fn load-tiled-tileset (filename)
             let data = (load-full-file filename)
