@@ -535,8 +535,11 @@ struct LevelTilemap
             local level-sprites = (SpriteBatch)
             for i x y in (enumerate (dim level-width level-height))
                 let tile = (level-data @ i)
-                if (tile == 0)
-                    continue;
+                let scale =
+                    if (tile == 0)
+                        vec2; # invisible tile
+                    else
+                        vec2 1
                 'add level-sprites
                     Sprite
                         position =
@@ -544,7 +547,7 @@ struct LevelTilemap
                                 tileset-obj.tile-width * (x as u32)
                                 # because images go y down but we go y up
                                 tileset-obj.tile-height * ((level-height - 1 - y) as u32)
-                        scale = (vec2 1)
+                        scale = scale
                         pivot = (vec2)
                         layer = (tile - 1)
                         rotation = 0
