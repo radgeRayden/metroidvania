@@ -564,52 +564,6 @@ struct LevelTilemap
 
 # RESOURCE INITIALIZATION
 # ================================================================================
-let 2DMesh = (Mesh 2DVertex u16)
-local sprites = (2DMesh 3000)
-do
-    local vertices =
-        arrayof vec2
-            vec2 -0.5 -0.5
-            vec2 0.5 -0.5
-            vec2 0.0 0.5
-    local colors =
-        arrayof vec4
-            vec4 1.0 0 0 1
-            vec4 0 1.0 0 1
-            vec4 0 0 1.0 1
-
-    for i in (range 3)
-        'emplace-append sprites.attribute-data
-            position = (vertices @ i)
-            color = (colors @ i)
-        'append sprites.index-data (i as u16)
-    'update sprites
-
-fn vertex-shader ()
-    using import glsl
-    buffer attributes :
-        struct VertexAttributeArray plain
-            data : (array 2DVertex)
-
-    out vcolor : vec4
-        location = 1
-
-    local attr = (attributes.data @ gl_VertexID)
-    gl_Position = (vec4 attr.position 0 1)
-    vcolor = attr.color
-
-fn fragment-shader ()
-    using import glsl
-    in vcolor : vec4
-        location = 1
-    out fcolor : vec4
-        location = 0
-
-    fcolor = vcolor
-
-let default-shader = (ShaderProgram vertex-shader fragment-shader)
-gl.UseProgram default-shader._handle
-
 fn sprite-vertex-shader ()
     using import glsl
     buffer attributes :
