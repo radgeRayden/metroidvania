@@ -4,3 +4,6 @@
 [submodule "3rd-party/stb"]
 	path = 3rd-party/stb
 	url = https://github.com/nothings/stb/
+[submodule "3rd-party/cJSON"]
+	path = 3rd-party/cJSON
+	url = https://github.com/DaveGamble/cJSON

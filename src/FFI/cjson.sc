@@ -3,7 +3,7 @@ using import radlib.foreign
 
 define-scope cjson
     let header =
-        include "cjson/cJSON.h"
+        include "../../3rd-party/cJSON/cJSON.h"
     using header.extern
     using header.struct
     using header.typedef
