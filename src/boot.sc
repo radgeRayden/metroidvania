@@ -562,6 +562,29 @@ struct LevelTilemap
                 level-data = level-data
         load-tiled-level filename
 
+struct Camera plain
+    position : vec2
+    scale : vec2
+    viewport : vec2
+    # bounds : vec4
+    fn move (self dir)
+        # TODO: apply boundary constraints
+        self.position += dir
+
+    fn apply (self shader)
+        let transform =
+            *
+                math.translate (vec3 -1 -1 0)
+                math.scale self.scale.xy1
+                math.ortho self.viewport.x self.viewport.y
+                math.translate (floor self.position.xy0)
+        gl.UniformMatrix4fv
+            gl.GetUniformLocation shader._handle "transform"
+            1
+            false
+            (&local transform) as (pointer f32)
+        ;
+
 # RESOURCE INITIALIZATION
 # ================================================================================
 fn sprite-vertex-shader ()
@@ -619,6 +642,10 @@ let sprite-shader = (ShaderProgram sprite-vertex-shader sprite-fragment-shader)
 gl.UseProgram sprite-shader._handle
 
 local level1 = (LevelTilemap "levels/1.json")
+local main-camera : Camera
+    position = (vec2)
+    scale = (vec2 4)
+
 
 # GAME LOOP
 # ================================================================================
@@ -637,17 +664,9 @@ while (not (glfw.WindowShouldClose main-window))
         level1.tileset.tile-width as f32
         level1.tileset.tile-height as f32
 
-    let camera-transform =
-        *
-            math.translate (vec3 -1 -1 0)
-            math.scale (vec3 2 2 1)
-            math.ortho width height
 
-    gl.UniformMatrix4fv
-        gl.GetUniformLocation sprite-shader._handle "transform"
-        1
-        false
-        (&local camera-transform) as (pointer f32)
+    main-camera.viewport = (vec2 width height)
+    'apply main-camera sprite-shader
     'draw level1.draw-data
 
     glfw.SwapBuffers main-window
