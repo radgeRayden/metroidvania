@@ -646,9 +646,17 @@ local main-camera : Camera
     position = (vec2)
     scale = (vec2 4)
 
+fn key-down? (code)
+    (glfw.GetKey main-window code) as bool
 
 # GAME LOOP
 # ================================================================================
+glfw.SetKeyCallback main-window
+    fn (window _key scancode action mods)
+        if ((_key == glfw.GLFW_KEY_ESCAPE) and (action == glfw.GLFW_RELEASE))
+            glfw.SetWindowShouldClose main-window true
+        ;
+
 while (not (glfw.WindowShouldClose main-window))
     glfw.PollEvents;
     local width : i32
@@ -664,6 +672,14 @@ while (not (glfw.WindowShouldClose main-window))
         level1.tileset.tile-width as f32
         level1.tileset.tile-height as f32
 
+    if (key-down? glfw.GLFW_KEY_LEFT)
+        'move main-camera (vec2 0.2 0)
+    if (key-down? glfw.GLFW_KEY_RIGHT)
+        'move main-camera (vec2 -0.2 0)
+    if (key-down? glfw.GLFW_KEY_UP)
+        'move main-camera (vec2 0 -0.2)
+    if (key-down? glfw.GLFW_KEY_DOWN)
+        'move main-camera (vec2 0 0.2)
 
     main-camera.viewport = (vec2 width height)
     'apply main-camera sprite-shader
