@@ -11,6 +11,7 @@ using import String
 using import itertools
 
 import .math
+import .timer
 
 # DEPENDENCIES
 # ================================================================================
@@ -47,6 +48,7 @@ let main-window = (glfw.CreateWindow 1280 720 "gam??" null null)
 if (main-window == null)
     error "Failed to create a window with specified settings."
 glfw.MakeContextCurrent main-window
+# glfw.SwapInterval 1
 
 gl.init;
 
@@ -646,10 +648,12 @@ local main-camera : Camera
     position = (vec2)
     scale = (vec2 4)
 
+local game-timer = (timer.Timer)
+
 fn key-down? (code)
     (glfw.GetKey main-window code) as bool
 
-# GAME LOOP
+# GAME CODE
 # ================================================================================
 glfw.SetKeyCallback main-window
     fn (window _key scancode action mods)
@@ -672,14 +676,23 @@ while (not (glfw.WindowShouldClose main-window))
         level1.tileset.tile-width as f32
         level1.tileset.tile-height as f32
 
-    if (key-down? glfw.GLFW_KEY_LEFT)
-        'move main-camera (vec2 0.2 0)
-    if (key-down? glfw.GLFW_KEY_RIGHT)
-        'move main-camera (vec2 -0.2 0)
-    if (key-down? glfw.GLFW_KEY_UP)
-        'move main-camera (vec2 0 -0.2)
-    if (key-down? glfw.GLFW_KEY_DOWN)
-        'move main-camera (vec2 0 0.2)
+    global dt-accum : f32
+    dt-accum += (('step game-timer) as f32)
+    step-size := 1 / 60
+    let cam-speed = 40
+
+    while (dt-accum >= step-size)
+        dt-accum -= step-size
+        let dt = step-size
+
+        if (key-down? glfw.GLFW_KEY_LEFT)
+            'move main-camera ((vec2 cam-speed 0) * dt)
+        if (key-down? glfw.GLFW_KEY_RIGHT)
+            'move main-camera ((vec2 -cam-speed 0) * dt)
+        if (key-down? glfw.GLFW_KEY_UP)
+            'move main-camera ((vec2 0 -cam-speed) * dt)
+        if (key-down? glfw.GLFW_KEY_DOWN)
+            'move main-camera ((vec2 0 cam-speed) * dt)
 
     main-camera.viewport = (vec2 width height)
     'apply main-camera sprite-shader
