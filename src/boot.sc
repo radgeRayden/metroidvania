@@ -676,8 +676,8 @@ while (not (glfw.WindowShouldClose main-window))
         level1.tileset.tile-width as f32
         level1.tileset.tile-height as f32
 
-    global dt-accum : f32
-    dt-accum += (('step game-timer) as f32)
+    global dt-accum : f64
+    dt-accum += ('step game-timer)
     step-size := 1 / 60
     let cam-speed = 40
 
