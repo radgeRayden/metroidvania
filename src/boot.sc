@@ -11,7 +11,6 @@ using import String
 using import itertools
 
 import .math
-import .timer
 
 # DEPENDENCIES
 # ================================================================================
@@ -655,8 +654,6 @@ local main-camera : Camera
     position = (vec2)
     scale = (vec2 4)
 
-local game-timer = (timer.Timer)
-
 fn key-down? (code)
     (glfw.GetKey main-window code) as bool
 
@@ -668,6 +665,7 @@ glfw.SetKeyCallback main-window
             glfw.SetWindowShouldClose main-window true
         ;
 
+global last-time = (glfw.GetTime)
 while (not (glfw.WindowShouldClose main-window))
     glfw.PollEvents;
     local width : i32
@@ -684,12 +682,17 @@ while (not (glfw.WindowShouldClose main-window))
         level1.tileset.tile-height as f32
 
     global dt-accum : f64
-    dt-accum += ('step game-timer)
+
+    let now = (glfw.GetTime)
+    let real-dt = (now - last-time)
+    last-time = now
+    dt-accum += real-dt
+
     step-size := 1 / 60
-    let cam-speed = 40
 
     while (dt-accum >= step-size)
         dt-accum -= step-size
+        let cam-speed = 40
         let dt = step-size
 
         if (key-down? glfw.GLFW_KEY_LEFT)
