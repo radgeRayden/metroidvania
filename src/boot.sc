@@ -646,11 +646,11 @@ fn sprite-fragment-shader ()
     uniform sprite-tex : sampler2DArray
     fcolor = (texture sprite-tex vtexcoord)
 
-let sprite-shader = (ShaderProgram sprite-vertex-shader sprite-fragment-shader)
+global sprite-shader = (ShaderProgram sprite-vertex-shader sprite-fragment-shader)
 gl.UseProgram sprite-shader._handle
 
-local level1 = (LevelTilemap "levels/1.json")
-local main-camera : Camera
+global level1 = (LevelTilemap "levels/1.json")
+global main-camera : Camera
     position = (vec2)
     scale = (vec2 4)
 
@@ -665,14 +665,22 @@ glfw.SetKeyCallback main-window
             glfw.SetWindowShouldClose main-window true
         ;
 
-global last-time = (glfw.GetTime)
-while (not (glfw.WindowShouldClose main-window))
-    glfw.PollEvents;
-    local width : i32
-    local height : i32
-    glfw.GetFramebufferSize main-window &width &height
-    gl.Viewport 0 0 width height
 
+global window-width : i32
+global window-height : i32
+
+fn update (dt)
+    let cam-speed = 40
+    if (key-down? glfw.GLFW_KEY_LEFT)
+        'move main-camera ((vec2 cam-speed 0) * dt)
+    if (key-down? glfw.GLFW_KEY_RIGHT)
+        'move main-camera ((vec2 -cam-speed 0) * dt)
+    if (key-down? glfw.GLFW_KEY_UP)
+        'move main-camera ((vec2 0 -cam-speed) * dt)
+    if (key-down? glfw.GLFW_KEY_DOWN)
+        'move main-camera ((vec2 0 cam-speed) * dt)
+
+fn draw ()
     gl.ClearColor 1.0 0.2 0.2 1.0
     gl.Clear (gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
@@ -680,6 +688,19 @@ while (not (glfw.WindowShouldClose main-window))
         gl.GetUniformLocation sprite-shader._handle "layer_size"
         level1.tileset.tile-width as f32
         level1.tileset.tile-height as f32
+
+    main-camera.viewport = (vec2 window-width window-height)
+    'apply main-camera sprite-shader
+    'draw level1.draw-data
+
+global last-time = (glfw.GetTime)
+while (not (glfw.WindowShouldClose main-window))
+    glfw.PollEvents;
+    glfw.GetFramebufferSize main-window &window-width &window-height
+    gl.Viewport 0 0 window-width window-height
+
+    # TODO: FBO to provide an internal resolution independent from
+    # display will go here.
 
     global dt-accum : f64
 
@@ -692,21 +713,9 @@ while (not (glfw.WindowShouldClose main-window))
 
     while (dt-accum >= step-size)
         dt-accum -= step-size
-        let cam-speed = 40
-        let dt = step-size
+        update step-size
 
-        if (key-down? glfw.GLFW_KEY_LEFT)
-            'move main-camera ((vec2 cam-speed 0) * dt)
-        if (key-down? glfw.GLFW_KEY_RIGHT)
-            'move main-camera ((vec2 -cam-speed 0) * dt)
-        if (key-down? glfw.GLFW_KEY_UP)
-            'move main-camera ((vec2 0 -cam-speed) * dt)
-        if (key-down? glfw.GLFW_KEY_DOWN)
-            'move main-camera ((vec2 0 cam-speed) * dt)
-
-    main-camera.viewport = (vec2 width height)
-    'apply main-camera sprite-shader
-    'draw level1.draw-data
+    draw;
 
     glfw.SwapBuffers main-window
 
