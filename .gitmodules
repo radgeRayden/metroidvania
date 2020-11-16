@@ -7,3 +7,6 @@
 [submodule "3rd-party/cJSON"]
 	path = 3rd-party/cJSON
 	url = https://github.com/DaveGamble/cJSON
+[submodule "3rd-party/glfw"]
+	path = 3rd-party/glfw
+	url = https://github.com/glfw/glfw.git
