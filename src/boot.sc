@@ -15,9 +15,18 @@ import .timer
 
 # DEPENDENCIES
 # ================================================================================
-load-library "../lib/libgame.so"
-load-library "../lib/libglfw.so"
-load-library "../lib/libphysfs.so"
+switch operating-system
+case 'linux
+    load-library "../lib/libgame.so"
+    load-library "../lib/libglfw.so"
+    load-library "../lib/libphysfs.so"
+case 'windows
+    load-library "../lib/libgame.dll"
+    load-library "../lib/glfw3.dll"
+    load-library "../lib/libphysfs.dll"
+default
+    error "Unsupported OS."
+
 run-stage;
 
 let glfw = (import .FFI.glfw)
