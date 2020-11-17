@@ -54,7 +54,7 @@ let main-window = (glfw.CreateWindow 1280 720 "gam??" null null)
 if (main-window == null)
     error "Failed to create a window with specified settings."
 glfw.MakeContextCurrent main-window
-# glfw.SwapInterval 1
+glfw.SwapInterval 1
 
 gl.init;
 
