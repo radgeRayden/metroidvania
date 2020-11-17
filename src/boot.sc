@@ -495,8 +495,8 @@ struct Tileset
                     cjson.GetObjectItem obj name
 
                 id := (gci t "id") . valueint
-                let props = (gci t "properties")
                 let cur-tile-props = (tile-properties @ id)
+                let props = (gci t "properties")
                 for p in (json-array->generator props)
                     let name =
                         do
