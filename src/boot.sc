@@ -753,4 +753,4 @@ while (not (glfw.WindowShouldClose main-window))
 # CLEANUP
 # ================================================================================
 glfw.DestroyWindow main-window
-# glfw.Terminate;
+glfw.Terminate;
