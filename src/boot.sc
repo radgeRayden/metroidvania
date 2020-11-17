@@ -350,30 +350,30 @@ struct Sprite plain
     rotation : f32
 
 struct SpriteBatch
-    draw-data : (Mesh Sprite u16)
+    sprites : (Mesh Sprite u16)
     _dirty? : bool
 
     inline __typecall (cls)
         super-type.__typecall cls
-            draw-data = ((Mesh Sprite u16) 128)
+            sprites = ((Mesh Sprite u16) 128)
             _dirty? = false
 
     fn add (self sprite)
         self._dirty? = true
         local indices =
             arrayof u16 0 2 3 3 1 0
-        idx-offset := (countof self.draw-data.attribute-data) * 4
+        idx-offset := (countof self.sprites.attribute-data) * 4
         for idx in indices
-            'append self.draw-data.index-data ((idx-offset + idx) as u16)
-        'append self.draw-data.attribute-data sprite
+            'append self.sprites.index-data ((idx-offset + idx) as u16)
+        'append self.sprites.attribute-data sprite
 
     fn draw (self)
         if self._dirty?
-            'update self.draw-data
+            'update self.sprites
             self._dirty? = false
-        gl.BindBufferBase gl.GL_SHADER_STORAGE_BUFFER 0 self.draw-data._attribute-buffer
-        gl.BindBuffer gl.GL_ELEMENT_ARRAY_BUFFER self.draw-data._index-buffer
-        gl.DrawElements gl.GL_TRIANGLES ((countof self.draw-data.index-data) as i32)
+        gl.BindBufferBase gl.GL_SHADER_STORAGE_BUFFER 0 self.sprites._attribute-buffer
+        gl.BindBuffer gl.GL_ELEMENT_ARRAY_BUFFER self.sprites._index-buffer
+        gl.DrawElements gl.GL_TRIANGLES ((countof self.sprites.index-data) as i32)
            \ gl.GL_UNSIGNED_SHORT null
 
 
