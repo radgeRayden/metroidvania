@@ -28,6 +28,8 @@ default
 
 run-stage;
 
+let C = (import radlib.libc)
+
 let glfw = (import .FFI.glfw)
 let gl = (import .FFI.glad)
 let physfs = (import .FFI.physfs)
@@ -308,8 +310,8 @@ struct ArrayTexture2D
         gl.BindTexture gl.GL_TEXTURE_2D_ARRAY handle
         gl.TexStorage3D gl.GL_TEXTURE_2D_ARRAY mip-count
             gl.GL_SRGB8_ALPHA8
-            layer-width
-            layer-height
+            layer-width as i32
+            layer-height as i32
             layer-count as i32
         gl.PixelStorei gl.GL_UNPACK_ROW_LENGTH (img-data.width as i32)
         for i in (range layer-count)
@@ -327,8 +329,8 @@ struct ArrayTexture2D
                 0 # xoffset
                 0 # yoffset
                 i as i32 # zoffset
-                layer-width
-                layer-height
+                layer-width as i32
+                layer-height as i32
                 1 # depth
                 gl.GL_RGBA
                 gl.GL_UNSIGNED_BYTE
@@ -351,11 +353,13 @@ struct Sprite plain
 
 struct SpriteBatch
     sprites : (Mesh Sprite u16)
+    image : ArrayTexture2D
     _dirty? : bool
 
-    inline __typecall (cls)
+    inline __typecall (cls image-filename layer-width layer-height)
         super-type.__typecall cls
             sprites = ((Mesh Sprite u16) 128)
+            image = (ArrayTexture2D image-filename layer-width layer-height)
             _dirty? = false
 
     fn add (self sprite)
@@ -373,6 +377,8 @@ struct SpriteBatch
             self._dirty? = false
         gl.BindBufferBase gl.GL_SHADER_STORAGE_BUFFER 0 self.sprites._attribute-buffer
         gl.BindBuffer gl.GL_ELEMENT_ARRAY_BUFFER self.sprites._index-buffer
+        gl.BindTextures 0 1
+            &local (storagecast (view self.image._handle))
         gl.DrawElements gl.GL_TRIANGLES ((countof self.sprites.index-data) as i32)
            \ gl.GL_UNSIGNED_SHORT null
 
@@ -448,7 +454,7 @@ inline json-array->generator (arr)
             self.next
 
 struct Tileset
-    image : (Rc ArrayTexture2D)
+    image : String
     tile-width : u32
     tile-height : u32
 
@@ -471,16 +477,13 @@ struct Tileset
 
             using import radlib.libc
             let image-path =
-                (String "levels/") .. (String image-name (_string.strlen image-name))
+                (String "levels/") .. (String image-name (C.string.strlen image-name))
 
-            let tileset-texture =
-                ArrayTexture2D image-path tile-width tile-height
 
             cjson.Delete json-data
 
             super-type.__typecall cls
-                image =
-                    Rc.wrap tileset-texture
+                image = image-path
                 tile-width = (tile-width as u32)
                 tile-height = (tile-height as u32)
         try
@@ -523,9 +526,8 @@ struct Scene
                 cjson.GetStringValue
                     cjson.GetObjectItem tileset "source"
 
-            using import radlib.libc
             let tileset-full-path =
-                basedir .. (String tileset-path (_string.strlen tileset-path))
+                basedir .. (String tileset-path (C.string.strlen tileset-path))
             let tileset-obj = (Tileset tileset-full-path)
 
             # NOTE: assuming we only have one layer. Will improve this to handle
@@ -539,7 +541,8 @@ struct Scene
             let tile-array = (cjson.GetObjectItem level-layer "data")
             for tile in (json-array->generator tile-array)
                 'append level-data (tile.valueint as u32)
-            local level-sprites = (SpriteBatch)
+            local level-sprites =
+                SpriteBatch tileset-obj.image tileset-obj.tile-width tileset-obj.tile-height
             for i x y in (enumerate (dim scene-width scene-height))
                 let tile = (level-data @ i)
                 let scale =
