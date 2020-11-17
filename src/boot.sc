@@ -453,10 +453,14 @@ inline json-array->generator (arr)
         inline "next" (self)
             self.next
 
+struct TileProperties
+    solid? : bool
+
 struct Tileset
     image : String
     tile-width : u32
     tile-height : u32
+    tile-properties : (Array TileProperties)
 
     global tileset-cache : (Map String (Rc this-type))
     inline __typecall (cls filename)
@@ -479,6 +483,30 @@ struct Tileset
             let image-path =
                 (String "levels/") .. (String image-name (C.string.strlen image-name))
 
+            let tiles = (cjson.GetObjectItem json-data "tiles")
+            let tile-count =
+                deref ((cjson.GetObjectItem json-data "tilecount") . valueint)
+
+            local tile-properties : (Array TileProperties)
+            'resize tile-properties tile-count
+
+            for t in (json-array->generator tiles)
+                inline gci (obj name) # get child item
+                    cjson.GetObjectItem obj name
+
+                id := (gci t "id") . valueint
+                let props = (gci t "properties")
+                let cur-tile-props = (tile-properties @ id)
+                for p in (json-array->generator props)
+                    let name =
+                        do
+                            let raw = (cjson.GetStringValue (gci p "name"))
+                            String raw (C.string.strlen raw)
+                    match name
+                    case "solid"
+                        cur-tile-props.solid? = (((gci p "value") . valueint) as bool)
+                    default
+                        ;
 
             cjson.Delete json-data
 
@@ -486,6 +514,7 @@ struct Tileset
                 image = image-path
                 tile-width = (tile-width as u32)
                 tile-height = (tile-height as u32)
+                tile-properties = (deref tile-properties)
         try
             copy
                 'get tileset-cache filename
