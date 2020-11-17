@@ -496,22 +496,28 @@ struct Tileset
     fn clear-cache ()
         'clear tileset-cache
 
-struct LevelTilemap
+struct Scene
     tileset : (Rc Tileset)
-    level-width : u32
-    level-height : u32
+    width : u32
+    height : u32
     level-data : (Array u32)
     draw-data : SpriteBatch
 
     inline __typecall (cls filename)
         fn load-tiled-level (filename)
-            let data = (load-full-file filename)
-            let json-data = (cjson.Parse data)
+            let tiled-scene = (cjson.Parse (load-full-file filename))
+
+            # we have to deref since those are references to the json object
+            let scene-width scene-height =
+                deref ((cjson.GetObjectItem tiled-scene "width") . valueint)
+                deref ((cjson.GetObjectItem tiled-scene "height") . valueint)
+
             # we'll assume a single tileset per level atm
             let tileset =
                 cjson.GetArrayItem
-                    cjson.GetObjectItem json-data "tilesets"
+                    cjson.GetObjectItem tiled-scene "tilesets"
                     0
+
             let basedir = (String "levels/")
             let tileset-path =
                 cjson.GetStringValue
@@ -526,22 +532,15 @@ struct LevelTilemap
             # multiple layers when it's needed.
             let level-layer =
                 cjson.GetArrayItem
-                    cjson.GetObjectItem json-data "layers"
+                    cjson.GetObjectItem tiled-scene "layers"
                     0
-
-            # we have to deref since those are references to the json object
-            let level-width level-height =
-                deref
-                    (cjson.GetObjectItem level-layer "width") . valueint
-                deref
-                    (cjson.GetObjectItem level-layer "height") . valueint
 
             local level-data : (Array u32)
             let tile-array = (cjson.GetObjectItem level-layer "data")
             for tile in (json-array->generator tile-array)
                 'append level-data (tile.valueint as u32)
             local level-sprites = (SpriteBatch)
-            for i x y in (enumerate (dim level-width level-height))
+            for i x y in (enumerate (dim scene-width scene-height))
                 let tile = (level-data @ i)
                 let scale =
                     if (tile == 0)
@@ -554,19 +553,19 @@ struct LevelTilemap
                             vec2
                                 tileset-obj.tile-width * (x as u32)
                                 # because images go y down but we go y up
-                                tileset-obj.tile-height * ((level-height - 1 - y) as u32)
+                                tileset-obj.tile-height * ((scene-height - 1 - y) as u32)
                         scale = scale
                         pivot = (vec2)
                         layer = (tile - 1)
                         rotation = 0
 
-            cjson.Delete json-data
+            cjson.Delete tiled-scene
 
             super-type.__typecall cls
                 tileset = tileset-obj
                 draw-data = level-sprites
-                level-width = (level-width as u32)
-                level-height = (level-height as u32)
+                width = (scene-width as u32)
+                height = (scene-height as u32)
                 level-data = level-data
         load-tiled-level filename
 
@@ -649,7 +648,7 @@ fn sprite-fragment-shader ()
 global sprite-shader = (ShaderProgram sprite-vertex-shader sprite-fragment-shader)
 gl.UseProgram sprite-shader._handle
 
-global level1 = (LevelTilemap "levels/1.json")
+global level1 = (Scene "levels/1.json")
 global main-camera : Camera
     position = (vec2)
     scale = (vec2 4)
