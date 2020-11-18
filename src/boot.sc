@@ -740,18 +740,26 @@ glfw.SetKeyCallback main-window
 global window-width : i32
 global window-height : i32
 
+# NOTE: very temporary thing, that's why it's down here.
+global player :
+    struct Player plain
+        position : vec2
+
+player.position = player-sprite.position
 
 fn update (dt)
     # TODO: create a follow function
     let player-speed = 40
     if (key-down? glfw.GLFW_KEY_LEFT)
-        player-sprite.position -= (vec2 player-speed 0) * dt
+        player.position -= (vec2 player-speed 0) * dt
     if (key-down? glfw.GLFW_KEY_RIGHT)
-        player-sprite.position += (vec2 player-speed 0) * dt
+        player.position += (vec2 player-speed 0) * dt
     if (key-down? glfw.GLFW_KEY_UP)
-        player-sprite.position += (vec2 0 player-speed) * dt
+        player.position += (vec2 0 player-speed) * dt
     if (key-down? glfw.GLFW_KEY_DOWN)
-        player-sprite.position -= (vec2 0 player-speed) * dt
+        player.position -= (vec2 0 player-speed) * dt
+
+    player-sprite.position = (floor player.position)
 
     main-camera.position =
         ((vec2 window-width window-height) / 2 / main-camera.scale) - player-sprite.position
