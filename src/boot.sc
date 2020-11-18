@@ -646,10 +646,7 @@ struct Camera plain
     position : vec2
     scale : vec2
     viewport : vec2
-    # bounds : vec4
-    fn move (self dir)
-        # TODO: apply boundary constraints
-        self.position += dir
+    bounds : vec4
 
     fn world->screen (self world)
         world - self.position
@@ -663,23 +660,27 @@ struct Camera plain
         f1 := f0 + focus-box-size
 
         let px py = self.position.x self.position.y
-        px =
-            embed
-                if (target.x < f0.x)
-                    px - (f0.x - target.x)
-                elseif (target.x > f1.x)
-                    px - (f1.x - target.x)
-                else
-                    deref px
-        py =
-            embed
-                if (target.y < f0.y)
-                    py - (f0.y - target.y)
-                elseif (target.y > f1.y)
-                    py - (f1.y - target.y)
-                else
-                    deref py
+        let new-px =
+            if (target.x < f0.x)
+                px - (f0.x - target.x)
+            elseif (target.x > f1.x)
+                px - (f1.x - target.x)
+            else
+                deref px
+        let new-py =
+            if (target.y < f0.y)
+                py - (f0.y - target.y)
+            elseif (target.y > f1.y)
+                py - (f1.y - target.y)
+            else
+                deref py
+
+        self.position =
+            vec2
+                clamp new-px self.bounds.s self.bounds.p
+                clamp new-py self.bounds.t self.bounds.q
         ;
+
     fn apply (self shader)
         let transform =
             *
@@ -777,6 +778,8 @@ global player :
         position : vec2
 
 player.position = player-sprite.position
+main-camera.bounds =
+    vec4 0 0 level1.width level1.height
 
 fn update (dt)
     # TODO: create a follow function
