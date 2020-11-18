@@ -1,6 +1,6 @@
 INCLUDE_DIRS = ./3rd-party/glad/include
 IFLAGS = $(addprefix -I, $(INCLUDE_DIRS))
-CFLAGS = -Wall -O2 -shared -fPIC $(IFLAGS)
+CFLAGS = -Wall -O2 -fPIC $(IFLAGS)
 LFLAGS =
 
 UNAME_S := $(shell uname -s)
@@ -19,6 +19,7 @@ ifeq ($(OS), Windows_NT)
 	CC = x86_64-w64-mingw32-gcc
 	CXX = x86_64-w64-mingw32-g++
 	MAKE = mingw32-make
+	LFLAGS += -Wl,--export-all
 	LIBGAME_SHARED = libgame.dll
 	PHYSFS_SHARED = libphysfs.dll
 	GLFW_SHARED = glfw3.dll
@@ -35,7 +36,7 @@ LIBGAME_DEPS += ./3rd-party/stb.o
 
 lib/$(LIBGAME_SHARED):$(LIBGAME_DEPS)
 	mkdir -p ./lib
-	$(CC) -o ./lib/$(LIBGAME_SHARED) $(LIBGAME_DEPS)  $(CFLAGS) $(LFLAGS)
+	$(CC) -o ./lib/$(LIBGAME_SHARED) $(LIBGAME_DEPS) -shared $(CFLAGS) $(LFLAGS)
 
 PHYSFS_SRC = "./3rd-party/physfs-3.0.2"
 PHYSFS_BUILD = $(PHYSFS_SRC)/build
