@@ -659,7 +659,6 @@ struct Camera plain
         f0 := center - (focus-box-size / 2)
         f1 := f0 + focus-box-size
 
-        let px py = self.position.x self.position.y
         let snap-point = (clamp target f0 f1)
         new-pos := self.position - (snap-point - target)
 
