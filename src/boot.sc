@@ -660,26 +660,13 @@ struct Camera plain
         f1 := f0 + focus-box-size
 
         let px py = self.position.x self.position.y
-        let new-px =
-            if (target.x < f0.x)
-                px - (f0.x - target.x)
-            elseif (target.x > f1.x)
-                px - (f1.x - target.x)
-            else
-                deref px
-        let new-py =
-            if (target.y < f0.y)
-                py - (f0.y - target.y)
-            elseif (target.y > f1.y)
-                py - (f1.y - target.y)
-            else
-                deref py
+        let snap-point = (clamp target f0 f1)
+        new-pos := self.position - (snap-point - target)
 
+        let bounds = (deref self.bounds) # workaround glm bug
         self.position =
             # max has to be adjusted because position is at top left corner of viewport
-            vec2
-                clamp new-px self.bounds.s (self.bounds.p - self.viewport.x)
-                clamp new-py self.bounds.t (self.bounds.q - self.viewport.y)
+            clamp new-pos bounds.st (bounds.pq - self.viewport)
         ;
 
     fn apply (self shader)
