@@ -370,6 +370,8 @@ struct SpriteBatch
         for idx in indices
             'append self.sprites.index-data ((idx-offset + idx) as u16)
         'append self.sprites.attribute-data sprite
+        # return sprite index
+        (countof self.sprites.attribute-data) - 1
 
     fn draw (self)
         if self._dirty?
@@ -528,6 +530,8 @@ struct Tileset
     fn clear-cache ()
         'clear tileset-cache
 
+global player-sprite : (mutable pointer Sprite)
+
 struct Scene
     tileset : (Rc Tileset)
     width : u32
@@ -538,11 +542,6 @@ struct Scene
     inline __typecall (cls filename)
         fn load-tiled-level (filename)
             let tiled-scene = (cjson.Parse (load-full-file filename))
-
-            # we have to deref since those are references to the json object
-            let scene-width scene-height =
-                deref ((cjson.GetObjectItem tiled-scene "width") . valueint)
-                deref ((cjson.GetObjectItem tiled-scene "height") . valueint)
 
             # we'll assume a single tileset per level atm
             let tileset =
@@ -559,6 +558,15 @@ struct Scene
                 basedir .. (String tileset-path (C.string.strlen tileset-path))
             let tileset-obj = (Tileset tileset-full-path)
 
+            # we have to deref since those are references to the json object
+            let scene-width-tiles scene-height-tiles =
+                deref ((cjson.GetObjectItem tiled-scene "width") . valueint)
+                deref ((cjson.GetObjectItem tiled-scene "height") . valueint)
+
+            let scene-width-px scene-height-px =
+                (scene-width-tiles as u32) * (copy tileset-obj.tile-width)
+                (scene-height-tiles as u32) * (copy tileset-obj.tile-height)
+
             # NOTE: assuming we only have one layer. Will improve this to handle
             # multiple layers when it's needed.
             let level-layer =
@@ -572,7 +580,7 @@ struct Scene
                 'append level-data (tile.valueint as u32)
             local level-sprites =
                 SpriteBatch tileset-obj.image tileset-obj.tile-width tileset-obj.tile-height
-            for i x y in (enumerate (dim scene-width scene-height))
+            for i x y in (enumerate (dim scene-width-tiles scene-height-tiles))
                 let tile = (level-data @ i)
                 let scale =
                     if (tile == 0)
@@ -585,19 +593,53 @@ struct Scene
                             vec2
                                 tileset-obj.tile-width * (x as u32)
                                 # because images go y down but we go y up
-                                tileset-obj.tile-height * ((scene-height - 1 - y) as u32)
+                                tileset-obj.tile-height * ((scene-height-tiles - 1 - y) as u32)
                         scale = scale
                         pivot = (vec2)
                         layer = (tile - 1)
                         rotation = 0
+
+            # HACK: extracting player position from the tileset objects while
+            # reusing the tileset image. Later I'll have entities separate, very likely
+            # using their own sprite sheet.
+            let obj-layer =
+                cjson.GetArrayItem
+                    cjson.GetObjectItem tiled-scene "layers"
+                    1
+            let obj-layer-type = (cjson.GetStringValue (cjson.GetObjectItem obj-layer "type"))
+            assert ((C.string.strcmp obj-layer-type "objectgroup") == 0)
+            let player-obj =
+                cjson.GetArrayItem
+                    cjson.GetObjectItem obj-layer "objects"
+                    0
+            let player-obj-name = (cjson.GetStringValue (cjson.GetObjectItem player-obj "name"))
+            assert ((C.string.strcmp player-obj-name "player") == 0)
+            let px py =
+                cjson.GetNumberValue (cjson.GetObjectItem player-obj "x")
+                cjson.GetNumberValue (cjson.GetObjectItem player-obj "y")
+            # TODO: make this a helper function outside of this and use it everywhere
+            # to convert from y-down to y-up.
+            inline tiled->worldpos (x y)
+                vec2
+                    x
+                    (scene-height-px as i32) - (y as i32)
+            let sprite-index =
+                'add level-sprites
+                    Sprite
+                        position = (tiled->worldpos px py)
+                        scale = (vec2 1)
+                        layer = 23 # red little man
+
+            player-sprite = (& (level-sprites.sprites.attribute-data @ sprite-index))
+            # end of the hack
 
             cjson.Delete tiled-scene
 
             super-type.__typecall cls
                 tileset = tileset-obj
                 draw-data = level-sprites
-                width = (scene-width as u32)
-                height = (scene-height as u32)
+                width = scene-width-px
+                height = scene-height-px
                 level-data = level-data
         load-tiled-level filename
 
@@ -695,7 +737,6 @@ glfw.SetKeyCallback main-window
         if ((_key == glfw.GLFW_KEY_ESCAPE) and (action == glfw.GLFW_RELEASE))
             glfw.SetWindowShouldClose main-window true
         ;
-
 
 global window-width : i32
 global window-height : i32
