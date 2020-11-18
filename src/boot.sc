@@ -743,8 +743,6 @@ global window-height : i32
 
 fn update (dt)
     # TODO: create a follow function
-    main-camera.position =
-        ((vec2 window-width window-height) / 2 / main-camera.scale) - player-sprite.position
     let player-speed = 40
     if (key-down? glfw.GLFW_KEY_LEFT)
         player-sprite.position -= (vec2 player-speed 0) * dt
@@ -754,6 +752,9 @@ fn update (dt)
         player-sprite.position += (vec2 0 player-speed) * dt
     if (key-down? glfw.GLFW_KEY_DOWN)
         player-sprite.position -= (vec2 0 player-speed) * dt
+
+    main-camera.position =
+        ((vec2 window-width window-height) / 2 / main-camera.scale) - player-sprite.position
 
 fn draw ()
     gl.ClearColor 1.0 0.2 0.2 1.0
