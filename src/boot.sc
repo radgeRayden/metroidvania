@@ -384,7 +384,6 @@ struct SpriteBatch
         gl.DrawElements gl.GL_TRIANGLES ((countof self.sprites.index-data) as i32)
            \ gl.GL_UNSIGNED_SHORT null
 
-
 fn gl-compile-shader (source kind)
     imply kind i32
     source as:= rawstring
@@ -725,7 +724,7 @@ gl.UseProgram sprite-shader._handle
 global level1 = (Scene "levels/1.json")
 global main-camera : Camera
     position = (vec2)
-    scale = (vec2 4)
+    scale = (vec2 6)
 
 fn key-down? (code)
     (glfw.GetKey main-window code) as bool
@@ -741,16 +740,20 @@ glfw.SetKeyCallback main-window
 global window-width : i32
 global window-height : i32
 
+
 fn update (dt)
-    let cam-speed = 40
+    # TODO: create a follow function
+    main-camera.position =
+        ((vec2 window-width window-height) / 2 / main-camera.scale) - player-sprite.position
+    let player-speed = 40
     if (key-down? glfw.GLFW_KEY_LEFT)
-        'move main-camera ((vec2 cam-speed 0) * dt)
+        player-sprite.position -= (vec2 player-speed 0) * dt
     if (key-down? glfw.GLFW_KEY_RIGHT)
-        'move main-camera ((vec2 -cam-speed 0) * dt)
+        player-sprite.position += (vec2 player-speed 0) * dt
     if (key-down? glfw.GLFW_KEY_UP)
-        'move main-camera ((vec2 0 -cam-speed) * dt)
+        player-sprite.position += (vec2 0 player-speed) * dt
     if (key-down? glfw.GLFW_KEY_DOWN)
-        'move main-camera ((vec2 0 cam-speed) * dt)
+        player-sprite.position -= (vec2 0 player-speed) * dt
 
 fn draw ()
     gl.ClearColor 1.0 0.2 0.2 1.0
@@ -763,6 +766,7 @@ fn draw ()
 
     main-camera.viewport = (vec2 window-width window-height)
     'apply main-camera sprite-shader
+    'update level1.draw-data.sprites
     'draw level1.draw-data
 
 global last-time = (glfw.GetTime)
