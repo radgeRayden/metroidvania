@@ -676,9 +676,10 @@ struct Camera plain
                 deref py
 
         self.position =
+            # max has to be adjusted because position is at top left corner of viewport
             vec2
-                clamp new-px self.bounds.s self.bounds.p
-                clamp new-py self.bounds.t self.bounds.q
+                clamp new-px self.bounds.s (self.bounds.p - self.viewport.x)
+                clamp new-py self.bounds.t (self.bounds.q - self.viewport.y)
         ;
 
     fn apply (self shader)
