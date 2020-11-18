@@ -745,12 +745,13 @@ global main-camera : Camera
     position = (vec2)
     scale = (vec2 6)
 
-fn key-down? (code)
-    (glfw.GetKey main-window code) as bool
 
 # GAME CODE
 # ================================================================================
 glfw.SetKeyCallback main-window
+    fn key-down? (code)
+        (glfw.GetKey main-window code) as bool
+
     fn (window _key scancode action mods)
         if ((_key == glfw.GLFW_KEY_ESCAPE) and (action == glfw.GLFW_RELEASE))
             glfw.SetWindowShouldClose main-window true
