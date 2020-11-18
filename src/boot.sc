@@ -651,13 +651,44 @@ struct Camera plain
         # TODO: apply boundary constraints
         self.position += dir
 
+    fn world->screen (self world)
+        world - self.position
+
+    fn follow (self target)
+        let target = (world->screen self target)
+        # define focus box
+        let focus-box-size = (vec2 60 70)
+        center := self.viewport / 2
+        f0 := center - (focus-box-size / 2)
+        f1 := f0 + focus-box-size
+
+        let px py = self.position.x self.position.y
+        px =
+            embed
+                if (target.x < f0.x)
+                    px - (f0.x - target.x)
+                elseif (target.x > f1.x)
+                    px - (f1.x - target.x)
+                else
+                    deref px
+        py =
+            embed
+                if (target.y < f0.y)
+                    py - (f0.y - target.y)
+                elseif (target.y > f1.y)
+                    py - (f1.y - target.y)
+                else
+                    deref py
+        ;
     fn apply (self shader)
         let transform =
             *
                 math.translate (vec3 -1 -1 0)
-                math.scale self.scale.xy1
+                # NOTE: disabled scaling for now until I sort out the relation
+                # with the viewport size and whatnot.
+                # math.scale self.scale.xy1
                 math.ortho self.viewport.x self.viewport.y
-                math.translate (floor self.position.xy0)
+                math.translate (floor -self.position.xy0)
         gl.UniformMatrix4fv
             gl.GetUniformLocation shader._handle "transform"
             1
@@ -761,8 +792,8 @@ fn update (dt)
 
     player-sprite.position = (floor player.position)
 
-    main-camera.position =
-        ((vec2 window-width window-height) / 2 / main-camera.scale) - player-sprite.position
+    main-camera.viewport = ((vec2 window-width window-height) / main-camera.scale)
+    'follow main-camera player-sprite.position
 
 fn draw ()
     gl.ClearColor 1.0 0.2 0.2 1.0
@@ -773,7 +804,6 @@ fn draw ()
         level1.tileset.tile-width as f32
         level1.tileset.tile-height as f32
 
-    main-camera.viewport = (vec2 window-width window-height)
     'apply main-camera sprite-shader
     'update level1.draw-data.sprites
     'draw level1.draw-data
