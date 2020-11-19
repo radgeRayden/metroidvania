@@ -45,10 +45,7 @@ let ceil =
 let round =
     gen-polyfill
         inline roundf (x)
-            if ((abs (x % 1.0)) < 0.5)
-                (floor (abs x)) * (sign x)
-            else
-                (ceil (abs x)) * (sign x)
+            floor (x + 0.5)
 
 inline ortho (width height)
     # https://www.scratchapixel.com/lessons/3d-basic-rendering/perspective-and-orthographic-projection-matrix/orthographic-projection-matrix
