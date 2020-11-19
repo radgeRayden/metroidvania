@@ -36,6 +36,10 @@ let physfs = (import .FFI.physfs)
 let stbi = (import .FFI.stbi)
 let cjson = (import .FFI.cjson)
 
+# CONSTANTS
+# ================================================================================
+let INTERNAL_RESOLUTION = (ivec2 (1920 // 6) (1080 // 6))
+
 # WINDOW AND OPENGL INITIALIZATION
 # ================================================================================
 glfw.SetErrorCallback
@@ -50,7 +54,7 @@ glfw.WindowHint glfw.GLFW_CONTEXT_VERSION_MAJOR 4
 glfw.WindowHint glfw.GLFW_CONTEXT_VERSION_MINOR 5
 glfw.WindowHint glfw.GLFW_OPENGL_DEBUG_CONTEXT true
 glfw.WindowHint glfw.GLFW_OPENGL_PROFILE glfw.GLFW_OPENGL_CORE_PROFILE
-glfw.WindowHint glfw.GLFW_SAMPLES 4
+# glfw.WindowHint glfw.GLFW_SAMPLES 4
 
 let main-window = (glfw.CreateWindow 1280 720 "gam??" null null)
 if (main-window == null)
@@ -135,7 +139,7 @@ inline make-openGL-debug-callback (log-level)
 gl.Enable gl.GL_DEBUG_OUTPUT
 gl.Enable gl.GL_BLEND
 gl.BlendFunc gl.GL_SRC_ALPHA gl.GL_ONE_MINUS_SRC_ALPHA
-gl.Enable gl.GL_MULTISAMPLE
+# gl.Enable gl.GL_MULTISAMPLE
 gl.Enable gl.GL_FRAMEBUFFER_SRGB
 # TODO: add some colors to this
 gl.DebugMessageCallback (make-openGL-debug-callback OpenGLDebugLevel.LOW) null
@@ -646,23 +650,29 @@ struct Camera plain
     position : vec2
     scale : vec2
     viewport : vec2
-    bounds : vec4
+    _bounds : vec4
 
     fn world->screen (self world)
         world - self.position
+
+    fn set-bounds (self scene-offset scene-size)
+        self._bounds =
+            vec4
+                scene-offset
+                max scene-size self.viewport
 
     fn follow (self target)
         let target = (world->screen self target)
         # define focus box
         center := self.viewport / 2
-        let focus-box-size = (vec2 96 48)
+        focus-box-size := self.viewport * 0.7
         f0 := center - (focus-box-size / 2)
         f1 := f0 + focus-box-size
 
         let snap-point = (clamp target f0 f1)
         new-pos := self.position - (snap-point - target)
 
-        let bounds = (deref self.bounds) # workaround glm bug
+        let bounds = (deref self._bounds) # workaround glm bug
         self.position =
             # max has to be adjusted because position is at top left corner of viewport
             clamp new-pos bounds.st (bounds.pq - self.viewport)
@@ -744,12 +754,12 @@ global level1 = (Scene "levels/1.json")
 global main-camera : Camera
     position = (vec2)
     scale = (vec2 6)
+    viewport = (vec2 INTERNAL_RESOLUTION)
 
 global main-render-target : u32
 global fb-color-attachment : GPUTexture
 global fb-depth-attachment : GPUTexture
 
-let INTERNAL_RESOLUTION = (ivec2 (1920 // 5) (216 // 5))
 
 # TODO: generic function to create textures
 gl.GenTextures 1 (&fb-color-attachment as (mutable@ u32))
@@ -790,8 +800,7 @@ global player :
         position : vec2
 
 player.position = player-sprite.position
-main-camera.bounds =
-    vec4 0 0 level1.width level1.height
+'set-bounds main-camera (vec2) (vec2 level1.width level1.height)
 
 fn update (dt)
     fn key-down? (code)
@@ -809,10 +818,10 @@ fn update (dt)
 
     player-sprite.position = (floor player.position)
 
-    main-camera.viewport = ((vec2 window-width window-height) / main-camera.scale)
     'follow main-camera player-sprite.position
 
 fn draw ()
+    gl.Viewport 0 0 INTERNAL_RESOLUTION.x INTERNAL_RESOLUTION.y
     gl.ClearColor 1.0 0.2 0.2 1.0
     gl.Clear (gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
@@ -829,10 +838,6 @@ global last-time = (glfw.GetTime)
 while (not (glfw.WindowShouldClose main-window))
     glfw.PollEvents;
     glfw.GetFramebufferSize main-window &window-width &window-height
-    gl.Viewport 0 0 window-width window-height
-
-    # TODO: FBO to provide an internal resolution independent from
-    # display will go here.
 
     global dt-accum : f64
 
@@ -847,7 +852,22 @@ while (not (glfw.WindowShouldClose main-window))
         dt-accum -= step-size
         update step-size
 
+    gl.BindFramebuffer gl.GL_FRAMEBUFFER main-render-target
     draw;
+    gl.BindFramebuffer gl.GL_FRAMEBUFFER 0
+    gl.BlitNamedFramebuffer main-render-target 0
+        # src rect
+        0
+        0
+        INTERNAL_RESOLUTION.x
+        INTERNAL_RESOLUTION.y
+        # dest rect
+        0
+        0
+        window-width
+        window-height
+        gl.GL_COLOR_BUFFER_BIT
+        gl.GL_NEAREST
 
     glfw.SwapBuffers main-window
 
