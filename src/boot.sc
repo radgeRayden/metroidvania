@@ -745,6 +745,33 @@ global main-camera : Camera
     position = (vec2)
     scale = (vec2 6)
 
+global main-render-target : u32
+global fb-color-attachment : GPUTexture
+global fb-depth-attachment : GPUTexture
+
+let INTERNAL_RESOLUTION = (ivec2 (1920 // 5) (216 // 5))
+
+# TODO: generic function to create textures
+gl.GenTextures 1 (&fb-color-attachment as (mutable@ u32))
+gl.BindTexture gl.GL_TEXTURE_2D fb-color-attachment
+gl.TexStorage2D gl.GL_TEXTURE_2D 1
+    gl.GL_SRGB8_ALPHA8
+    INTERNAL_RESOLUTION.x
+    INTERNAL_RESOLUTION.y
+
+gl.GenTextures 1 (&fb-depth-attachment as (mutable@ u32))
+gl.BindTexture gl.GL_TEXTURE_2D fb-depth-attachment
+gl.TexStorage2D gl.GL_TEXTURE_2D 1
+    gl.GL_DEPTH_COMPONENT24
+    INTERNAL_RESOLUTION.x
+    INTERNAL_RESOLUTION.y
+
+gl.CreateFramebuffers 1 &main-render-target
+gl.NamedFramebufferTexture main-render-target gl.GL_COLOR_ATTACHMENT0 fb-color-attachment 0
+gl.NamedFramebufferTexture main-render-target gl.GL_DEPTH_ATTACHMENT fb-depth-attachment 0
+
+let fbo-status = (gl.CheckNamedFramebufferStatus main-render-target gl.GL_FRAMEBUFFER)
+assert (fbo-status == gl.GL_FRAMEBUFFER_COMPLETE) "failed creating main render target"
 
 # GAME CODE
 # ================================================================================
