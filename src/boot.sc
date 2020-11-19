@@ -625,7 +625,7 @@ struct Scene
             inline tiled->worldpos (x y)
                 vec2
                     x
-                    (scene-height-px as i32) - (y as i32)
+                    (scene-height-px as i32) - 1 - (y as i32)
             let sprite-index =
                 'add level-sprites
                     Sprite
