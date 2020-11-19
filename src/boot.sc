@@ -749,9 +749,6 @@ global main-camera : Camera
 # GAME CODE
 # ================================================================================
 glfw.SetKeyCallback main-window
-    fn key-down? (code)
-        (glfw.GetKey main-window code) as bool
-
     fn (window _key scancode action mods)
         if ((_key == glfw.GLFW_KEY_ESCAPE) and (action == glfw.GLFW_RELEASE))
             glfw.SetWindowShouldClose main-window true
@@ -770,7 +767,9 @@ main-camera.bounds =
     vec4 0 0 level1.width level1.height
 
 fn update (dt)
-    # TODO: create a follow function
+    fn key-down? (code)
+        (glfw.GetKey main-window code) as bool
+
     let player-speed = 40
     if (key-down? glfw.GLFW_KEY_LEFT)
         player.position -= (vec2 player-speed 0) * dt
