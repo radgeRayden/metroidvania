@@ -540,6 +540,11 @@ struct Scene
     width : u32
     height : u32
     level-data : (Array u32)
+    # NOTE: for now we're assuming the scene has no offset, single layer, etc.
+    # A lot of these assumptions will not hold eventually, but for now we can afford
+    # to simply fill this in with tile solid value and do collision detection based on
+    # that. At some point it might be better to do something like kikito's bump.
+    collision-matrix : (Array bool)
     draw-data : SpriteBatch
 
     inline __typecall (cls filename)
@@ -578,9 +583,12 @@ struct Scene
                     0
 
             local level-data : (Array u32)
+            local collision-matrix : (Array bool)
             let tile-array = (cjson.GetObjectItem level-layer "data")
             for tile in (json-array->generator tile-array)
-                'append level-data (tile.valueint as u32)
+                let id = (tile.valueint as u32)
+                'append level-data id
+                'append collision-matrix ((tileset-obj.tile-properties @ (id - 1)) . solid?)
             local level-sprites =
                 SpriteBatch tileset-obj.image tileset-obj.tile-width tileset-obj.tile-height
             for i x y in (enumerate (dim scene-width-tiles scene-height-tiles))
@@ -644,6 +652,7 @@ struct Scene
                 width = scene-width-px
                 height = scene-height-px
                 level-data = level-data
+                collision-matrix = collision-matrix
         load-tiled-level filename
 
 struct Camera plain
@@ -802,19 +811,43 @@ global player :
 player.position = player-sprite.position
 'set-bounds main-camera (vec2) (vec2 level1.width level1.height)
 
+fn player-move (pos)
+    # scene is all on positive atm, so just do whatever. Could also
+    # block, but I think it might be useful to not do that (eg. to transition rooms)
+    if ((pos.x < 0) or (pos.y < 0))
+        player.position = pos
+        return;
+
+    let tw th = level1.tileset.tile-width level1.tileset.tile-height
+    let fx fy =
+        (pos.x as u32) // tw
+        (pos.y as u32) // th
+
+    let lw lh = (level1.width // tw) (level1.height // th)
+
+    # again remember our world space is y up
+    idx := (lh - 1 - fy) * lw + fx
+    print fx fy
+    print lw lh idx
+    print (countof level1.collision-matrix)
+    solid? := level1.collision-matrix @ idx
+    if (not solid?)
+        player.position = pos
+    ;
+
 fn update (dt)
     fn key-down? (code)
         (glfw.GetKey main-window code) as bool
 
     let player-speed = 40
     if (key-down? glfw.GLFW_KEY_LEFT)
-        player.position -= (vec2 player-speed 0) * dt
+        player-move (player.position - (vec2 player-speed 0) * dt)
     if (key-down? glfw.GLFW_KEY_RIGHT)
-        player.position += (vec2 player-speed 0) * dt
+        player-move (player.position + (vec2 player-speed 0) * dt)
     if (key-down? glfw.GLFW_KEY_UP)
-        player.position += (vec2 0 player-speed) * dt
+        player-move (player.position + (vec2 0 player-speed) * dt)
     if (key-down? glfw.GLFW_KEY_DOWN)
-        player.position -= (vec2 0 player-speed) * dt
+        player-move (player.position - (vec2 0 player-speed) * dt)
 
     player-sprite.position = (floor player.position)
 
