@@ -855,6 +855,31 @@ while (not (glfw.WindowShouldClose main-window))
     gl.BindFramebuffer gl.GL_FRAMEBUFFER main-render-target
     draw;
     gl.BindFramebuffer gl.GL_FRAMEBUFFER 0
+
+    gl.ClearColor 0.005 0.005 0.005 1.0
+    gl.Clear (gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+
+    # preserve aspect ratio
+    let game-aspect-ratio = (INTERNAL_RESOLUTION.x / INTERNAL_RESOLUTION.y)
+    let window-aspect-ratio = (window-width / window-height)
+
+    let blit-size blit-offset =
+        do
+            window-width as:= f32
+            window-height as:= f32
+            if (window-aspect-ratio > game-aspect-ratio)
+                blit-width := window-height * game-aspect-ratio
+                _
+                    ivec2 blit-width window-height
+                    ivec2 ((window-width - blit-width) / 2) 0
+            else
+                blit-height := window-width / game-aspect-ratio
+                _
+                    ivec2 window-width blit-height
+                    ivec2 0 ((window-height - blit-height) / 2)
+
+    let blit-begin blit-end = blit-offset (blit-offset + blit-size)
+
     gl.BlitNamedFramebuffer main-render-target 0
         # src rect
         0
@@ -862,10 +887,10 @@ while (not (glfw.WindowShouldClose main-window))
         INTERNAL_RESOLUTION.x
         INTERNAL_RESOLUTION.y
         # dest rect
-        0
-        0
-        window-width
-        window-height
+        blit-begin.x
+        blit-begin.y
+        blit-end.x
+        blit-end.y
         gl.GL_COLOR_BUFFER_BIT
         gl.GL_NEAREST
 
