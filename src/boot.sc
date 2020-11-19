@@ -794,10 +794,13 @@ assert (fbo-status == gl.GL_FRAMEBUFFER_COMPLETE) "failed creating main render t
 
 # GAME CODE
 # ================================================================================
+global gravity-on : bool
 glfw.SetKeyCallback main-window
     fn (window _key scancode action mods)
         if ((_key == glfw.GLFW_KEY_ESCAPE) and (action == glfw.GLFW_RELEASE))
             glfw.SetWindowShouldClose main-window true
+        if ((_key == glfw.GLFW_KEY_SPACE) and (action == glfw.GLFW_RELEASE))
+            gravity-on = true
         ;
 
 global window-width : i32
@@ -827,9 +830,6 @@ fn player-move (pos)
 
     # again remember our world space is y up
     idx := (lh - 1 - fy) * lw + fx
-    print fx fy
-    print lw lh idx
-    print (countof level1.collision-matrix)
     solid? := level1.collision-matrix @ idx
     if (not solid?)
         player.position = pos
@@ -839,15 +839,15 @@ fn update (dt)
     fn key-down? (code)
         (glfw.GetKey main-window code) as bool
 
+    let gravity = 100
+    if gravity-on
+        player-move (player.position - ((vec2 0 gravity) * dt))
+
     let player-speed = 40
     if (key-down? glfw.GLFW_KEY_LEFT)
         player-move (player.position - (vec2 player-speed 0) * dt)
     if (key-down? glfw.GLFW_KEY_RIGHT)
         player-move (player.position + (vec2 player-speed 0) * dt)
-    if (key-down? glfw.GLFW_KEY_UP)
-        player-move (player.position + (vec2 0 player-speed) * dt)
-    if (key-down? glfw.GLFW_KEY_DOWN)
-        player-move (player.position - (vec2 0 player-speed) * dt)
 
     player-sprite.position = (floor player.position)
 
