@@ -858,32 +858,48 @@ fn player-move (pos)
                     c2.v (unpack ((t * tile-size) + tile-size))
                 &manifold
         if (manifold.count > 0)
-            let normal = (vec2 manifold.n.x manifold.n.y)
-            let depth = (manifold.depths @ 0)
-
-            if (normal.x != 0.)
-                player.position = (vec2 (pos.x - (normal.x * depth)) pos.y)
-            elseif (normal.y != 0)
-                player.position = (vec2 pos.x (pos.y - (normal.y * depth)))
+            # TODO: properly resolve the collision
+            # let normal = (vec2 manifold.n.x manifold.n.y)
+            # let contact = (manifold.contact_points @ 0)
+            # if (normal.x != 0.)
+            #     let cx = contact.x
+            #     player.position = (vec2 (cx - (8 * (sign normal.x))) pos.y)
+            # elseif (normal.y != 0)
+            #     let cy = contact.y
+            #     player.position = (vec2 pos.x (cy - (8 * (sign normal.y))))
             return;
 
         t + (vec2 1 0)
 
     player.position = pos
 
+global gravity-on : bool
+let gravity = 100.
+global yvel = -gravity
+
+glfw.SetKeyCallback main-window
+    fn (window _key scancode action mods)
+        if ((_key == glfw.GLFW_KEY_ESCAPE) and (action == glfw.GLFW_RELEASE))
+            glfw.SetWindowShouldClose main-window true
+        if ((_key == glfw.GLFW_KEY_SPACE) and (action == glfw.GLFW_RELEASE))
+            gravity-on = true
+            yvel = 150
+        ;
+
+
 fn update (dt)
     fn key-down? (code)
         (glfw.GetKey main-window code) as bool
-
-    let gravity = 100
-    if gravity-on
-        player-move (player.position - ((vec2 0 gravity) * dt))
 
     let player-speed = 40
     if (key-down? glfw.GLFW_KEY_LEFT)
         player-move (player.position - (vec2 player-speed 0) * dt)
     if (key-down? glfw.GLFW_KEY_RIGHT)
         player-move (player.position + (vec2 player-speed 0) * dt)
+
+    if gravity-on
+        yvel = (clamp (yvel - (gravity * dt)) -gravity 200.)
+        player-move (player.position + ((vec2 0 yvel) * dt))
 
     player-sprite.position = (floor player.position)
 
