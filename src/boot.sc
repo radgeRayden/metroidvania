@@ -814,9 +814,38 @@ global player :
     struct Player plain
         position : vec2
         velocity : vec2
+        grounded? : bool
 
 player.position = player-sprite.position
 'set-bounds main-camera (vec2) (vec2 level1.width level1.height)
+
+fn solid-tile? (pos)
+    let tile-size = (vec2 level1.tileset.tile-width level1.tileset.tile-height)
+    let lw lh =
+        (level1.width as f32) / tile-size.x
+        (level1.height as f32) / tile-size.y
+
+    let t = (floor (pos / tile-size))
+
+    # out of bounds
+    if (or
+        (t.x < 0)
+        (t.x > lw)
+        (t.y < 0)
+        (t.y > lh))
+        return false
+
+    # again remember our world space is y up
+    idx := (lh - 1 - t.y) * lw + t.x
+    deref (level1.collision-matrix @ (idx as usize))
+
+fn grounded? ()
+    # NOTE: because currently the player AABB is hardcoded at 8x8, we know
+    # if it clears the tiles at its 2 lower corners then it's airborne.
+    let pos = player.position
+    or
+        solid-tile? (vec2 pos.x (pos.y - 1))
+        solid-tile? (vec2 (pos.x + 8) (pos.y - 1))
 
 fn player-move (pos)
     # scene is all on positive atm, so just do whatever. Could also
@@ -866,6 +895,8 @@ fn player-move (pos)
             if (normal.y < 0)
                 # TODO: set a grounded flag
                 player.velocity.y = 0
+            if (normal.x != 0)
+                player.velocity.x = 0
             let depth = (manifold.depths @ 0)
             player.position = (pos - (normal * depth))
             return;
@@ -884,12 +915,15 @@ glfw.SetKeyCallback main-window
         if ((_key == glfw.GLFW_KEY_ESCAPE) and (action == glfw.GLFW_RELEASE))
             glfw.SetWindowShouldClose main-window true
         if ((_key == glfw.GLFW_KEY_SPACE) and (action == glfw.GLFW_PRESS))
-            player.velocity.y = jump-force
+            if player.grounded?
+                player.velocity.y = jump-force
         ;
 
 fn update (dt)
     fn key-down? (code)
         (glfw.GetKey main-window code) as bool
+
+    player.grounded? = (grounded?)
 
     let yvel = player.velocity.y
     let xvel = player.velocity.x
@@ -904,7 +938,13 @@ fn update (dt)
             xvel = 0
 
     # apply gravity
-    yvel = (clamp (yvel + (gravity * dt)) gravity 200.)
+    # NOTE: we check for yvel <= 0 so we are still able to jump, since
+    # the jump sets the yvel to be positive, but it would immediately be set to 0
+    # because grounded.
+    if ((deref player.grounded?) and (yvel <= 0))
+        yvel = 0
+    else
+        yvel = (clamp (yvel + (gravity * dt)) gravity 200.)
     player-move (player.position + (vec2 (player.velocity.x * dt) 0))
     player-move (player.position + (vec2 0 (player.velocity.y * dt)))
 
@@ -995,6 +1035,7 @@ while (not (glfw.WindowShouldClose main-window))
         ig.Begin "Player" &player-stats-open? 0
         ig.Text f"position: ${player.position.x} ${player.position.y}"
         ig.Text f"velocity: ${player.velocity.x} ${player.velocity.y}"
+        ig.Text f"grounded?: ${player.grounded?}"
         ig.End;
 
     ig.Render;
