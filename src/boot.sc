@@ -819,7 +819,11 @@ player.position = player-sprite.position
 fn player-move (pos)
     # scene is all on positive atm, so just do whatever. Could also
     # block, but I think it might be useful to not do that (eg. to transition rooms)
-    if ((pos.x < 0) or (pos.y < 0))
+    if (or
+        (pos.x < 0)
+        (pos.y < 0)
+        (pos.x > (level1.width as f32))
+        (pos.y > (level1.height as f32)))
         player.position = pos
         return;
 
@@ -830,37 +834,42 @@ fn player-move (pos)
 
     # find all tiles that intersect the player AABB and test against them
     init-tx := (floor (pos.x / tile-size.x))
-    let manifold =
-        loop (t = (vec2 init-tx (floor (pos.y / tile-size.y))))
-            # player AABB is hardcoded to 8x8 for now
-            if ((t.y * tile-size.y) > (pos.y + 8))
-                break
-                    (Option c2.Manifold) none
-            if ((t.x * tile-size.x) > (pos.x + 8))
-                repeat (vec2 init-tx (t.y + 1))
+    loop (t = (vec2 init-tx (floor (pos.y / tile-size.y))))
+        # player AABB is hardcoded to 8x8 for now
+        if ((t.y * tile-size.y) > (pos.y + 8))
+            break;
+        if (t.y >= lh)
+            break;
+        if ((t.x * tile-size.x) > (pos.x + 8))
+            repeat (vec2 init-tx (t.y + 1))
+        if (t.x >= lw)
+            break;
 
-            # again remember our world space is y up
-            idx := (lh - 1 - t.y) * lw + t.x
-            solid? := level1.collision-matrix @ (idx as usize)
+        # again remember our world space is y up
+        idx := (lh - 1 - t.y) * lw + t.x
+        solid? := level1.collision-matrix @ (idx as usize)
 
-            local manifold : c2.Manifold
-            if solid?
-                c2.AABBtoAABBManifold
-                    c2.AABB (c2.v (unpack pos)) (c2.v (unpack (pos + (vec2 8))))
-                    c2.AABB
-                        c2.v (unpack (t * tile-size))
-                        c2.v (unpack ((t * tile-size) + tile-size))
-                    &manifold
-            if (manifold.count > 0)
-                break ((Option c2.Manifold) manifold)
-            else
-                t + (vec2 1 0)
+        local manifold : c2.Manifold
+        if solid?
+            c2.AABBtoAABBManifold
+                c2.AABB (c2.v (unpack pos)) (c2.v (unpack (pos + (vec2 8))))
+                c2.AABB
+                    c2.v (unpack (t * tile-size))
+                    c2.v (unpack ((t * tile-size) + tile-size))
+                &manifold
+        if (manifold.count > 0)
+            let normal = (vec2 manifold.n.x manifold.n.y)
+            let depth = (manifold.depths @ 0)
 
-    if manifold
-        let manifold = ('force-unwrap manifold)
-        ;
-    else
-        player.position = pos
+            if (normal.x != 0.)
+                player.position = (vec2 (pos.x - (normal.x * depth)) pos.y)
+            elseif (normal.y != 0)
+                player.position = (vec2 pos.x (pos.y - (normal.y * depth)))
+            return;
+
+        t + (vec2 1 0)
+
+    player.position = pos
 
 fn update (dt)
     fn key-down? (code)
