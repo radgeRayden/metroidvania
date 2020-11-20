@@ -796,15 +796,6 @@ assert (fbo-status == gl.GL_FRAMEBUFFER_COMPLETE) "failed creating main render t
 
 # GAME CODE
 # ================================================================================
-global gravity-on : bool
-glfw.SetKeyCallback main-window
-    fn (window _key scancode action mods)
-        if ((_key == glfw.GLFW_KEY_ESCAPE) and (action == glfw.GLFW_RELEASE))
-            glfw.SetWindowShouldClose main-window true
-        if ((_key == glfw.GLFW_KEY_SPACE) and (action == glfw.GLFW_RELEASE))
-            gravity-on = true
-        ;
-
 global window-width : i32
 global window-height : i32
 
