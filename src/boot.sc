@@ -845,7 +845,10 @@ fn grounded? ()
     let pos = player.position
     or
         solid-tile? (vec2 pos.x (pos.y - 1))
-        solid-tile? (vec2 (pos.x + 8) (pos.y - 1))
+        # NOTE: adding 7 under the assumption that the interval is [begin,end)
+        # it seems to solve a bug where we could climb walls, because it would always be grounded
+        # as long as we were touching them to the right.
+        solid-tile? (vec2 (pos.x + 7) (pos.y - 1))
 
 fn player-move (pos)
     # scene is all on positive atm, so just do whatever. Could also
@@ -865,6 +868,8 @@ fn player-move (pos)
 
     # find all tiles that intersect the player AABB and test against them
     init-tx := (floor (pos.x / tile-size.x))
+    # FIXME: maybe we have to subtract one pixel from the maximum? Seems to be
+    # inclusive, so we're going past the actual AABB a bit.
     loop (t = (vec2 init-tx (floor (pos.y / tile-size.y))))
         # player AABB is hardcoded to 8x8 for now
         if ((t.y * tile-size.y) > (pos.y + 8))
