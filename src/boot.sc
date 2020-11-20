@@ -20,10 +20,12 @@ case 'linux
     load-library "../lib/libgame.so"
     load-library "../lib/libglfw.so"
     load-library "../lib/libphysfs.so"
+    load-library "../lib/cimgui.so"
 case 'windows
     load-library "../lib/libgame.dll"
     load-library "../lib/glfw3.dll"
     load-library "../lib/libphysfs.dll"
+    load-library "../lib/cimgui.dll"
 default
     error "Unsupported OS."
 
@@ -37,12 +39,13 @@ let physfs = (import .FFI.physfs)
 let stbi = (import .FFI.stbi)
 let cjson = (import .FFI.cjson)
 let c2 = (import .FFI.c2)
+let ig = (import .FFI.imgui)
 
 # CONSTANTS
 # ================================================================================
 let INTERNAL_RESOLUTION = (ivec2 (1920 // 6) (1080 // 6))
 
-# WINDOW AND OPENGL INITIALIZATION
+# DEPENDENCY INITIALIZATION
 # ================================================================================
 glfw.SetErrorCallback
     fn "glfw-error" (error-code message)
@@ -71,6 +74,12 @@ if (not (physfs.init (argv @ 0)))
     error "Failed to initialize PHYSFS."
 physfs.mount "../data" "/" true
 physfs.setWriteDir "."
+
+ig.CreateContext null
+local io = (ig.GetIO)
+
+ig.impl.Glfw_InitForOpenGL main-window true
+ig.impl.OpenGL3_Init null
 
 run-stage;
 
@@ -976,6 +985,15 @@ while (not (glfw.WindowShouldClose main-window))
         blit-end.y
         gl.GL_COLOR_BUFFER_BIT
         gl.GL_NEAREST
+
+    ig.impl.OpenGL3_NewFrame;
+    ig.impl.Glfw_NewFrame;
+    ig.NewFrame;
+    global show-demo-window : bool true
+    if show-demo-window
+        ig.ShowDemoWindow &show-demo-window
+    ig.Render;
+    ig.impl.OpenGL3_RenderDrawData (ig.GetDrawData)
 
     glfw.SwapBuffers main-window
 
