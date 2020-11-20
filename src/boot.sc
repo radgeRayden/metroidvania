@@ -803,6 +803,7 @@ global window-height : i32
 global player :
     struct Player plain
         position : vec2
+        velocity : vec2
 
 player.position = player-sprite.position
 'set-bounds main-camera (vec2) (vec2 level1.width level1.height)
@@ -864,33 +865,39 @@ fn player-move (pos)
 
     player.position = pos
 
-global gravity-on : bool
-let gravity = 100.
-global yvel = -gravity
+let jump-force = 100.
+let gravity = -200.
+let player-speed = 40.
+let accel = 150.
 
 glfw.SetKeyCallback main-window
     fn (window _key scancode action mods)
         if ((_key == glfw.GLFW_KEY_ESCAPE) and (action == glfw.GLFW_RELEASE))
             glfw.SetWindowShouldClose main-window true
         if ((_key == glfw.GLFW_KEY_SPACE) and (action == glfw.GLFW_RELEASE))
-            gravity-on = true
-            yvel = 150
+            player.velocity.y = jump-force
         ;
-
 
 fn update (dt)
     fn key-down? (code)
         (glfw.GetKey main-window code) as bool
 
-    let player-speed = 40
+    let yvel = player.velocity.y
+    let xvel = player.velocity.x
     if (key-down? glfw.GLFW_KEY_LEFT)
-        player-move (player.position - (vec2 player-speed 0) * dt)
-    if (key-down? glfw.GLFW_KEY_RIGHT)
-        player-move (player.position + (vec2 player-speed 0) * dt)
+        xvel = (max -player-speed (xvel - accel * dt))
+    elseif (key-down? glfw.GLFW_KEY_RIGHT)
+        xvel = (min player-speed (xvel + accel * dt))
+    else
+        let friction = (-accel * (sign xvel) * 2)
+        xvel = (xvel + friction * dt)
+        if ((abs xvel) < 1)
+            xvel = 0
 
-    if gravity-on
-        yvel = (clamp (yvel - (gravity * dt)) -gravity 200.)
-        player-move (player.position + ((vec2 0 yvel) * dt))
+    # apply gravity
+    yvel = (clamp (yvel + (gravity * dt)) gravity 200.)
+    player-move (player.position + (vec2 (player.velocity.x * dt) 0))
+    player-move (player.position + (vec2 0 (player.velocity.y * dt)))
 
     player-sprite.position = (floor player.position)
 
