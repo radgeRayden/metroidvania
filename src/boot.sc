@@ -1,5 +1,6 @@
 # TODO: import as submodule
 using import radlib.core-extensions
+using import radlib.stringtools
 
 using import enum
 using import struct
@@ -988,9 +989,14 @@ while (not (glfw.WindowShouldClose main-window))
     ig.impl.OpenGL3_NewFrame;
     ig.impl.Glfw_NewFrame;
     ig.NewFrame;
-    global show-demo-window : bool true
-    if show-demo-window
-        ig.ShowDemoWindow &show-demo-window
+
+    global player-stats-open? : bool true
+    if player-stats-open?
+        ig.Begin "Player" &player-stats-open? 0
+        ig.Text f"position: ${player.position.x} ${player.position.y}"
+        ig.Text f"velocity: ${player.velocity.x} ${player.velocity.y}"
+        ig.End;
+
     ig.Render;
     ig.impl.OpenGL3_RenderDrawData (ig.GetDrawData)
 
