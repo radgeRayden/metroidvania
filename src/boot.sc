@@ -933,11 +933,15 @@ fn update (dt)
     let yvel = player.velocity.y
     let xvel = player.velocity.x
     if (key-down? glfw.GLFW_KEY_LEFT)
+        if (xvel > 0)
+            xvel = 0
         xvel = (max -player-speed (xvel - accel * dt))
     elseif (key-down? glfw.GLFW_KEY_RIGHT)
+        if (xvel < 0)
+            xvel = 0
         xvel = (min player-speed (xvel + accel * dt))
     else
-        let friction = (-accel * (sign xvel) * 2)
+        let friction = (-accel * (sign xvel))
         xvel = (xvel + friction * dt)
         if ((abs xvel) < (accel * dt))
             xvel = 0
