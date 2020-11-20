@@ -874,7 +874,7 @@ glfw.SetKeyCallback main-window
     fn (window _key scancode action mods)
         if ((_key == glfw.GLFW_KEY_ESCAPE) and (action == glfw.GLFW_RELEASE))
             glfw.SetWindowShouldClose main-window true
-        if ((_key == glfw.GLFW_KEY_SPACE) and (action == glfw.GLFW_RELEASE))
+        if ((_key == glfw.GLFW_KEY_SPACE) and (action == glfw.GLFW_PRESS))
             player.velocity.y = jump-force
         ;
 
