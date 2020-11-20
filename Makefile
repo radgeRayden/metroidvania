@@ -33,6 +33,7 @@ all:$(SHARED_LIBS)
 LIBGAME_DEPS += ./3rd-party/glad/src/glad.o
 LIBGAME_DEPS += ./3rd-party/cJSON/cJSON.o
 LIBGAME_DEPS += ./3rd-party/stb.o
+LIBGAME_DEPS += ./3rd-party/cute.o
 
 lib/$(LIBGAME_SHARED):$(LIBGAME_DEPS)
 	mkdir -p ./lib
