@@ -859,15 +859,14 @@ fn player-move (pos)
                     c2.v (unpack ((t * tile-size) + tile-size))
                 &manifold
         if (manifold.count > 0)
-            # TODO: properly resolve the collision
-            # let normal = (vec2 manifold.n.x manifold.n.y)
-            # let contact = (manifold.contact_points @ 0)
-            # if (normal.x != 0.)
-            #     let cx = contact.x
-            #     player.position = (vec2 (cx - (8 * (sign normal.x))) pos.y)
-            # elseif (normal.y != 0)
-            #     let cy = contact.y
-            #     player.position = (vec2 pos.x (cy - (8 * (sign normal.y))))
+            # FIXME: still has some flickering. Maybe with a grounded flag and
+            # zeroing gravity then it would be ok?
+            let normal = (vec2 manifold.n.x manifold.n.y)
+            if (normal.y < 0)
+                # TODO: set a grounded flag
+                player.velocity.y = 0
+            let depth = (manifold.depths @ 0)
+            player.position = (pos - (normal * depth))
             return;
 
         t + (vec2 1 0)
