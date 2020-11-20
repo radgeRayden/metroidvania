@@ -24,21 +24,21 @@ define-scope cimgui
         # IMGUI_IMPL_API void     ImGui_ImplOpenGL3_DestroyFontsTexture();
         # IMGUI_IMPL_API bool     ImGui_ImplOpenGL3_CreateDeviceObjects();
         # IMGUI_IMPL_API void     ImGui_ImplOpenGL3_DestroyDeviceObjects();
-        let gl3-init =
+        let OpenGL3_Init =
             extern 'ImGui_ImplOpenGL3_Init (function bool rawstring)
-        let gl3-shutdown =
+        let OpenGL3_Shutdown =
             extern 'ImGui_ImplOpenGL3_Shutdown (function void)
-        let gl3-new-frame =
+        let OpenGL3_NewFrame =
             extern 'ImGui_ImplOpenGL3_NewFrame (function void)
-        let gl3-render-draw-data =
+        let OpenGL3_RenderDrawData =
             extern 'ImGui_ImplOpenGL3_RenderDrawData (function void (pointer header.typedef.ImDrawData))
-        let gl3-create-fonts-texture =
+        let OpenGL3_CreateFontsTexture =
             extern 'ImGui_ImplOpenGL3_CreateFontsTexture   (function bool)
-        let gl3-destroy-fonts-texture =
+        let OpenGL3_DestroyFontsTexture =
             extern 'ImGui_ImplOpenGL3_DestroyFontsTexture  (function void)
-        let gl3-create-device-objects =
+        let OpenGL3_CreateDeviceObjects =
             extern 'ImGui_ImplOpenGL3_CreateDeviceObjects  (function bool)
-        let gl3-destroy-device-objects =
+        let OpenGL3_DestroyDeviceObjects =
             extern 'ImGui_ImplOpenGL3_DestroyDeviceObjects (function void)
 
         # IMGUI_IMPL_API bool     ImGui_ImplGlfw_InitForOpenGL(GLFWwindow* window, bool install_callbacks);
@@ -55,11 +55,11 @@ define-scope cimgui
         # IMGUI_IMPL_API void     ImGui_ImplGlfw_CharCallback(GLFWwindow* window, unsigned int c);
 
         import .glfw
-        let glfw-init-for-gl =
+        let Glfw_InitForOpenGL =
             extern 'ImGui_ImplGlfw_InitForOpenGL (function bool (pointer glfw.window) bool)
-        let glfw-shutdown =
+        let Glfw_Shutdown =
             extern 'ImGui_ImplGlfw_Shutdown      (function void)
-        let glfw-new-frame =
+        let Glfw_NewFrame =
             extern 'ImGui_ImplGlfw_NewFrame      (function void)
 
 sanitize-scope cimgui "^ig" "^Im"
