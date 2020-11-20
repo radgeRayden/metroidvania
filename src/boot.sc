@@ -685,7 +685,7 @@ struct Camera plain
         let target = (world->screen self target)
         # define focus box
         center := self.viewport / 2
-        focus-box-size := self.viewport * 0.7
+        focus-box-size := self.viewport * 0.5
         f0 := center - (focus-box-size / 2)
         f1 := f0 + focus-box-size
 
