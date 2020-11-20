@@ -13,3 +13,6 @@
 [submodule "3rd-party/cute_headers"]
 	path = 3rd-party/cute_headers
 	url = https://github.com/RandyGaul/cute_headers
+[submodule "3rd-party/cimgui"]
+	path = 3rd-party/cimgui
+	url = https://github.com/cimgui/cimgui
