@@ -1,7 +1,7 @@
 INCLUDE_DIRS = ./3rd-party/glad/include ./3rd-party/cimgui/imgui
 IFLAGS = $(addprefix -I, $(INCLUDE_DIRS))
 CFLAGS = -Wall -O2 -fPIC $(IFLAGS)
-CXXFLAGS = $(CFLAGS) -DIMGUI_IMPL_API="extern \"C\""
+CXXFLAGS = $(CFLAGS) -DIMGUI_IMPL_API="extern \"C\"" -DIMGUI_IMPL_OPENGL_LOADER_GLAD
 LFLAGS =
 
 UNAME_S := $(shell uname -s)
