@@ -9,6 +9,7 @@ using import Rc
 using import Map
 using import String
 using import itertools
+using import Option
 
 import .math
 
@@ -35,6 +36,7 @@ let gl = (import .FFI.glad)
 let physfs = (import .FFI.physfs)
 let stbi = (import .FFI.stbi)
 let cjson = (import .FFI.cjson)
+let c2 = (import .FFI.c2)
 
 # CONSTANTS
 # ================================================================================
@@ -821,19 +823,44 @@ fn player-move (pos)
         player.position = pos
         return;
 
-    let tw th = level1.tileset.tile-width level1.tileset.tile-height
-    let fx fy =
-        (pos.x as u32) // tw
-        (pos.y as u32) // th
+    let tile-size = (vec2 level1.tileset.tile-width level1.tileset.tile-height)
+    let lw lh =
+        (level1.width as f32) / tile-size.x
+        (level1.height as f32) / tile-size.y
 
-    let lw lh = (level1.width // tw) (level1.height // th)
+    # find all tiles that intersect the player AABB and test against them
+    init-tx := (floor (pos.x / tile-size.x))
+    let manifold =
+        loop (t = (vec2 init-tx (floor (pos.y / tile-size.y))))
+            # player AABB is hardcoded to 8x8 for now
+            if ((t.y * tile-size.y) > (pos.y + 8))
+                break
+                    (Option c2.Manifold) none
+            if ((t.x * tile-size.x) > (pos.x + 8))
+                repeat (vec2 init-tx (t.y + 1))
 
-    # again remember our world space is y up
-    idx := (lh - 1 - fy) * lw + fx
-    solid? := level1.collision-matrix @ idx
-    if (not solid?)
+            # again remember our world space is y up
+            idx := (lh - 1 - t.y) * lw + t.x
+            solid? := level1.collision-matrix @ (idx as usize)
+
+            local manifold : c2.Manifold
+            if solid?
+                c2.AABBtoAABBManifold
+                    c2.AABB (c2.v (unpack pos)) (c2.v (unpack (pos + (vec2 8))))
+                    c2.AABB
+                        c2.v (unpack (t * tile-size))
+                        c2.v (unpack ((t * tile-size) + tile-size))
+                    &manifold
+            if (manifold.count > 0)
+                break ((Option c2.Manifold) manifold)
+            else
+                t + (vec2 1 0)
+
+    if manifold
+        let manifold = ('force-unwrap manifold)
+        ;
+    else
         player.position = pos
-    ;
 
 fn update (dt)
     fn key-down? (code)
