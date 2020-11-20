@@ -900,7 +900,7 @@ fn update (dt)
     else
         let friction = (-accel * (sign xvel) * 2)
         xvel = (xvel + friction * dt)
-        if ((abs xvel) < 1)
+        if ((abs xvel) < (accel * dt))
             xvel = 0
 
     # apply gravity
