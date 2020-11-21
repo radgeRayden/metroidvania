@@ -917,8 +917,62 @@ let accel = 150.
 
 glfw.SetKeyCallback main-window
     fn (window _key scancode action mods)
+        # application keybindings
+        # exit game
         if ((_key == glfw.GLFW_KEY_ESCAPE) and (action == glfw.GLFW_RELEASE))
             glfw.SetWindowShouldClose main-window true
+
+        # go fullscreen
+        if (and
+            ((mods & glfw.GLFW_MOD_ALT) as bool)
+            (_key == glfw.GLFW_KEY_ENTER)
+            (action == glfw.GLFW_RELEASE))
+
+            global fullscreen? : bool false
+            global prev-x : i32
+            global prev-y : i32
+            global prev-width : i32
+            global prev-height : i32
+
+            let monitor = (glfw.GetPrimaryMonitor)
+            if (not fullscreen?)
+                fullscreen? = true
+                glfw.GetWindowSize main-window &prev-width &prev-height
+                glfw.GetWindowPos main-window &prev-x &prev-y
+                let video-mode = (glfw.GetVideoMode monitor)
+                glfw.SetWindowMonitor main-window monitor 0 0
+                    video-mode.width
+                    video-mode.height
+                    glfw.GLFW_DONT_CARE as i32
+            else
+                fullscreen? = false
+                glfw.SetWindowMonitor main-window null prev-x prev-y
+                    prev-width
+                    prev-height
+                    glfw.GLFW_DONT_CARE as i32
+
+        if (((mods & glfw.GLFW_MOD_ALT) as bool) and (action == glfw.GLFW_PRESS))
+            let scale =
+                switch _key
+                case glfw.GLFW_KEY_1
+                    1
+                case glfw.GLFW_KEY_2
+                    2
+                case glfw.GLFW_KEY_3
+                    3
+                case glfw.GLFW_KEY_4
+                    4
+                case glfw.GLFW_KEY_5
+                    5
+                default
+                    -1
+            if (scale == -1)
+                ; # do nothing, wrong keybinding
+            else
+                scaled := INTERNAL_RESOLUTION * scale
+                glfw.SetWindowSize main-window scaled.x scaled.y
+
+        # game controls
         if ((_key == glfw.GLFW_KEY_SPACE) and (action == glfw.GLFW_PRESS))
             if player.grounded?
                 player.velocity.y = jump-force
