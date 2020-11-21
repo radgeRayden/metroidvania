@@ -995,7 +995,7 @@ fn update (dt)
             xvel = 0
         xvel = (min player-speed (xvel + accel * dt))
     else
-        let friction = (-accel * (sign xvel))
+        let friction = (-accel * (sign xvel) * 1.5)
         xvel = (xvel + friction * dt)
         if ((abs xvel) < (accel * dt))
             xvel = 0
