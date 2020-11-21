@@ -1036,10 +1036,12 @@ while (not (glfw.WindowShouldClose main-window))
 
     global dt-accum : f64
 
+    let time-scale = 1
+
     let now = (glfw.GetTime)
     let real-dt = (now - last-time)
     last-time = now
-    dt-accum += real-dt
+    dt-accum += real-dt * time-scale
 
     step-size := 1 / 60
 
