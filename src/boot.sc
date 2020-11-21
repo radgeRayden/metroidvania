@@ -1096,8 +1096,8 @@ while (not (glfw.WindowShouldClose main-window))
     global player-stats-open? : bool true
     if player-stats-open?
         ig.Begin "Player" &player-stats-open? 0
-        ig.Text f"position: ${player.position.x} ${player.position.y}"
-        ig.Text f"velocity: ${player.velocity.x} ${player.velocity.y}"
+        ig.Text "position: %.3f %.3f" player.position.x player.position.y
+        ig.Text "velocity: %.3f %.3f" player.velocity.x player.velocity.y
         ig.Text f"grounded?: ${player.grounded?}"
         ig.End;
 
