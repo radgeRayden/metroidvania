@@ -910,10 +910,10 @@ fn player-move (pos)
 
     player.position = pos
 
-let jump-force = 100.
-let gravity = -200.
-let player-speed = 40.
-let accel = 150.
+let jump-force = 120.
+let gravity = -240.
+let player-speed = 60.
+let accel = 180.
 
 glfw.SetKeyCallback main-window
     fn (window _key scancode action mods)
@@ -997,7 +997,7 @@ fn update (dt)
     else
         let friction = (-accel * (sign xvel) * 1.5)
         xvel = (xvel + friction * dt)
-        if ((abs xvel) < (accel * dt))
+        if ((abs xvel) < 1.5)
             xvel = 0
 
     # apply gravity
@@ -1007,7 +1007,7 @@ fn update (dt)
     if ((deref player.grounded?) and (yvel <= 0))
         yvel = 0
     else
-        yvel = (clamp (yvel + (gravity * dt)) gravity 200.)
+        yvel = (clamp (yvel + (gravity * dt)) -100. 200.)
     player-move (player.position + (vec2 (player.velocity.x * dt) 0))
     player-move (player.position + (vec2 0 (player.velocity.y * dt)))
 
@@ -1099,7 +1099,7 @@ while (not (glfw.WindowShouldClose main-window))
     if player-stats-open?
         ig.Begin "Player" &player-stats-open? 0
         ig.Text "position: %.3f %.3f" player.position.x player.position.y
-        ig.Text "velocity: %.3f %.3f" player.velocity.x player.velocity.y
+        ig.Text "velocity: %.3f %.3f" (unpack (player.velocity * step-size))
         ig.Text f"grounded?: ${player.grounded?}"
         ig.End;
 
