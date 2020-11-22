@@ -14,21 +14,27 @@ using import Option
 
 import .math
 
+let argc argv = (launch-args)
+
 # DEPENDENCIES
 # ================================================================================
-switch operating-system
-case 'linux
-    load-library "../lib/libgame.so"
-    load-library "../lib/libglfw.so"
-    load-library "../lib/libphysfs.so"
-    load-library "../lib/cimgui.so"
-case 'windows
-    load-library "../lib/libgame.dll"
-    load-library "../lib/glfw3.dll"
-    load-library "../lib/libphysfs.dll"
-    load-library "../lib/cimgui.dll"
-default
-    error "Unsupported OS."
+
+let amalgamated? = ((argc > 2) and ((string (argv @ 2)) == "-amalgamated"))
+# prototype mode
+if (not amalgamated?)
+    switch operating-system
+    case 'linux
+        load-library "../lib/libgame.so"
+        load-library "../lib/libglfw.so"
+        load-library "../lib/libphysfs.so"
+        load-library "../lib/cimgui.so"
+    case 'windows
+        load-library "../lib/libgame.dll"
+        load-library "../lib/glfw3.dll"
+        load-library "../lib/libphysfs.dll"
+        load-library "../lib/cimgui.dll"
+    default
+        error "Unsupported OS."
 
 run-stage;
 
@@ -70,7 +76,6 @@ glfw.SwapInterval 1
 
 gl.init;
 
-let argc argv = (launch-args)
 if (not (physfs.init (argv @ 0)))
     error "Failed to initialize PHYSFS."
 physfs.mount "../data" "/" true

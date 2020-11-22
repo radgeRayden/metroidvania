@@ -30,11 +30,16 @@ endif
 
 SHARED_LIBS = $(addprefix ./lib/, $(LIBGAME_SHARED) $(PHYSFS_SHARED) $(GLFW_SHARED) $(CIMGUI_SHARED))
 
-all:$(SHARED_LIBS)
-	@echo "Build complete."
+PHYSFS_SRC = ./3rd-party/physfs-3.0.2
+PHYSFS_BUILD = $(PHYSFS_SRC)/build
+GLFW_SRC = ./3rd-party/glfw
+GLFW_BUILD = $(GLFW_SRC)/build
+CIMGUI_SRC = ./3rd-party/cimgui
+CIMGUI_BUILD = $(CIMGUI_SRC)/build
 
-.cpp.o:
-	$(CXX) $(CXXFLAGS) -c -o $@ $<
+CIMGUI_STATIC = $(CIMGUI_BUILD)/cimgui.a
+PHYSFS_STATIC = $(PHYSFS_BUILD)/libphysfs.a
+GLFW_STATIC = $(GLFW_BUILD)/src/libglfw3.a
 
 LIBGAME_DEPS += ./3rd-party/glad/src/glad.o
 LIBGAME_DEPS += ./3rd-party/cJSON/cJSON.o
@@ -43,12 +48,40 @@ LIBGAME_DEPS += ./3rd-party/cute.o
 LIBGAME_DEPS += ./3rd-party/cimgui/imgui/examples/imgui_impl_opengl3.o
 LIBGAME_DEPS += ./3rd-party/cimgui/imgui/examples/imgui_impl_glfw.o
 
+MAIN_OBJ = "game.o"
+
+all:$(SHARED_LIBS)
+	@echo "Build complete."
+
+MAIN_OBJ:
+	scopes makemain.sc
+
+STATIC_LIBS = $(CIMGUI_STATIC) $(PHYSFS_STATIC) $(GLFW_STATIC)
+amalgamated: $(STATIC_LIBS) $(LIBGAME_DEPS)
+	mkdir -p ./bin
+	scopes copyscdeps.sc
+	$(CXX) -g -o ./bin/game $(LIBGAME_DEPS) game.o -Wl,-rpath='$${ORIGIN}' -Wl,-z,origin -Wl,-E -L./bin -lscopesrt -lasound -L. -Wl,--whole-archive $(addprefix -l:, $(STATIC_LIBS)) -Wl,--no-whole-archive -lpthread -lm -ldl -lX11
+
+$(CIMGUI_STATIC):
+	cmake -G "$(MAKEFILE_FLAVOR) Makefiles" -DCMAKE_C_COMPILER=$(CC) -DCMAKE_C_FLAGS="$(CFLAGS)" -DIMGUI_STATIC=on -S $(CIMGUI_SRC) -B $(CIMGUI_BUILD)
+	${MAKE} -C $(CIMGUI_BUILD)
+
+$(PHYSFS_STATIC):./lib/$(PHYSFS_SHARED)
+
+GLFW_OPTIONS = -DGLFW_BUILD_EXAMPLES=off -DGLFW_BUILD_TESTS=off -DGLFW_BUILD_DOCS=off
+$(GLFW_STATIC):
+	mkdir -p ./lib
+	mkdir -p $(GLFW_BUILD)
+	cmake -G "$(MAKEFILE_FLAVOR) Makefiles" -DCMAKE_C_COMPILER=$(CC) -DCMAKE_C_FLAGS="$(CFLAGS)" $(GLFW_OPTIONS) -DBUILD_SHARED_LIBS=off -S $(GLFW_SRC) -B $(GLFW_BUILD)
+	${MAKE} -C $(GLFW_BUILD)
+
+.cpp.o:
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
 lib/$(LIBGAME_SHARED):$(LIBGAME_DEPS)
 	mkdir -p ./lib
 	$(CC) -o ./lib/$(LIBGAME_SHARED) $(LIBGAME_DEPS) -shared $(CFLAGS) $(LFLAGS)
 
-PHYSFS_SRC = ./3rd-party/physfs-3.0.2
-PHYSFS_BUILD = $(PHYSFS_SRC)/build
 lib/$(PHYSFS_SHARED):
 	mkdir -p ./lib
 	mkdir -p $(PHYSFS_BUILD)
@@ -56,17 +89,13 @@ lib/$(PHYSFS_SHARED):
 	${MAKE} -C $(PHYSFS_BUILD)
 	cp $(shell realpath $(PHYSFS_BUILD)/$(PHYSFS_SHARED)) ./lib/$(PHYSFS_SHARED)
 
-GLFW_SRC = ./3rd-party/glfw
-GLFW_BUILD = $(GLFW_SRC)/build
 lib/$(GLFW_SHARED):
 	mkdir -p ./lib
 	mkdir -p $(GLFW_BUILD)
-	cmake -G "$(MAKEFILE_FLAVOR) Makefiles" -DCMAKE_C_COMPILER=$(CC) -DCMAKE_C_FLAGS="$(CFLAGS)" -DBUILD_SHARED_LIBS=on -S $(GLFW_SRC) -B $(GLFW_BUILD)
+	cmake -G "$(MAKEFILE_FLAVOR) Makefiles" -DCMAKE_C_COMPILER=$(CC) -DCMAKE_C_FLAGS="$(CFLAGS)" $(GLFW_OPTIONS) -DBUILD_SHARED_LIBS=on -S $(GLFW_SRC) -B $(GLFW_BUILD)
 	${MAKE} -C $(GLFW_BUILD)
 	cp $(shell realpath $(GLFW_BUILD)/src/$(GLFW_SHARED)) ./lib/$(GLFW_SHARED)
 
-CIMGUI_SRC = ./3rd-party/cimgui
-CIMGUI_BUILD = $(CIMGUI_SRC)/build
 lib/$(CIMGUI_SHARED):
 	mkdir -p ./lib
 	mkdir -p $(CIMGUI_BUILD)
