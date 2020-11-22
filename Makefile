@@ -61,7 +61,7 @@ GLFW_BUILD = $(GLFW_SRC)/build
 lib/$(GLFW_SHARED):
 	mkdir -p ./lib
 	mkdir -p $(GLFW_BUILD)
-	cmake -G "$(MAKEFILE_FLAVOR) Makefiles" -DCMAKE_C_COMPILER=$(CC) -DCMAKE_C_FLAGS="$(CFLAGS)" -S $(GLFW_SRC) -B $(GLFW_BUILD)
+	cmake -G "$(MAKEFILE_FLAVOR) Makefiles" -DCMAKE_C_COMPILER=$(CC) -DCMAKE_C_FLAGS="$(CFLAGS)" -DBUILD_SHARED_LIBS=on -S $(GLFW_SRC) -B $(GLFW_BUILD)
 	${MAKE} -C $(GLFW_BUILD)
 	cp $(shell realpath $(GLFW_BUILD)/src/$(GLFW_SHARED)) ./lib/$(GLFW_SHARED)
 
