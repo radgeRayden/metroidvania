@@ -59,6 +59,7 @@ MAIN_OBJ:
 STATIC_LIBS = $(CIMGUI_STATIC) $(PHYSFS_STATIC) $(GLFW_STATIC)
 amalgamated: $(STATIC_LIBS) $(LIBGAME_DEPS)
 	mkdir -p ./bin
+	mkdir -p ./lib/scopes
 	scopes copyscdeps.sc
 	$(CXX) -g -o ./bin/game $(LIBGAME_DEPS) game.o -Wl,-rpath='$${ORIGIN}' -Wl,-z,origin -Wl,-E -L./bin -lscopesrt -lasound -L. -Wl,--whole-archive $(addprefix -l:, $(STATIC_LIBS)) -Wl,--no-whole-archive -lpthread -lm -ldl -lX11
 

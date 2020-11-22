@@ -8,7 +8,34 @@ let libname =
         "libscopesrt.dll"
     default
         error "Unsupported OS"
+
+let libs... =
+    "Array"
+    "Box"
+    "Capture"
+    "chaining"
+    "console"
+    "core"
+    "enum"
+    "FunctionChain"
+    "glm"
+    "glsl"
+    "itertools"
+    "Map"
+    "Option"
+    "property"
+    "Rc"
+    "Set"
+    "spicetools"
+    "String"
+    "struct"
+    "testing"
+    "UTF-8"
+
 C.stdlib.system
     f"cp ${compiler-dir}/bin/${libname} ./bin/${libname}"
-C.stdlib.system
-    f"cp -r ${compiler-dir}/lib/scopes ./lib/scopes"
+va-map
+    inline (lib)
+        C.stdlib.system
+            f"cp -r ${compiler-dir}/lib/scopes/${lib}.sc ./lib/scopes/"
+    libs...
