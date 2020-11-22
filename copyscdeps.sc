@@ -5,7 +5,7 @@ let libname =
     case 'linux
         "libscopesrt.so"
     case 'windows
-        "libscopesrt.dll"
+        "scopesrt.dll"
     default
         error "Unsupported OS"
 
@@ -39,3 +39,5 @@ va-map
         C.stdlib.system
             f"cp -r ${compiler-dir}/lib/scopes/${lib}.sc ./lib/scopes/"
     libs...
+C.stdlib.system
+    f"cp -r ${compiler-dir}/lib/clang ./lib/clang"

@@ -2,33 +2,6 @@ INCLUDE_DIRS = ./3rd-party/glad/include ./3rd-party/cimgui/imgui
 IFLAGS = $(addprefix -I, $(INCLUDE_DIRS))
 CFLAGS = -Wall -O2 -fPIC $(IFLAGS)
 CXXFLAGS = $(CFLAGS) -DIMGUI_IMPL_API="extern \"C\"" -DIMGUI_IMPL_OPENGL_LOADER_GLAD
-LFLAGS =
-
-UNAME_S := $(shell uname -s)
-ifeq ($(UNAME_S), Linux)
-	ECHO_MESSAGE = "Linux"
-	MAKEFILE_FLAVOR = Unix
-	MAKE = make
-	LIBGAME_SHARED = libgame.so
-	PHYSFS_SHARED = libphysfs.so
-	GLFW_SHARED = libglfw.so
-	CIMGUI_SHARED = cimgui.so
-endif
-
-ifeq ($(OS), Windows_NT)
-	ECHO_MESSAGE = "Windows"
-	MAKEFILE_FLAVOR = MinGW
-	CC = x86_64-w64-mingw32-gcc
-	CXX = x86_64-w64-mingw32-g++
-	MAKE = mingw32-make
-	LFLAGS += -Wl,--export-all
-	LIBGAME_SHARED = libgame.dll
-	PHYSFS_SHARED = libphysfs.dll
-	GLFW_SHARED = glfw3.dll
-	CIMGUI_SHARED = cimgui.dll
-endif
-
-SHARED_LIBS = $(addprefix ./lib/, $(LIBGAME_SHARED) $(PHYSFS_SHARED) $(GLFW_SHARED) $(CIMGUI_SHARED))
 
 PHYSFS_SRC = ./3rd-party/physfs-3.0.2
 PHYSFS_BUILD = $(PHYSFS_SRC)/build
@@ -47,21 +20,50 @@ LIBGAME_DEPS += ./3rd-party/stb.o
 LIBGAME_DEPS += ./3rd-party/cute.o
 LIBGAME_DEPS += ./3rd-party/cimgui/imgui/examples/imgui_impl_opengl3.o
 LIBGAME_DEPS += ./3rd-party/cimgui/imgui/examples/imgui_impl_glfw.o
+STATIC_LIBS = $(CIMGUI_STATIC) $(PHYSFS_STATIC) $(GLFW_STATIC)
 
-MAIN_OBJ = "game.o"
+MAIN_OBJ = game.o
+
+LFLAGS = -Wl,-rpath='$$ORIGIN' -L. -Wl,--whole-archive $(addprefix -l:, $(STATIC_LIBS)) -Wl,--no-whole-archive -lpthread -lm -L./bin -lscopesrt 
+
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S), Linux)
+	ECHO_MESSAGE = "Linux"
+	MAKEFILE_FLAVOR = Unix
+	MAKE = make
+	LIBGAME_SHARED = libgame.so
+	PHYSFS_SHARED = libphysfs.so
+	GLFW_SHARED = libglfw.so
+	CIMGUI_SHARED = cimgui.so
+	LFLAGS += -ldl -lX11
+endif
+
+ifeq ($(OS), Windows_NT)
+	ECHO_MESSAGE = "Windows"
+	MAKEFILE_FLAVOR = MinGW
+	CC = x86_64-w64-mingw32-gcc
+	CXX = x86_64-w64-mingw32-g++
+	MAKE = mingw32-make
+	LIBGAME_SHARED = libgame.dll
+	PHYSFS_SHARED = libphysfs.dll
+	GLFW_SHARED = glfw3.dll
+	CIMGUI_SHARED = cimgui.dll
+	LFLAGS += -Wl,--export-all -lgdi32
+endif
+
+SHARED_LIBS = $(addprefix ./lib/, $(LIBGAME_SHARED) $(PHYSFS_SHARED) $(GLFW_SHARED) $(CIMGUI_SHARED))
 
 all:$(SHARED_LIBS)
 	@echo "Build complete."
 
-MAIN_OBJ:
+$(MAIN_OBJ):
 	scopes makemain.sc
 
-STATIC_LIBS = $(CIMGUI_STATIC) $(PHYSFS_STATIC) $(GLFW_STATIC)
-amalgamated: $(STATIC_LIBS) $(LIBGAME_DEPS)
+amalgamated: $(STATIC_LIBS) $(LIBGAME_DEPS) $(MAIN_OBJ)
 	mkdir -p ./bin
 	mkdir -p ./lib/scopes
 	scopes copyscdeps.sc
-	$(CXX) -g -o ./bin/game $(LIBGAME_DEPS) game.o -Wl,-rpath='$${ORIGIN}' -Wl,-z,origin -Wl,-E -L./bin -lscopesrt -lasound -L. -Wl,--whole-archive $(addprefix -l:, $(STATIC_LIBS)) -Wl,--no-whole-archive -lpthread -lm -ldl -lX11
+	$(CXX) -g -o ./bin/game $(LIBGAME_DEPS) game.o $(LFLAGS) 
 
 $(CIMGUI_STATIC):
 	cmake -G "$(MAKEFILE_FLAVOR) Makefiles" -DCMAKE_C_COMPILER=$(CC) -DCMAKE_C_FLAGS="$(CFLAGS)" -DIMGUI_STATIC=on -S $(CIMGUI_SRC) -B $(CIMGUI_BUILD)
@@ -81,7 +83,7 @@ $(GLFW_STATIC):
 
 lib/$(LIBGAME_SHARED):$(LIBGAME_DEPS)
 	mkdir -p ./lib
-	$(CC) -o ./lib/$(LIBGAME_SHARED) $(LIBGAME_DEPS) -shared $(CFLAGS) $(LFLAGS)
+	$(CC) -o ./lib/$(LIBGAME_SHARED) $(LIBGAME_DEPS) -shared $(CFLAGS) -Wl,--export-all
 
 lib/$(PHYSFS_SHARED):
 	mkdir -p ./lib
