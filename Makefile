@@ -35,7 +35,7 @@ ifeq ($(UNAME_S), Linux)
 	PHYSFS_SHARED = libphysfs.so
 	GLFW_SHARED = libglfw.so
 	CIMGUI_SHARED = cimgui.so
-	LFLAGS += -ldl -lX11
+	LFLAGS += -ldl -lX11 -Wl,-z,origin -Wl,-E
 endif
 
 ifeq ($(OS), Windows_NT)
