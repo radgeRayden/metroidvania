@@ -898,8 +898,15 @@ fn player-move (pos)
                     c2.v (unpack ((t * tile-size) + tile-size))
                 &manifold
         if (manifold.count > 0)
-            # FIXME: still has some flickering. Maybe with a grounded flag and
-            # zeroing gravity then it would be ok?
+            # TODO: investigate if we should resolve based on the velocity, and not only
+            # informed by the normal. The manifold algorithm reports the normal
+            # based on the smallest axis of penetration, which can give misleading normals
+            # when colliding with corners of boxes.
+            # Another path is to resolve collision multiple times (maybe up to a maximum) until
+            # we are completely clear. At the moment we correct once and then exit, which might leave
+            # our player character still penetrating something, causing a weird collision to be
+            # reported next frame. This is probably the cause of bugs such as getting stuck
+            # when bumping on the ceiling and sometimes sliding down walls.
             let normal = (vec2 manifold.n.x manifold.n.y)
             if (normal.y < 0)
                 # TODO: set a grounded flag
