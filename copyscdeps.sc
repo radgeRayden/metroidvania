@@ -5,10 +5,12 @@ let libname =
     case 'linux
         "libscopesrt.so"
     case 'windows
-        "libscopesrt.dll"
+        "scopesrt.dll"
     default
         error "Unsupported OS"
 C.stdlib.system
     f"cp ${compiler-dir}/bin/${libname} ./bin/${libname}"
 C.stdlib.system
     f"cp -r ${compiler-dir}/lib/scopes ./lib/scopes"
+C.stdlib.system
+    f"cp -r ${compiler-dir}/lib/clang ./lib/clang"
