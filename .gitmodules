@@ -16,3 +16,6 @@
 [submodule "3rd-party/cimgui"]
 	path = 3rd-party/cimgui
 	url = https://github.com/cimgui/cimgui
+[submodule "src/radlib"]
+	path = src/radlib
+	url = https://github.com/radgeRayden/radlib

@@ -1,5 +1,5 @@
-using import radlib.core-extensions
-using import radlib.foreign
+using import ..radlib.core-extensions
+using import ..radlib.foreign
 
 # import C functions and sanitize the scope
 define-scope glad

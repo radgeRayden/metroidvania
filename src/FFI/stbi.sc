@@ -1,5 +1,5 @@
-using import radlib.foreign
-using import radlib.core-extensions
+using import ..radlib.foreign
+using import ..radlib.core-extensions
 define-scope stbi
     let header =
         include

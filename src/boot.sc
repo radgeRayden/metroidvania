@@ -1,6 +1,6 @@
 # TODO: import as submodule
-using import radlib.core-extensions
-using import radlib.stringtools
+using import .radlib.core-extensions
+using import .radlib.stringtools
 
 using import enum
 using import struct
@@ -38,7 +38,7 @@ if (not amalgamated?)
 
 run-stage;
 
-let C = (import radlib.libc)
+let C = (import .radlib.libc)
 
 let glfw = (import .FFI.glfw)
 let gl = (import .FFI.glad)
@@ -501,7 +501,6 @@ struct Tileset
                 deref
                     (cjson.GetObjectItem json-data "tileheight") . valueint
 
-            using import radlib.libc
             let image-path =
                 (String "levels/") .. (String image-name (C.string.strlen image-name))
 
