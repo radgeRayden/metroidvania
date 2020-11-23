@@ -51,6 +51,7 @@ let ig = (import .FFI.imgui)
 # CONSTANTS
 # ================================================================================
 let INTERNAL_RESOLUTION = (ivec2 (1920 // 6) (1080 // 6))
+let ATLAS_PAGE_SIZE = (ivec2 1024 1024)
 
 # DEPENDENCY INITIALIZATION
 # ================================================================================
@@ -324,6 +325,8 @@ struct ArrayTexture2D
         local handle : u32
         # TODO: accomodate more mip levels
         let mip-count = 1
+        assert (((img-data.width % layer-width) == 0) and ((img-data.height % layer-height) == 0))
+            "source image size wasn't a multiple of the requested layer size"
         subimg-columns := img-data.width // layer-width
         subimg-rows := img-data.height // layer-height
         layer-count := subimg-rows * subimg-columns
@@ -365,45 +368,81 @@ struct ArrayTexture2D
         super-type.__typecall cls
             _handle = (GPUTexture handle)
 
-struct Sprite plain
+struct LayerSprite plain
     position : vec2
     scale : vec2
     pivot : vec2
-    layer : u32
     rotation : f32
+    layer : u32
+
+struct AtlasSprite plain
+    position : vec2
+    scale : vec2
+    pivot : vec2
+    rotation : f32
+    texcoords : vec4
+    page : u32
+
+let LayerSpriteMesh = (Mesh LayerSprite u16)
+let AtlasSpriteMesh = (Mesh AtlasSprite u16)
+enum SpriteAttributes
+    # one sprite per layer
+    Layer : LayerSpriteMesh
+    # layer contains atlas
+    Atlas : AtlasSpriteMesh
+
+    let __typecall = enum-class-constructor
+    inline... update (self)
+        'apply self
+            (T self) -> ('update self (va-tail *...))
 
 struct SpriteBatch
-    sprites : (Mesh Sprite u16)
+    sprites : SpriteAttributes
     image : ArrayTexture2D
     _dirty? : bool
 
-    inline __typecall (cls image-filename layer-width layer-height)
+    inline... __typecall (cls image-filename layer-width layer-height)
         super-type.__typecall cls
-            sprites = ((Mesh Sprite u16) 128)
+            sprites = (typeinit (LayerSpriteMesh 128))
             image = (ArrayTexture2D image-filename layer-width layer-height)
             _dirty? = false
+    case (cls image-filename)
+        super-type.__typecall cls
+            sprites = (typeinit (AtlasSpriteMesh 128))
+            image = (ArrayTexture2D image-filename (unpack ATLAS_PAGE_SIZE))
+            _dirty? = false
 
+    # atlas variant
     fn add (self sprite)
+    # per layer sprite variant
+    fn add-layer (self sprite)
+        assert (('literal self.sprites) == SpriteAttributes.Layer.Literal)
+        let sprites = ('unsafe-extract-payload self.sprites SpriteAttributes.Layer.Type)
+
         self._dirty? = true
         local indices =
             arrayof u16 0 2 3 3 1 0
-        idx-offset := (countof self.sprites.attribute-data) * 4
+        idx-offset := (countof sprites.attribute-data) * 4
         for idx in indices
-            'append self.sprites.index-data ((idx-offset + idx) as u16)
-        'append self.sprites.attribute-data sprite
+            'append sprites.index-data ((idx-offset + idx) as u16)
+        'append sprites.attribute-data sprite
         # return sprite index
-        (countof self.sprites.attribute-data) - 1
+        (countof sprites.attribute-data) - 1
 
     fn draw (self)
         if self._dirty?
             'update self.sprites
             self._dirty? = false
-        gl.BindBufferBase gl.GL_SHADER_STORAGE_BUFFER 0 self.sprites._attribute-buffer
-        gl.BindBuffer gl.GL_ELEMENT_ARRAY_BUFFER self.sprites._index-buffer
-        gl.BindTextures 0 1
-            &local (storagecast (view self.image._handle))
-        gl.DrawElements gl.GL_TRIANGLES ((countof self.sprites.index-data) as i32)
-           \ gl.GL_UNSIGNED_SHORT null
+        dispatch self.sprites
+        case Layer (sprites)
+            gl.BindBufferBase gl.GL_SHADER_STORAGE_BUFFER 0 sprites._attribute-buffer
+            gl.BindBuffer gl.GL_ELEMENT_ARRAY_BUFFER sprites._index-buffer
+            gl.BindTextures 0 1
+                &local (storagecast (view self.image._handle))
+            gl.DrawElements gl.GL_TRIANGLES ((countof sprites.index-data) as i32)
+                \ gl.GL_UNSIGNED_SHORT null
+        default
+            ;
 
 fn gl-compile-shader (source kind)
     imply kind i32
@@ -549,7 +588,8 @@ struct Tileset
     fn clear-cache ()
         'clear tileset-cache
 
-global player-sprite : (mutable pointer Sprite)
+struct Entity plain
+global player-sprite : (mutable pointer LayerSprite)
 
 struct Scene
     tileset : (Rc Tileset)
@@ -614,8 +654,8 @@ struct Scene
                         vec2; # invisible tile
                     else
                         vec2 1
-                'add level-sprites
-                    Sprite
+                'add-layer level-sprites
+                    LayerSprite
                         position =
                             vec2
                                 tileset-obj.tile-width * (x as u32)
@@ -651,13 +691,14 @@ struct Scene
                     x
                     (scene-height-px as i32) - 1 - (y as i32)
             let sprite-index =
-                'add level-sprites
-                    Sprite
+                'add-layer level-sprites
+                    LayerSprite
                         position = (tiled->worldpos px py)
                         scale = (vec2 1)
                         layer = 23 # red little man
 
-            player-sprite = (& (level-sprites.sprites.attribute-data @ sprite-index))
+            let sprites = ('unsafe-extract-payload level-sprites.sprites SpriteAttributes.Layer.Type)
+            player-sprite = (& (sprites.attribute-data @ sprite-index))
             # end of the hack
 
             cjson.Delete tiled-scene
@@ -725,7 +766,7 @@ fn sprite-vertex-shader ()
     using import glsl
     buffer attributes :
         struct AttributeArray plain
-            data : (array Sprite)
+            data : (array LayerSprite)
 
     uniform transform : mat4
     uniform layer_size : vec2
