@@ -52,6 +52,22 @@ let ig = (import .FFI.imgui)
 # ================================================================================
 let INTERNAL_RESOLUTION = (ivec2 (1920 // 6) (1080 // 6))
 let ATLAS_PAGE_SIZE = (ivec2 1024 1024)
+let GAME_VERSION =
+    static-if amalgamated?
+        string (call (extern 'GAME_VERSION (function rawstring)))
+    else
+        do
+            label git-log
+                let version-size = 19
+                let handle = (C.stdio.popen "git log -1 --format='v%cd.%h' --date=short" "r")
+                if (handle == null)
+                    merge git-log "UNKNOWN-nogit"
+                local str : (array i8 version-size)
+                C.stdio.fgets &str version-size handle
+                C.stdio.pclose handle
+                string (&str as (pointer i8)) version-size
+
+print "version:" GAME_VERSION
 
 # DEPENDENCY INITIALIZATION
 # ================================================================================
