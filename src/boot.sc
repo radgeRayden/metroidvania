@@ -429,16 +429,19 @@ struct SpriteBatch
     image : (Rc ArrayTexture2D)
     _dirty? : bool
 
-    inline... __typecall (cls image-filename layer-width layer-height)
+    inline... __typecall (cls, image : (Rc ArrayTexture2D), attr-tag : type)
         super-type.__typecall cls
-            sprites = (typeinit (LayerSpriteMesh 128))
-            image = (Rc.wrap (ArrayTexture2D image-filename layer-width layer-height))
+            sprites = (attr-tag (typeinit 128))
+            image = image
             _dirty? = false
+    case (cls image-filename layer-width layer-height)
+        this-function cls
+            Rc.wrap (ArrayTexture2D image-filename layer-width layer-height)
+            SpriteAttributes.Layer
     case (cls image-filename)
-        super-type.__typecall cls
-            sprites = (typeinit (AtlasSpriteMesh 128))
-            image = (Rc.wrap (ArrayTexture2D image-filename (unpack ATLAS_PAGE_SIZE)))
-            _dirty? = false
+        this-function cls
+            Rc.wrap (ArrayTexture2D image-filename (unpack ATLAS_PAGE_SIZE))
+            SpriteAttributes.Atlas
 
     # atlas variant
     fn add (self sprite)
