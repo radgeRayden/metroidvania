@@ -389,7 +389,7 @@ struct ArrayTexture2D
             _handle = (GPUTexture handle)
             _layer-width = layer-width
             _layer-height = layer-height
-            _layer-count = layer-count
+            _layer-count = (layer-count as u32)
 
     case (cls, filename : String, layer-width, layer-height)
         local filenames : (Array String)
