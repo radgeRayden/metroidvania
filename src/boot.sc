@@ -426,18 +426,18 @@ enum SpriteAttributes
 
 struct SpriteBatch
     sprites : SpriteAttributes
-    image : ArrayTexture2D
+    image : (Rc ArrayTexture2D)
     _dirty? : bool
 
     inline... __typecall (cls image-filename layer-width layer-height)
         super-type.__typecall cls
             sprites = (typeinit (LayerSpriteMesh 128))
-            image = (ArrayTexture2D image-filename layer-width layer-height)
+            image = (Rc.wrap (ArrayTexture2D image-filename layer-width layer-height))
             _dirty? = false
     case (cls image-filename)
         super-type.__typecall cls
             sprites = (typeinit (AtlasSpriteMesh 128))
-            image = (ArrayTexture2D image-filename (unpack ATLAS_PAGE_SIZE))
+            image = (Rc.wrap (ArrayTexture2D image-filename (unpack ATLAS_PAGE_SIZE)))
             _dirty? = false
 
     # atlas variant
