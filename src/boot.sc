@@ -67,8 +67,6 @@ let GAME_VERSION =
                 C.stdio.pclose handle
                 string (&str as (pointer i8)) version-size
 
-print "version:" GAME_VERSION
-
 # DEPENDENCY INITIALIZATION
 # ================================================================================
 glfw.SetErrorCallback
@@ -1216,7 +1214,9 @@ while (not (glfw.WindowShouldClose main-window))
 
     global player-stats-open? : bool true
     if player-stats-open?
-        ig.Begin "Player" &player-stats-open? 0
+        ig.Begin "Info" &player-stats-open? 0
+        ig.Text f"version: ${GAME_VERSION}"
+        ig.Text ""
         ig.Text "position: %.3f %.3f" player.position.x player.position.y
         ig.Text "velocity: %.3f %.3f" (unpack (player.velocity * step-size))
         ig.Text f"grounded?: ${player.grounded?}"
