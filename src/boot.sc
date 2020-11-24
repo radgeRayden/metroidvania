@@ -479,16 +479,21 @@ struct SpriteBatch
         if self._dirty?
             'update self.sprites
             self._dirty? = false
-        dispatch self.sprites
-        case Layer (sprites)
-            gl.BindBufferBase gl.GL_SHADER_STORAGE_BUFFER 0 sprites._attribute-buffer
-            gl.BindBuffer gl.GL_ELEMENT_ARRAY_BUFFER sprites._index-buffer
-            gl.BindTextures 0 1
-                &local (storagecast (view self.image._handle))
-            gl.DrawElements gl.GL_TRIANGLES ((countof sprites.index-data) as i32)
-                \ gl.GL_UNSIGNED_SHORT null
-        default
-            ;
+        let attribute-buffer index-buffer index-count =
+            'apply self.sprites
+                inline (T sprites)
+                    _
+                        sprites._attribute-buffer
+                        sprites._index-buffer
+                        countof sprites.index-data
+
+        gl.BindBufferBase gl.GL_SHADER_STORAGE_BUFFER 0 attribute-buffer
+        gl.BindBuffer gl.GL_ELEMENT_ARRAY_BUFFER index-buffer
+        gl.BindTextures 0 1
+            &local (storagecast (view self.image._handle))
+        gl.DrawElements gl.GL_TRIANGLES (index-count as i32)
+            \ gl.GL_UNSIGNED_SHORT null
+        ;
 
 fn gl-compile-shader (source kind)
     imply kind i32
