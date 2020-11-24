@@ -804,10 +804,10 @@ struct Camera plain
         let snap-point = (clamp target f0 f1)
         new-pos := self.position - (snap-point - target)
 
-        let bounds = (deref self._bounds) # workaround glm bug
+        let bounds = self._bounds
         self.position =
             # max has to be adjusted because position is at top left corner of viewport
-            clamp new-pos bounds.st (bounds.pq - self.viewport)
+            clamp new-pos (imply bounds.st vec2) (bounds.pq - self.viewport)
         ;
 
     fn apply (self shader)
