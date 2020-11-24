@@ -622,6 +622,24 @@ struct Tileset
 struct Entity plain
 global player-sprite : (mutable pointer LayerSprite)
 
+# NOTE: for a game this size, I opted to load all the sprite textures
+# at once, in a single ArrayTexture where they can be indexed by position in
+# the atlas and page (array layer). To make this easier to work with we use
+# this singleton.
+fn game-texture-atlas ()
+    global atlas : (Option (Rc ArrayTexture2D))
+    if (not atlas)
+        local images : (Array String)
+        # TODO: for the moment I'm loading the test tileset
+        # as if it were one of the atlas images. Should be substituted
+        # for proper texture atlas, possibly with a naming convention
+        # such that this list doesn't need to be filled in explicitly.
+        'append images (String "levels/adve.png")
+        atlas =
+            Rc.wrap (ArrayTexture2D images 8 8)
+
+    copy ('force-unwrap atlas)
+
 struct Scene
     tileset : (Rc Tileset)
     width : u32
@@ -632,7 +650,8 @@ struct Scene
     # to simply fill this in with tile solid value and do collision detection based on
     # that. At some point it might be better to do something like kikito's bump.
     collision-matrix : (Array bool)
-    draw-data : SpriteBatch
+    background-sprites : SpriteBatch
+    entity-sprites : SpriteBatch
 
     inline __typecall (cls filename)
         fn load-tiled-level (filename)
@@ -676,7 +695,7 @@ struct Scene
                 let id = (tile.valueint as u32)
                 'append level-data id
                 'append collision-matrix ((tileset-obj.tile-properties @ (id - 1)) . solid?)
-            local level-sprites =
+            local background-sprites =
                 SpriteBatch tileset-obj.image tileset-obj.tile-width tileset-obj.tile-height
             for i x y in (enumerate (dim scene-width-tiles scene-height-tiles))
                 let tile = (level-data @ i)
@@ -685,7 +704,7 @@ struct Scene
                         vec2; # invisible tile
                     else
                         vec2 1
-                'add-layer level-sprites
+                'add-layer background-sprites
                     LayerSprite
                         position =
                             vec2
@@ -722,13 +741,13 @@ struct Scene
                     x
                     (scene-height-px as i32) - 1 - (y as i32)
             let sprite-index =
-                'add-layer level-sprites
+                'add-layer background-sprites
                     LayerSprite
                         position = (tiled->worldpos px py)
                         scale = (vec2 1)
                         layer = 23 # red little man
 
-            let sprites = ('unsafe-extract-payload level-sprites.sprites SpriteAttributes.Layer.Type)
+            let sprites = ('unsafe-extract-payload background-sprites.sprites SpriteAttributes.Layer.Type)
             player-sprite = (& (sprites.attribute-data @ sprite-index))
             # end of the hack
 
@@ -736,11 +755,12 @@ struct Scene
 
             super-type.__typecall cls
                 tileset = tileset-obj
-                draw-data = level-sprites
+                background-sprites = background-sprites
                 width = scene-width-px
                 height = scene-height-px
                 level-data = level-data
                 collision-matrix = collision-matrix
+                entity-sprites = (SpriteBatch (game-texture-atlas) SpriteAttributes.Atlas)
         load-tiled-level filename
 
 struct Camera plain
@@ -1109,8 +1129,8 @@ fn draw ()
         level1.tileset.tile-height as f32
 
     'apply main-camera sprite-shader
-    'update level1.draw-data.sprites
-    'draw level1.draw-data
+    'update level1.background-sprites.sprites
+    'draw level1.background-sprites
 
 global last-time = (glfw.GetTime)
 while (not (glfw.WindowShouldClose main-window))
