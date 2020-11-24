@@ -4,12 +4,13 @@ let C = (import .src.radlib.libc)
 let game-version =
     label git-log
         let version-size = 19
-        let handle = (C.stdio.popen "git log -1 --format='v%cd.%h' --date=short" "r")
+        let handle = (C.stdio.popen "git log -1 --format='v%cd.%h' --date=short 2>/dev/null" "r")
         if (handle == null)
             merge git-log ("UNKNOWN-nogit" as rawstring)
         local str : (array i8 version-size)
         C.stdio.fgets &str version-size handle
-        C.stdio.pclose handle
+        if ((C.stdio.pclose handle) != 0)
+            merge git-log ("UNKNOWN-nogit" as rawstring)
         (string (&str as (pointer i8)) version-size) as rawstring
 run-stage;
 
