@@ -60,9 +60,6 @@ $(MAIN_OBJ):
 	scopes makemain.sc
 
 amalgamated: $(STATIC_LIBS) $(LIBGAME_DEPS) $(MAIN_OBJ)
-	# replace magic constant with git version information
-	bbe -e s/1735091143250581554/$$(git log -1 --format='v%cd.%h' --date=short)/ $(MAIN_OBJ) > _$(MAIN_OBJ)
-	mv _game.o game.o
 	mkdir -p ./bin
 	mkdir -p ./lib/scopes
 	scopes copyscdeps.sc
