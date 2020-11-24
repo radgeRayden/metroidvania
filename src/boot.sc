@@ -84,7 +84,7 @@ glfw.WindowHint glfw.GLFW_OPENGL_DEBUG_CONTEXT true
 glfw.WindowHint glfw.GLFW_OPENGL_PROFILE glfw.GLFW_OPENGL_CORE_PROFILE
 # glfw.WindowHint glfw.GLFW_SAMPLES 4
 
-let main-window = (glfw.CreateWindow 1280 720 "gam??" null null)
+let main-window = (glfw.CreateWindow 1280 720 ("untitled metroidvania - " .. GAME_VERSION) null null)
 if (main-window == null)
     error "Failed to create a window with specified settings."
 glfw.MakeContextCurrent main-window
@@ -1215,9 +1215,7 @@ while (not (glfw.WindowShouldClose main-window))
 
     global player-stats-open? : bool true
     if player-stats-open?
-        ig.Begin "Info" &player-stats-open? 0
-        ig.Text f"version: ${GAME_VERSION}"
-        ig.Text ""
+        ig.Begin "Debug Info" &player-stats-open? 0
         ig.Text "position: %.3f %.3f" player.position.x player.position.y
         ig.Text "velocity: %.3f %.3f" (unpack (player.velocity * step-size))
         ig.Text f"grounded?: ${player.grounded?}"
