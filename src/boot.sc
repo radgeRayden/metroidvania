@@ -319,17 +319,30 @@ let GPUTexture =
 
 struct ArrayTexture2D
     _handle : GPUTexture
+    _layer-width : u32
+    _layer-height : u32
+    _layer-count : u32
 
-    inline __typecall (cls filename layer-width layer-height)
-        let img-data = (ImageData filename)
+    # NOTE: the layer count is inferred.
+    inline... __typecall (cls, filenames : (Array String), layer-width, layer-height)
+        assert ((countof filenames) > 0)
         local handle : u32
         # TODO: accomodate more mip levels
         let mip-count = 1
-        assert (((img-data.width % layer-width) == 0) and ((img-data.height % layer-height) == 0))
-            "source image size wasn't a multiple of the requested layer size"
-        subimg-columns := img-data.width // layer-width
-        subimg-rows := img-data.height // layer-height
-        layer-count := subimg-rows * subimg-columns
+        # NOTE: to deduce the layer count, it's easier to load all images in memory at once.
+        local images : (Array ImageData)
+        for file in filenames
+            'append images (ImageData file)
+
+        let layer-count =
+            fold (layer-count = 0:usize) for img-data in images
+                assert (((img-data.width % layer-width) == 0) and ((img-data.height % layer-height) == 0))
+                    "source image size wasn't a multiple of the requested layer size"
+
+                subimg-columns := img-data.width // layer-width
+                subimg-rows := img-data.height // layer-height
+                layer-count + (subimg-rows * subimg-columns)
+
         gl.GenTextures 1 &handle
         gl.BindTexture gl.GL_TEXTURE_2D_ARRAY handle
         gl.TexStorage3D gl.GL_TEXTURE_2D_ARRAY mip-count
@@ -337,36 +350,51 @@ struct ArrayTexture2D
             layer-width as i32
             layer-height as i32
             layer-count as i32
-        gl.PixelStorei gl.GL_UNPACK_ROW_LENGTH (img-data.width as i32)
-        for i in (range layer-count)
-            let subimg-col subimg-row =
-                i % subimg-columns
-                i // subimg-columns
-            let first-texel =
-                +
-                    layer-width * layer-height * subimg-columns * subimg-row
-                    layer-width * subimg-col
 
-            gl.TextureSubImage3D
-                handle
-                0 # mip level
-                0 # xoffset
-                0 # yoffset
-                i as i32 # zoffset
-                layer-width as i32
-                layer-height as i32
-                1 # depth
-                gl.GL_RGBA
-                gl.GL_UNSIGNED_BYTE
-                & (img-data.data @ (first-texel * img-data.channels))
+        for img-data in images
+            subimg-columns    := img-data.width // layer-width
+            subimg-rows       := img-data.height // layer-height
+            local-layer-count := subimg-rows * subimg-columns
+
+            gl.PixelStorei gl.GL_UNPACK_ROW_LENGTH (img-data.width as i32)
+            for i in (range local-layer-count)
+                let col row =
+                    i % subimg-columns
+                    i // subimg-columns
+                let first-texel =
+                    +
+                        layer-width * layer-height * subimg-columns * row
+                        layer-width * col
+
+                gl.TextureSubImage3D
+                    handle
+                    0 # mip level
+                    0 # xoffset
+                    0 # yoffset
+                    i as i32 # zoffset
+                    layer-width as i32
+                    layer-height as i32
+                    1 # depth
+                    gl.GL_RGBA
+                    gl.GL_UNSIGNED_BYTE
+                    & (img-data.data @ (first-texel * img-data.channels))
+            gl.TexParameteri gl.GL_TEXTURE_2D_ARRAY gl.GL_TEXTURE_MIN_FILTER gl.GL_NEAREST
+            gl.TexParameteri gl.GL_TEXTURE_2D_ARRAY gl.GL_TEXTURE_MAG_FILTER gl.GL_NEAREST
+            gl.TexParameteri gl.GL_TEXTURE_2D_ARRAY gl.GL_TEXTURE_WRAP_S gl.GL_CLAMP_TO_EDGE
+            gl.TexParameteri gl.GL_TEXTURE_2D_ARRAY gl.GL_TEXTURE_WRAP_T gl.GL_CLAMP_TO_EDGE
+
         gl.PixelStorei gl.GL_UNPACK_ROW_LENGTH 0
-        gl.TexParameteri gl.GL_TEXTURE_2D_ARRAY gl.GL_TEXTURE_MIN_FILTER gl.GL_NEAREST
-        gl.TexParameteri gl.GL_TEXTURE_2D_ARRAY gl.GL_TEXTURE_MAG_FILTER gl.GL_NEAREST
-        gl.TexParameteri gl.GL_TEXTURE_2D_ARRAY gl.GL_TEXTURE_WRAP_S gl.GL_CLAMP_TO_EDGE
-        gl.TexParameteri gl.GL_TEXTURE_2D_ARRAY gl.GL_TEXTURE_WRAP_T gl.GL_CLAMP_TO_EDGE
 
         super-type.__typecall cls
             _handle = (GPUTexture handle)
+            _layer-width = layer-width
+            _layer-height = layer-height
+            _layer-count = layer-count
+
+    case (cls, filename : String, layer-width, layer-height)
+        local filenames : (Array String)
+        'append filenames (copy filename)
+        this-function cls filenames layer-width layer-height
 
 struct LayerSprite plain
     position : vec2
