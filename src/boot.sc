@@ -740,7 +740,13 @@ struct Scene
                 vec2
                     x
                     (scene-height-px as i32) - 1 - (y as i32)
-            let _player = ('append entities entity.archetypes.player)
+            let _player =
+                'append entities
+                    copy
+                        try
+                            'get entity.archetypes entity.EntityKind.Player
+                        else
+                            error "unknown entity type"
             let entity-index = (countof entities)
             _player.position = (tiled->worldpos px py)
 
@@ -865,6 +871,7 @@ fn sprite-fragment-shader ()
 global sprite-shader = (ShaderProgram sprite-vertex-shader sprite-fragment-shader)
 gl.UseProgram sprite-shader._handle
 
+entity.init-archetypes;
 global level1 = (Scene "levels/1.json")
 global main-camera : Camera
     position = (vec2)
@@ -874,7 +881,6 @@ global main-camera : Camera
 global main-render-target : u32
 global fb-color-attachment : GPUTexture
 global fb-depth-attachment : GPUTexture
-
 
 # TODO: generic function to create textures
 gl.GenTextures 1 (&fb-color-attachment as (mutable@ u32))
