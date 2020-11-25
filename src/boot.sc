@@ -411,59 +411,33 @@ struct ArrayTexture2D
         'append filenames (copy filename)
         this-function cls filenames layer-width layer-height
 
-struct LayerSprite plain
+struct Sprite plain
     position : vec2
     scale : vec2
     pivot : vec2
     rotation : f32
-    layer : u32
-
-struct AtlasSprite plain
-    position : vec2
-    scale : vec2
-    pivot : vec2
-    rotation : f32
-    texcoords : vec4
+    texcoords : vec4 = (vec4 0 0 1 1)
     page : u32
 
-let LayerSpriteMesh = (Mesh LayerSprite u16)
-let AtlasSpriteMesh = (Mesh AtlasSprite u16)
-enum SpriteAttributes
-    # one sprite per layer
-    Layer : LayerSpriteMesh
-    # layer contains atlas
-    Atlas : AtlasSpriteMesh
-
-    let __typecall = enum-class-constructor
-    inline... update (self)
-        'apply self
-            (T self) -> ('update self (va-tail *...))
-
 struct SpriteBatch
-    sprites : SpriteAttributes
+    sprites : (Mesh Sprite u16)
     image : (Rc ArrayTexture2D)
     _dirty? : bool
 
-    inline... __typecall (cls, image : (Rc ArrayTexture2D), attr-tag : type)
+    inline... __typecall (cls, image : (Rc ArrayTexture2D))
         super-type.__typecall cls
-            sprites = (attr-tag (typeinit 128))
+            sprites = ((Mesh Sprite u16) 128)
             image = image
             _dirty? = false
     case (cls image-filename layer-width layer-height)
         this-function cls
             Rc.wrap (ArrayTexture2D image-filename layer-width layer-height)
-            SpriteAttributes.Layer
     case (cls image-filename)
         this-function cls
             Rc.wrap (ArrayTexture2D image-filename (unpack ATLAS_PAGE_SIZE))
-            SpriteAttributes.Atlas
 
-    # atlas variant
     fn add (self sprite)
-    # per layer sprite variant
-    fn add-layer (self sprite)
-        assert (('literal self.sprites) == SpriteAttributes.Layer.Literal)
-        let sprites = ('unsafe-extract-payload self.sprites SpriteAttributes.Layer.Type)
+        let sprites = self.sprites
 
         self._dirty? = true
         local indices =
@@ -480,12 +454,10 @@ struct SpriteBatch
             'update self.sprites
             self._dirty? = false
         let attribute-buffer index-buffer index-count =
-            'apply self.sprites
-                inline (T sprites)
-                    _
-                        sprites._attribute-buffer
-                        sprites._index-buffer
-                        countof sprites.index-data
+            _
+                self.sprites._attribute-buffer
+                self.sprites._index-buffer
+                countof self.sprites.index-data
 
         gl.BindBufferBase gl.GL_SHADER_STORAGE_BUFFER 0 attribute-buffer
         gl.BindBuffer gl.GL_ELEMENT_ARRAY_BUFFER index-buffer
@@ -640,7 +612,7 @@ struct Tileset
         'clear tileset-cache
 
 struct Entity plain
-global player-sprite : (mutable pointer LayerSprite)
+global player-sprite : (mutable pointer Sprite)
 
 # NOTE: for a game this size, I opted to load all the sprite textures
 # at once, in a single ArrayTexture where they can be indexed by position in
@@ -724,8 +696,8 @@ struct Scene
                         vec2; # invisible tile
                     else
                         vec2 1
-                'add-layer background-sprites
-                    LayerSprite
+                'add background-sprites
+                    Sprite
                         position =
                             vec2
                                 tileset-obj.tile-width * (x as u32)
@@ -733,7 +705,8 @@ struct Scene
                                 tileset-obj.tile-height * ((scene-height-tiles - 1 - y) as u32)
                         scale = scale
                         pivot = (vec2)
-                        layer = (tile - 1)
+                        texcoords = (vec4 0 0 1 1)
+                        page = (tile - 1)
                         rotation = 0
 
             # HACK: extracting player position from the tileset objects while
@@ -761,13 +734,13 @@ struct Scene
                     x
                     (scene-height-px as i32) - 1 - (y as i32)
             let sprite-index =
-                'add-layer background-sprites
-                    LayerSprite
+                'add background-sprites
+                    Sprite
                         position = (tiled->worldpos px py)
                         scale = (vec2 1)
-                        layer = 23 # red little man
+                        page = 23 # red little man
 
-            let sprites = ('unsafe-extract-payload background-sprites.sprites SpriteAttributes.Layer.Type)
+            let sprites = background-sprites.sprites
             player-sprite = (& (sprites.attribute-data @ sprite-index))
             # end of the hack
 
@@ -780,7 +753,7 @@ struct Scene
                 height = scene-height-px
                 level-data = level-data
                 collision-matrix = collision-matrix
-                entity-sprites = (SpriteBatch (game-texture-atlas) SpriteAttributes.Atlas)
+                entity-sprites = (SpriteBatch (game-texture-atlas))
         load-tiled-level filename
 
 struct Camera plain
@@ -837,7 +810,7 @@ fn sprite-vertex-shader ()
     using import glsl
     buffer attributes :
         struct AttributeArray plain
-            data : (array LayerSprite)
+            data : (array Sprite)
 
     uniform transform : mat4
     uniform layer_size : vec2
@@ -852,13 +825,6 @@ fn sprite-vertex-shader ()
             vec2 0 1 # bottom left
             vec2 1 1 # bottom right
 
-    local texcoords =
-        arrayof vec2
-            vec2 0 1
-            vec2 1 1
-            vec2 0 0
-            vec2 1 0
-
     let sprites = attributes.data
     idx         := gl_VertexID
     sprite      := sprites @ (idx // 4)
@@ -867,12 +833,20 @@ fn sprite-vertex-shader ()
     orientation := sprite.rotation
     pivot       := sprite.pivot
     scale       := sprite.scale
+    stexcoords  := sprite.texcoords
+
+    local texcoords =
+        arrayof vec2
+            stexcoords.sq
+            stexcoords.pq
+            stexcoords.st
+            stexcoords.pt
 
     # TODO: explain what this does in a comment
     gl_Position =
         * transform
             vec4 (origin + pivot + (math.rotate ((vertex * layer_size * scale) - pivot) orientation)) 0 1
-    vtexcoord = (vec3 (texcoords @ (idx % 4)) sprite.layer)
+    vtexcoord = (vec3 (texcoords @ (idx % 4)) sprite.page)
 
 fn sprite-fragment-shader ()
     using import glsl
