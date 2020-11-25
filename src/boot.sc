@@ -449,6 +449,10 @@ struct SpriteBatch
         # return sprite index
         (countof sprites.attribute-data) - 1
 
+    fn clear (self)
+        'clear self.sprites.attribute-data
+        'clear self.sprites.index-data
+
     fn draw (self)
         if self._dirty?
             'update self.sprites
