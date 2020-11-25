@@ -555,9 +555,7 @@ struct Tileset
     inline __typecall (cls filename)
         fn load-tiled-tileset (filename)
             let data = (load-full-file filename)
-            # FIXME: this version doesn't seem to have ParseWithLength, but it would be preferrable.
-            # change it once we use our in-tree version of cJSON.
-            let json-data = (cjson.Parse data)
+            let json-data = (cjson.ParseWithLength data (countof data))
             let image-name =
                 cjson.GetStringValue
                     cjson.GetObjectItem json-data "image"
