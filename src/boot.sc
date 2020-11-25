@@ -13,6 +13,7 @@ using import itertools
 using import Option
 
 import .math
+import .entity
 
 let argc argv = (launch-args)
 
@@ -413,7 +414,7 @@ struct ArrayTexture2D
 
 struct Sprite plain
     position : vec2
-    scale : vec2
+    scale : vec2 = (vec2 1)
     pivot : vec2
     rotation : f32
     texcoords : vec4 = (vec4 0 0 1 1)
@@ -615,8 +616,7 @@ struct Tileset
     fn clear-cache ()
         'clear tileset-cache
 
-struct Entity plain
-global player-sprite : (mutable pointer Sprite)
+global player : (mutable pointer entity.Entity)
 
 # NOTE: for a game this size, I opted to load all the sprite textures
 # at once, in a single ArrayTexture where they can be indexed by position in
@@ -647,6 +647,7 @@ struct Scene
     # that. At some point it might be better to do something like kikito's bump.
     collision-matrix : (Array bool)
     background-sprites : SpriteBatch
+    entities : (Array entity.Entity)
     entity-sprites : SpriteBatch
 
     inline __typecall (cls filename)
@@ -713,6 +714,8 @@ struct Scene
                         page = (tile - 1)
                         rotation = 0
 
+            local entities : (Array entity.Entity)
+
             # HACK: extracting player position from the tileset objects while
             # reusing the tileset image. Later I'll have entities separate, very likely
             # using their own sprite sheet.
@@ -737,15 +740,11 @@ struct Scene
                 vec2
                     x
                     (scene-height-px as i32) - 1 - (y as i32)
-            let sprite-index =
-                'add background-sprites
-                    Sprite
-                        position = (tiled->worldpos px py)
-                        scale = (vec2 1)
-                        page = 23 # red little man
+            let _player = ('append entities entity.archetypes.player)
+            let entity-index = (countof entities)
+            _player.position = (tiled->worldpos px py)
 
-            let sprites = background-sprites.sprites
-            player-sprite = (& (sprites.attribute-data @ sprite-index))
+            player = &_player
             # end of the hack
 
             cjson.Delete tiled-scene
@@ -757,6 +756,7 @@ struct Scene
                 height = scene-height-px
                 level-data = level-data
                 collision-matrix = collision-matrix
+                entities = (deref entities)
                 entity-sprites = (SpriteBatch (game-texture-atlas))
         load-tiled-level filename
 
@@ -903,14 +903,6 @@ assert (fbo-status == gl.GL_FRAMEBUFFER_COMPLETE) "failed creating main render t
 global window-width : i32
 global window-height : i32
 
-# NOTE: very temporary thing, that's why it's down here.
-global player :
-    struct Player plain
-        position : vec2
-        velocity : vec2
-        grounded? : bool
-
-player.position = player-sprite.position
 'set-bounds main-camera (vec2) (vec2 level1.width level1.height)
 
 fn solid-tile? (pos)
@@ -1112,9 +1104,7 @@ fn update (dt)
     player-move (player.position + (vec2 (player.velocity.x * dt) 0))
     player-move (player.position + (vec2 0 (player.velocity.y * dt)))
 
-    player-sprite.position = (floor player.position)
-
-    'follow main-camera player-sprite.position
+    'follow main-camera player.position
 
 fn draw ()
     gl.Viewport 0 0 INTERNAL_RESOLUTION.x INTERNAL_RESOLUTION.y
@@ -1126,9 +1116,19 @@ fn draw ()
         level1.tileset.tile-width as f32
         level1.tileset.tile-height as f32
 
+    'clear level1.entity-sprites
+    'add level1.entity-sprites
+        Sprite
+            position = (floor player.position)
+            page = player.sprite
+
     'apply main-camera sprite-shader
+
     'update level1.background-sprites.sprites
     'draw level1.background-sprites
+
+    'update level1.entity-sprites.sprites
+    'draw level1.entity-sprites
 
 global last-time = (glfw.GetTime)
 while (not (glfw.WindowShouldClose main-window))
