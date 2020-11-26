@@ -43,9 +43,6 @@ struct Entity
 let EntityConstructor = (@ (function (uniqueof Entity -1)))
 global archetypes : (Map EntityKind EntityConstructor)
 
-inline set-archetype (tag f)
-    'set archetypes tag (static-typify f)
-
 let ComponentList = (Array Component)
 typedef+ ComponentList
     inline __typecall (cls ...)
@@ -98,6 +95,9 @@ struct EntityList
         let last-index = ((countof self._entities) - 1)
         'swap self._entities id.idx last-index
         'remove self._entities last-index
+
+inline set-archetype (tag f)
+    'set archetypes tag (static-typify f)
 
 fn init-archetypes ()
     set-archetype EntityKind.Player
