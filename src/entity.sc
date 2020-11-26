@@ -95,7 +95,9 @@ struct EntityList
     fn remove (self id)
         # make sure the id is valid
         'get self id
-        'swap self._entities id.idx ((countof self._entities) - 1)
+        let last-index = ((countof self._entities) - 1)
+        'swap self._entities id.idx last-index
+        'remove self._entities last-index
 
 fn init-archetypes ()
     set-archetype EntityKind.Player
