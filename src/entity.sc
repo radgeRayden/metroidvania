@@ -21,9 +21,16 @@ struct SpriteComponent < ComponentBase
     texcoords : vec4
     page : u32
 
+    fn update (self parent)
+        self.position = (floor parent.position)
+        ;
+
 enum Component
     Sprite : SpriteComponent
     let __typecall = enum-class-constructor
+    inline update (self parent)
+        'apply self
+            (T self) -> ('update self parent)
 
 enum EntityKind plain
     Player = 0
@@ -84,6 +91,11 @@ struct EntityList
                 'swap self._entities ((countof self._entities) - 1)
                 'pop self._entities
                 'discard self._entity-lookup ent.id
+
+    fn update (self)
+        for ent in self
+            for component in ent.components
+                'update component ent
 
 let EntityConstructor = (@ (function (uniqueof Entity -1)))
 let ArchetypeMap = (Map EntityKind EntityConstructor)

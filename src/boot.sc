@@ -1106,6 +1106,7 @@ fn update (dt)
     player-move (player.position + (vec2 0 (player.velocity.y * dt)))
 
     'follow main-camera player.position
+    'update level1.entities
 
 fn draw ()
     gl.Viewport 0 0 INTERNAL_RESOLUTION.x INTERNAL_RESOLUTION.y
