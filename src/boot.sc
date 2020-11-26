@@ -614,7 +614,7 @@ struct Tileset
     fn clear-cache ()
         'clear tileset-cache
 
-global player-id : entity.EntityId
+global player : (Rc entity.Entity)
 
 # NOTE: for a game this size, I opted to load all the sprite textures
 # at once, in a single ArrayTexture where they can be indexed by position in
@@ -739,12 +739,11 @@ struct Scene
                     x
                     (scene-height-px as i32) - 1 - (y as i32)
 
-            let player =
-                'add entities
-                    call
-                        'get entity.archetypes entity.EntityKind.Player
-
-            player-id = player.id
+            player =
+                copy
+                    'add entities
+                        call
+                            'get entity.archetypes entity.EntityKind.Player
 
             player.position = (tiled->worldpos px py)
             # end of the hack
@@ -874,13 +873,6 @@ global main-camera : Camera
     scale = (vec2 6)
     viewport = (vec2 INTERNAL_RESOLUTION)
 
-inline get-player ()
-    try
-        'get level1.entities player-id
-    else
-        assert false "player entity not found on the scene"
-        unreachable;
-
 global main-render-target : u32
 global fb-color-attachment : GPUTexture
 global fb-depth-attachment : GPUTexture
@@ -935,7 +927,6 @@ fn solid-tile? (pos)
     deref (level1.collision-matrix @ (idx as usize))
 
 fn grounded? ()
-    let player = (get-player)
     # NOTE: because currently the player AABB is hardcoded at 8x8, we know
     # if it clears the tiles at its 2 lower corners then it's airborne.
     let pos = player.position
@@ -947,7 +938,6 @@ fn grounded? ()
         solid-tile? (vec2 (pos.x + 7) (pos.y - 1))
 
 fn player-move (pos)
-    let player = (get-player)
     # scene is all on positive atm, so just do whatever. Could also
     # block, but I think it might be useful to not do that (eg. to transition rooms)
     if (or
@@ -1078,13 +1068,11 @@ glfw.SetKeyCallback main-window
 
         # game controls
         if ((_key == glfw.GLFW_KEY_SPACE) and (action == glfw.GLFW_PRESS))
-            let player = (get-player)
             if player.grounded?
                 player.velocity.y = jump-force
         ;
 
 fn update (dt)
-    let player = (get-player)
     fn key-down? (code)
         (glfw.GetKey main-window code) as bool
 
@@ -1129,7 +1117,6 @@ fn draw ()
         level1.tileset.tile-width as f32
         level1.tileset.tile-height as f32
 
-    let player = (get-player)
     'clear level1.entity-sprites
     'add level1.entity-sprites
         Sprite
@@ -1210,7 +1197,6 @@ while (not (glfw.WindowShouldClose main-window))
     ig.impl.Glfw_NewFrame;
     ig.NewFrame;
 
-    let player = (get-player)
     global player-stats-open? : bool true
     if player-stats-open?
         ig.Begin "Debug Info" &player-stats-open? 0
