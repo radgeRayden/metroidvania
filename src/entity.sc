@@ -40,8 +40,6 @@ struct Entity
     sprite : u32 # FIXME: shouldn't be here, and moreover should include texcoords
     tag : EntityKind = EntityKind.Player
 
-let EntityConstructor = (@ (function (uniqueof Entity -1)))
-global archetypes : (Map EntityKind EntityConstructor)
 
 let ComponentList = (Array Component)
 typedef+ ComponentList
@@ -95,6 +93,22 @@ struct EntityList
         let last-index = ((countof self._entities) - 1)
         'swap self._entities id.idx last-index
         'remove self._entities last-index
+
+let EntityConstructor = (@ (function (uniqueof Entity -1)))
+let ArchetypeMap = (Map EntityKind EntityConstructor)
+typedef+ ArchetypeMap
+    fn get (self kind)
+        imply kind EntityKind
+        # NOTE: because the inputs to this map are well defined, we can
+        # fearlessly assert false on error, meaning I messed up in the definition
+        # of the archetypes, and not in whatever code I'm writing that uses them.
+        try
+            super-type.get self kind
+        else
+            assert false "unknown entity type"
+            unreachable;
+
+global archetypes : ArchetypeMap
 
 inline set-archetype (tag f)
     'set archetypes tag (static-typify f)

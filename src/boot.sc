@@ -742,10 +742,7 @@ struct Scene
             let player =
                 'add entities
                     call
-                        try
-                            'get entity.archetypes entity.EntityKind.Player
-                        else
-                            error "unknown entity type"
+                        'get entity.archetypes entity.EntityKind.Player
 
             player-id = player.id
 
