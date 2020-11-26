@@ -614,7 +614,7 @@ struct Tileset
     fn clear-cache ()
         'clear tileset-cache
 
-global player-id : u32
+global player-id : entity.EntityId
 
 # NOTE: for a game this size, I opted to load all the sprite textures
 # at once, in a single ArrayTexture where they can be indexed by position in
@@ -645,7 +645,7 @@ struct Scene
     # that. At some point it might be better to do something like kikito's bump.
     collision-matrix : (Array bool)
     background-sprites : SpriteBatch
-    entities : (Array entity.Entity)
+    entities : entity.EntityList
     entity-sprites : SpriteBatch
 
     inline __typecall (cls filename)
@@ -712,7 +712,7 @@ struct Scene
                         page = (tile - 1)
                         rotation = 0
 
-            local entities : (Array entity.Entity)
+            local entities : entity.EntityList
 
             # HACK: extracting player position from the tileset objects while
             # reusing the tileset image. Later I'll have entities separate, very likely
@@ -739,18 +739,17 @@ struct Scene
                     x
                     (scene-height-px as i32) - 1 - (y as i32)
 
-            let entity-index = (countof entities)
             let player =
-                'append entities
+                'add entities
                     call
                         try
                             'get entity.archetypes entity.EntityKind.Player
                         else
                             error "unknown entity type"
-                        entity-index as u32
+
+            player-id = player.id
 
             player.position = (tiled->worldpos px py)
-            player.id = (entity-index as u32)
             # end of the hack
 
             cjson.Delete tiled-scene
@@ -878,6 +877,13 @@ global main-camera : Camera
     scale = (vec2 6)
     viewport = (vec2 INTERNAL_RESOLUTION)
 
+inline get-player ()
+    try
+        'get level1.entities player-id
+    else
+        assert false "player entity not found on the scene"
+        unreachable;
+
 global main-render-target : u32
 global fb-color-attachment : GPUTexture
 global fb-depth-attachment : GPUTexture
@@ -932,7 +938,7 @@ fn solid-tile? (pos)
     deref (level1.collision-matrix @ (idx as usize))
 
 fn grounded? ()
-    let player = (level1.entities @ player-id)
+    let player = (get-player)
     # NOTE: because currently the player AABB is hardcoded at 8x8, we know
     # if it clears the tiles at its 2 lower corners then it's airborne.
     let pos = player.position
@@ -944,7 +950,7 @@ fn grounded? ()
         solid-tile? (vec2 (pos.x + 7) (pos.y - 1))
 
 fn player-move (pos)
-    let player = (level1.entities @ player-id)
+    let player = (get-player)
     # scene is all on positive atm, so just do whatever. Could also
     # block, but I think it might be useful to not do that (eg. to transition rooms)
     if (or
@@ -1075,13 +1081,13 @@ glfw.SetKeyCallback main-window
 
         # game controls
         if ((_key == glfw.GLFW_KEY_SPACE) and (action == glfw.GLFW_PRESS))
-            let player = (level1.entities @ player-id)
+            let player = (get-player)
             if player.grounded?
                 player.velocity.y = jump-force
         ;
 
 fn update (dt)
-    let player = (level1.entities @ player-id)
+    let player = (get-player)
     fn key-down? (code)
         (glfw.GetKey main-window code) as bool
 
@@ -1126,7 +1132,7 @@ fn draw ()
         level1.tileset.tile-width as f32
         level1.tileset.tile-height as f32
 
-    let player = (level1.entities @ player-id)
+    let player = (get-player)
     'clear level1.entity-sprites
     'add level1.entity-sprites
         Sprite
@@ -1207,7 +1213,7 @@ while (not (glfw.WindowShouldClose main-window))
     ig.impl.Glfw_NewFrame;
     ig.NewFrame;
 
-    let player = (level1.entities @ player-id)
+    let player = (get-player)
     global player-stats-open? : bool true
     if player-stats-open?
         ig.Begin "Debug Info" &player-stats-open? 0

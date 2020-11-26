@@ -8,7 +8,16 @@ using import Map
 using import Array
 
 struct SpriteComponent
-let EntityId = u32
+struct EntityId plain
+    _idx : usize
+    _gid : usize
+    inline __== (selfT otherT)
+        static-if (selfT == otherT)
+            inline (self other)
+                and
+                    self._idx == other._idx
+                    self._gid == other._gid
+
     position : vec2
     texcoords : vec4
     page : u32
@@ -31,11 +40,11 @@ struct Entity
     sprite : u32 # FIXME: shouldn't be here, and moreover should include texcoords
     tag : EntityKind = EntityKind.Player
 
-let EntityConstructor = (@ (function (uniqueof Entity -1) EntityId))
+let EntityConstructor = (@ (function (uniqueof Entity -1)))
 global archetypes : (Map EntityKind EntityConstructor)
 
 inline set-archetype (tag f)
-    'set archetypes tag (static-typify f EntityId)
+    'set archetypes tag (static-typify f)
 
 let ComponentList = (Array Component)
 typedef+ ComponentList
@@ -48,11 +57,50 @@ typedef+ ComponentList
             ...
         deref arr
 
+enum EntityError plain
+    StaleReference
+
+struct EntityList
+    _next-vacant : usize = 0
+    _entities : (Array Entity)
+    inline __as (selfT otherT)
+        static-if (otherT == Generator)
+            inline (self)
+                self._entities as Generator
+
+    fn get (self id)
+        let ent = (self._entities @ id._idx)
+        if (ent.id != id)
+            raise EntityError.StaleReference
+        view ent
+
+    fn add (self ent)
+        let new-index = self._next-vacant
+        global gid : usize 0
+        if (new-index == 0)
+            'append self._entities ent
+        else
+            self._entities @ new-index = ent
+
+        let ent = (self._entities @ new-index)
+        ent.id =
+            EntityId
+                _idx = self._next-vacant
+                _gid = gid
+
+        gid += 1
+        self._next-vacant += 1
+        view ent
+
+    fn remove (self id)
+        # make sure the id is valid
+        'get self id
+        'swap self._entities id.idx ((countof self._entities) - 1)
+
 fn init-archetypes ()
     set-archetype EntityKind.Player
-        fn (id)
+        fn ()
             Entity
-                id = id
                 sprite = 23
                 tag = EntityKind.Player
                 components =
@@ -61,5 +109,5 @@ fn init-archetypes ()
     locals;
 
 do
-    let EntityKind Entity archetypes init-archetypes
+    let EntityKind EntityId Entity EntityList EntityError archetypes init-archetypes
     locals;
