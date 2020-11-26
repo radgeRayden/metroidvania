@@ -8,6 +8,7 @@ using import Map
 using import Array
 
 struct SpriteComponent
+let EntityId = u32
     position : vec2
     texcoords : vec4
     page : u32
@@ -22,7 +23,7 @@ enum EntityKind plain
         hash (self as i32)
 
 struct Entity
-    id : u32
+    id : EntityId
     position : vec2
     velocity : vec2
     grounded? : bool
@@ -30,10 +31,11 @@ struct Entity
     sprite : u32 # FIXME: shouldn't be here, and moreover should include texcoords
     tag : EntityKind = EntityKind.Player
 
-global archetypes : (Map EntityKind (@ (function (uniqueof Entity -1))))
+let EntityConstructor = (@ (function (uniqueof Entity -1) EntityId))
+global archetypes : (Map EntityKind EntityConstructor)
 
 inline set-archetype (tag f)
-    'set archetypes tag (static-typify f)
+    'set archetypes tag (static-typify f EntityId)
 
 let ComponentList = (Array Component)
 typedef+ ComponentList
@@ -48,8 +50,9 @@ typedef+ ComponentList
 
 fn init-archetypes ()
     set-archetype EntityKind.Player
-        fn ()
+        fn (id)
             Entity
+                id = id
                 sprite = 23
                 tag = EntityKind.Player
                 components =

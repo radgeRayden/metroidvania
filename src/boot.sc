@@ -738,6 +738,8 @@ struct Scene
                 vec2
                     x
                     (scene-height-px as i32) - 1 - (y as i32)
+
+            let entity-index = (countof entities)
             let player =
                 'append entities
                     call
@@ -745,7 +747,8 @@ struct Scene
                             'get entity.archetypes entity.EntityKind.Player
                         else
                             error "unknown entity type"
-            let entity-index = (countof entities)
+                        entity-index as u32
+
             player.position = (tiled->worldpos px py)
             player.id = (entity-index as u32)
             # end of the hack
