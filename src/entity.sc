@@ -70,28 +70,29 @@ struct EntityList
         view ent
 
     fn add (self ent)
-        let new-index = self._next-vacant
+        let new-index = (deref self._next-vacant)
         global gid : usize 0
-        if (new-index == 0)
+        if (new-index == (countof self._entities))
             'append self._entities ent
+            self._next-vacant = (countof self._entities)
         else
+            # FIXME: what to do with next-vacant?
             self._entities @ new-index = ent
 
         let ent = (self._entities @ new-index)
         ent.id =
             EntityId
-                _idx = self._next-vacant
+                _idx = new-index
                 _gid = gid
-
+       
         gid += 1
-        self._next-vacant += 1
         view ent
 
     fn remove (self id)
         # make sure the id is valid
         'get self id
         let last-index = ((countof self._entities) - 1)
-        'swap self._entities id.idx last-index
+        'swap self._entities id._idx last-index
         'remove self._entities last-index
 
 let EntityConstructor = (@ (function (uniqueof Entity -1)))
