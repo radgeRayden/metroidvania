@@ -69,9 +69,9 @@ struct EntityList
             raise EntityError.StaleReference
         view ent
 
+    global gid : usize
     fn add (self ent)
         let new-index = (deref self._next-vacant)
-        global gid : usize 0
         if (new-index == (countof self._entities))
             'append self._entities ent
             self._next-vacant = (countof self._entities)
