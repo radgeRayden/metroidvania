@@ -6,18 +6,17 @@ using import glm
 using import String
 using import Map
 using import Array
+using import Rc
 
-struct SpriteComponent
-struct EntityId plain
-    _idx : usize
-    _gid : usize
-    inline __== (selfT otherT)
-        static-if (selfT == otherT)
-            inline (self other)
-                and
-                    self._idx == other._idx
-                    self._gid == other._gid
+let EntityId = u32
 
+typedef ComponentBase < Struct
+    fn update (...)
+        ;
+    fn draw (...)
+        ;
+
+struct SpriteComponent < ComponentBase
     position : vec2
     texcoords : vec4
     page : u32
@@ -33,12 +32,14 @@ enum EntityKind plain
 
 struct Entity
     id : EntityId
+    tag : EntityKind = EntityKind.Player
+    # if false, can be removed at any moment
+    alive? : bool = true
     position : vec2
     velocity : vec2
     grounded? : bool
     components : (Array Component)
     sprite : u32 # FIXME: shouldn't be here, and moreover should include texcoords
-    tag : EntityKind = EntityKind.Player
 
 
 let ComponentList = (Array Component)
@@ -56,44 +57,33 @@ enum EntityError plain
     StaleReference
 
 struct EntityList
-    _next-vacant : usize = 0
-    _entities : (Array Entity)
+    _entities : (Array (Rc Entity))
+    _entity-lookup : (Map EntityId (Rc Entity))
+
     inline __as (selfT otherT)
         static-if (otherT == Generator)
             inline (self)
                 self._entities as Generator
 
-    fn get (self id)
-        let ent = (self._entities @ id._idx)
-        if (ent.id != id)
-            raise EntityError.StaleReference
-        view ent
+    inline get (self id)
+        'get self._entity-lookup id
 
-    global gid : usize
+    global gid : EntityId
     fn add (self ent)
-        let new-index = (deref self._next-vacant)
-        if (new-index == (countof self._entities))
-            'append self._entities ent
-            self._next-vacant = (countof self._entities)
-        else
-            # FIXME: what to do with next-vacant?
-            self._entities @ new-index = ent
+        let ent = ('append self._entities (Rc.wrap ent))
+        ent.id = gid
+        'set self._entity-lookup gid (copy ent)
 
-        let ent = (self._entities @ new-index)
-        ent.id =
-            EntityId
-                _idx = new-index
-                _gid = gid
-       
         gid += 1
-        view ent
+        ent
 
-    fn remove (self id)
-        # make sure the id is valid
-        'get self id
-        let last-index = ((countof self._entities) - 1)
-        'swap self._entities id._idx last-index
-        'remove self._entities last-index
+    fn purge (self)
+        """"Removes all dead entities.
+        for ent in self
+            if (not ent.alive?)
+                'swap self._entities ((countof self._entities) - 1)
+                'pop self._entities
+                'discard self._entity-lookup ent.id
 
 let EntityConstructor = (@ (function (uniqueof Entity -1)))
 let ArchetypeMap = (Map EntityKind EntityConstructor)
