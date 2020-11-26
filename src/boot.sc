@@ -1119,10 +1119,17 @@ fn draw ()
         level1.tileset.tile-height as f32
 
     'clear level1.entity-sprites
-    'add level1.entity-sprites
-        Sprite
-            position = (floor player.position)
-            page = player.sprite
+    for ent in level1.entities
+        for component in ent.components
+            dispatch component
+            case Sprite (s)
+                print s.page
+                'add level1.entity-sprites
+                    Sprite
+                        position = s.position
+                        page = s.page
+            default
+                ;
 
     'apply main-camera sprite-shader
 
