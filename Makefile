@@ -24,6 +24,7 @@ STATIC_LIBS = $(CIMGUI_STATIC) $(PHYSFS_STATIC) $(GLFW_STATIC)
 
 MAIN_OBJ = game.o
 
+LFLAGS_LIBGAME =
 LFLAGS = -Wl,-rpath='$$ORIGIN' -L. -Wl,--whole-archive $(addprefix -l:, $(STATIC_LIBS)) -Wl,--no-whole-archive -lpthread -lm -L./bin -lscopesrt 
 
 UNAME_S := $(shell uname -s)
@@ -49,6 +50,7 @@ ifeq ($(OS), Windows_NT)
 	GLFW_SHARED = glfw3.dll
 	CIMGUI_SHARED = cimgui.dll
 	LFLAGS += -Wl,--export-all -lgdi32
+	LFLAGS_LIBGAME += -Wl,--export-all
 endif
 
 SHARED_LIBS = $(addprefix ./lib/, $(LIBGAME_SHARED) $(PHYSFS_SHARED) $(GLFW_SHARED) $(CIMGUI_SHARED))
@@ -83,7 +85,7 @@ $(GLFW_STATIC):
 
 lib/$(LIBGAME_SHARED):$(LIBGAME_DEPS)
 	mkdir -p ./lib
-	$(CC) -o ./lib/$(LIBGAME_SHARED) $(LIBGAME_DEPS) -shared $(CFLAGS) -Wl,--export-all
+	$(CC) -o ./lib/$(LIBGAME_SHARED) $(LIBGAME_DEPS) -shared $(CFLAGS) $(LFLAGS_LIBGAME)
 
 lib/$(PHYSFS_SHARED):
 	mkdir -p ./lib
