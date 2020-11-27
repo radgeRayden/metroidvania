@@ -109,100 +109,6 @@ run-stage;
 
 # HELPERS AND TYPES
 # ================================================================================
-let GPUBuffer =
-    make-handle-type 'GPUBuffer u32
-        inline __drop (self)
-            local handle : u32 = (storagecast (view self))
-            gl.DeleteBuffers 1 &handle
-            ;
-
-struct 2DVertex plain
-    position : vec2
-    color : vec4
-
-fn gl-make-buffer (kind size)
-    local handle : u32
-    gl.GenBuffers 1 &handle
-    gl.BindBuffer (kind as u32) handle
-    gl.NamedBufferStorage handle (size as i64) null
-        gl.GL_DYNAMIC_STORAGE_BIT
-    GPUBuffer (deref handle)
-
-typedef Mesh < Struct
-    @@ memo
-    inline __typecall (cls attributeT indexT)
-        struct (.. "Mesh<" (tostring attributeT) "," (tostring indexT) ">")
-            let IndexFormat = indexT
-            let AttributeType = attributeT
-
-            attribute-data : (Array AttributeType)
-            _attribute-buffer : GPUBuffer
-            _attribute-buffer-size : usize
-            index-data : (Array IndexFormat)
-            _index-buffer : GPUBuffer
-            _index-buffer-size : usize
-
-            fn ensure-storage (self)
-                """"If store size is not enough to contain uploaded data, destroys the
-                    attached GPU resources and recreates them with differently sized data stores.
-                let attr-data-size = ((sizeof AttributeType) * (countof self.attribute-data))
-                let index-data-size = ((sizeof IndexFormat) * (countof self.index-data))
-
-                # find a size that can hold the amount of data we want by multiplying by 2 repeatedly
-                inline find-next-size (current required)
-                    if (current == 0)
-                        required
-                    else
-                        loop (size = (deref current))
-                            assert (size >= current) # probably an overflow
-                            if (size >= required)
-                                break size
-                            size * 2
-
-                if (self._attribute-buffer-size < attr-data-size)
-                    let new-size = (find-next-size self._attribute-buffer-size attr-data-size)
-                    self._attribute-buffer =
-                        gl-make-buffer gl.GL_SHADER_STORAGE_BUFFER new-size
-                    self._attribute-buffer-size = new-size
-                if (self._index-buffer-size < index-data-size)
-                    let new-size = (find-next-size self._index-buffer-size index-data-size)
-                    self._index-buffer =
-                        gl-make-buffer gl.GL_ELEMENT_ARRAY_BUFFER new-size
-                    self._index-buffer-size = new-size
-                ;
-
-            fn update (self)
-                """"Uploads mesh data to GPU.
-                'ensure-storage self
-                gl.NamedBufferSubData self._attribute-buffer 0 (self._attribute-buffer-size as i64)
-                    (imply self.attribute-data pointer) as voidstar
-                gl.NamedBufferSubData self._index-buffer 0 (self._index-buffer-size as i64)
-                    (imply self.index-data pointer) as voidstar
-
-            inline __typecall (cls expected-attr-count)
-                let expected-index-count = ((expected-attr-count * 1.5) as usize) # estimate
-                let attr-store-size = ((sizeof AttributeType) * expected-attr-count)
-                let ibuffer-store-size = ((sizeof IndexFormat) * expected-index-count)
-
-                let attr-handle =
-                    gl-make-buffer gl.GL_SHADER_STORAGE_BUFFER attr-store-size
-
-                let ibuffer-handle =
-                    gl-make-buffer gl.GL_ELEMENT_ARRAY_BUFFER ibuffer-store-size
-
-                local attr-array : (Array AttributeType)
-                'reserve attr-array expected-attr-count
-                local index-array : (Array IndexFormat)
-                'reserve index-array expected-index-count
-
-                super-type.__typecall cls
-                    attribute-data = attr-array
-                    _attribute-buffer = attr-handle
-                    _attribute-buffer-size = attr-store-size
-                    index-data = index-array
-                    _index-buffer = ibuffer-handle
-                    _index-buffer-size = ibuffer-store-size
-
 fn load-full-file (filename)
     let file = (physfs.openRead filename)
     if (file == null)
@@ -347,13 +253,13 @@ struct Sprite plain
     page : u32
 
 struct SpriteBatch
-    sprites : (Mesh Sprite u16)
+    sprites : (renderer.Mesh Sprite u16)
     image : (Rc ArrayTexture2D)
     _dirty? : bool
 
     inline... __typecall (cls, image : (Rc ArrayTexture2D))
         super-type.__typecall cls
-            sprites = ((Mesh Sprite u16) 128)
+            sprites = ((renderer.Mesh Sprite u16) 128)
             image = image
             _dirty? = false
     case (cls image-filename layer-width layer-height)
