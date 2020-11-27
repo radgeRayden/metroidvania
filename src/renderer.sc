@@ -11,7 +11,9 @@ import .filesystem
 using import .common
 using constants
 
-fn init ()
+# LOW LEVEL BASE
+# ================================================================================
+fn init-gl ()
     gl.init;
 
     enum OpenGLDebugLevel plain
@@ -404,4 +406,6 @@ do
         SpriteBatch
         GPUShaderProgram
         GPUTexture
+
+        sprite-layers
     locals;

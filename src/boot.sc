@@ -677,25 +677,20 @@ fn draw ()
         level1.tileset.tile-width as f32
         level1.tileset.tile-height as f32
 
-    'clear level1.entity-sprites
+    for layer in renderer.sprite-layers
+        'clear layer
     for ent in level1.entities
         for component in ent.components
-            dispatch component
-            case Sprite (s)
-                'add level1.entity-sprites
-                    Sprite
-                        position = s.position
-                        page = s.page
-            default
-                ;
+            'draw component ent
 
     'apply main-camera sprite-shader
 
     'update level1.background-sprites.sprites
     'draw level1.background-sprites
 
-    'update level1.entity-sprites.sprites
-    'draw level1.entity-sprites
+    for layer in renderer.sprite-layers
+        'update layer.sprites
+        'draw layer
 
 global last-time = (glfw.GetTime)
 while (not (glfw.WindowShouldClose main-window))

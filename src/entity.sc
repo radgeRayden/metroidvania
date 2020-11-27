@@ -1,5 +1,8 @@
 using import .radlib.core-extensions
 
+using import .common
+import .renderer
+
 using import enum
 using import struct
 using import glm
@@ -17,12 +20,15 @@ typedef ComponentBase < Struct
         ;
 
 struct SpriteComponent < ComponentBase
-    position : vec2
-    texcoords : vec4
-    page : u32
+    layer : u32
+    sprite : Sprite
 
     fn update (self parent)
-        self.position = (floor parent.position)
+        self.sprite.position = (floor parent.position)
+        ;
+
+    fn draw (self parent)
+        'add (renderer.sprite-layers @ self.layer) self.sprite
         ;
 
 enum Component
@@ -31,6 +37,9 @@ enum Component
     inline update (self parent)
         'apply self
             (T self) -> ('update self parent)
+    inline draw (self parent)
+        'apply self
+            (T self) -> ('draw self parent)
 
 enum EntityKind plain
     Player = 0
@@ -46,8 +55,6 @@ struct Entity
     velocity : vec2
     grounded? : bool
     components : (Array Component)
-    sprite : u32 # FIXME: shouldn't be here, and moreover should include texcoords
-
 
 let ComponentList = (Array Component)
 typedef+ ComponentList
@@ -120,11 +127,14 @@ fn init-archetypes ()
     set-archetype EntityKind.Player
         fn ()
             Entity
-                sprite = 23
                 tag = EntityKind.Player
                 components =
                     ComponentList
-                        SpriteComponent (page = 23)
+                        SpriteComponent
+                            layer = 0
+                            Sprite
+                                page = 0
+                                texcoords = (vec4 (320 / 1024) 0 (328 / 1024) (8 / 1024))
     locals;
 
 do
