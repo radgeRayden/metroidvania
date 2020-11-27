@@ -1,7 +1,11 @@
 using import struct
 using import glm
+using import Array
+
+import .filesystem
 
 let C = (import .radlib.libc)
+let stbi = (import .FFI.stbi)
 
 let argc argv = (launch-args)
 let BUILD_MODE_AMALGAMATED? = ((argc > 2) and ((string (argv @ 2)) == "-amalgamated"))
