@@ -377,6 +377,25 @@ typedef GPUShaderProgram <:: u32
     inline __drop (self)
         gl.DeleteProgram (storagecast (view self))
 
+# GAME DRAWING CODE
+# ================================================================================
+global sprite-layers : (Array SpriteBatch 4)
+
+fn init ()
+    init-gl;
+
+    local atlases : (Array String)
+    for name in (filesystem.get-directory-files "sprites")
+        let match? start end = ('match? "atlas[0-9]+.png" (name as string))
+        if match?
+            'append atlases ("sprites/" .. name)
+
+    let mega-atlas =
+        Rc.wrap (ArrayTexture2D atlases ATLAS_PAGE_SIZE.x ATLAS_PAGE_SIZE.y)
+    for i in (range ('capacity sprite-layers))
+        'append sprite-layers
+            SpriteBatch (copy mega-atlas)
+
 do
     let init
         GPUBuffer
