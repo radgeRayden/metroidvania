@@ -12,20 +12,20 @@ using import String
 using import itertools
 using import Option
 
-import .renderer
 import .math
 import .entity
 import .filesystem
 using import .common
+import .renderer
+using renderer
+using constants
 
 let argc argv = (launch-args)
 
 # DEPENDENCIES
 # ================================================================================
-
-let amalgamated? = ((argc > 2) and ((string (argv @ 2)) == "-amalgamated"))
 # prototype mode
-if (not amalgamated?)
+if (not BUILD_MODE_AMALGAMATED?)
     switch operating-system
     case 'linux
         load-library "../lib/libgame.so"
@@ -50,26 +50,6 @@ let stbi = (import .FFI.stbi)
 let cjson = (import .FFI.cjson)
 let c2 = (import .FFI.c2)
 let ig = (import .FFI.imgui)
-
-# CONSTANTS
-# ================================================================================
-let INTERNAL_RESOLUTION = (ivec2 (1920 // 6) (1080 // 6))
-let ATLAS_PAGE_SIZE = (ivec2 1024 1024)
-let GAME_VERSION =
-    static-if amalgamated?
-        string (call (extern 'GAME_VERSION (function rawstring)))
-    else
-        do
-            label git-log
-                let version-size = 19
-                let handle = (C.stdio.popen "git log -1 --format='v%cd.%h' --date=short 2>/dev/null" "r")
-                if (handle == null)
-                    merge git-log "UNKNOWN-nogit"
-                local str : (array i8 version-size)
-                C.stdio.fgets &str version-size handle
-                if ((C.stdio.pclose handle) != 0)
-                    merge git-log "UNKNOWN-nogit"
-                string (&str as (pointer i8)) version-size
 
 # DEPENDENCY INITIALIZATION
 # ================================================================================
@@ -107,238 +87,6 @@ run-stage;
 
 # HELPERS AND TYPES
 # ================================================================================
-fn load-image-data (filename)
-    let data = (filesystem.load-full-file filename)
-    local x : i32
-    local y : i32
-    local n : i32
-    let img-data =
-        stbi.load_from_memory
-            (imply data pointer) as (pointer u8)
-            (countof data) as i32
-            &x
-            &y
-            &n
-            0
-    let data-len = (x * y * n)
-    _
-        Struct.__typecall (Array u8)
-            _items = img-data
-            _count = data-len
-            _capacity = data-len
-        deref x
-        deref y
-        deref n
-
-struct ImageData
-    data : (Array u8)
-    width : usize
-    height : usize
-    channels : u32
-
-    inline __typecall (cls filename)
-        let data w h c = (load-image-data filename)
-        super-type.__typecall cls
-            data = data
-            width = (w as usize)
-            height = (h as usize)
-            channels = (c as u32)
-
-let GPUTexture =
-    make-handle-type 'GPUTexture u32
-        inline __drop (self)
-            gl.DeleteTextures 1 (&local (storagecast (view self)))
-
-struct ArrayTexture2D
-    _handle : GPUTexture
-    _layer-width : u32
-    _layer-height : u32
-    _layer-count : u32
-
-    # NOTE: the layer count is inferred.
-    inline... __typecall (cls, filenames : (Array String), layer-width, layer-height)
-        assert ((countof filenames) > 0)
-        local handle : u32
-        # TODO: accomodate more mip levels
-        let mip-count = 1
-        # NOTE: to deduce the layer count, it's easier to load all images in memory at once.
-        local images : (Array ImageData)
-        for file in filenames
-            'append images (ImageData file)
-
-        let layer-count =
-            fold (layer-count = 0:usize) for img-data in images
-                assert (((img-data.width % layer-width) == 0) and ((img-data.height % layer-height) == 0))
-                    "source image size wasn't a multiple of the requested layer size"
-
-                subimg-columns := img-data.width // layer-width
-                subimg-rows := img-data.height // layer-height
-                layer-count + (subimg-rows * subimg-columns)
-
-        gl.GenTextures 1 &handle
-        gl.BindTexture gl.GL_TEXTURE_2D_ARRAY handle
-        gl.TexStorage3D gl.GL_TEXTURE_2D_ARRAY mip-count
-            gl.GL_SRGB8_ALPHA8
-            layer-width as i32
-            layer-height as i32
-            layer-count as i32
-
-        for img-data in images
-            subimg-columns    := img-data.width // layer-width
-            subimg-rows       := img-data.height // layer-height
-            local-layer-count := subimg-rows * subimg-columns
-
-            gl.PixelStorei gl.GL_UNPACK_ROW_LENGTH (img-data.width as i32)
-            for i in (range local-layer-count)
-                let col row =
-                    i % subimg-columns
-                    i // subimg-columns
-                let first-texel =
-                    +
-                        layer-width * layer-height * subimg-columns * row
-                        layer-width * col
-
-                gl.TextureSubImage3D
-                    handle
-                    0 # mip level
-                    0 # xoffset
-                    0 # yoffset
-                    i as i32 # zoffset
-                    layer-width as i32
-                    layer-height as i32
-                    1 # depth
-                    gl.GL_RGBA
-                    gl.GL_UNSIGNED_BYTE
-                    & (img-data.data @ (first-texel * img-data.channels))
-            gl.TexParameteri gl.GL_TEXTURE_2D_ARRAY gl.GL_TEXTURE_MIN_FILTER gl.GL_NEAREST
-            gl.TexParameteri gl.GL_TEXTURE_2D_ARRAY gl.GL_TEXTURE_MAG_FILTER gl.GL_NEAREST
-            gl.TexParameteri gl.GL_TEXTURE_2D_ARRAY gl.GL_TEXTURE_WRAP_S gl.GL_CLAMP_TO_EDGE
-            gl.TexParameteri gl.GL_TEXTURE_2D_ARRAY gl.GL_TEXTURE_WRAP_T gl.GL_CLAMP_TO_EDGE
-
-        gl.PixelStorei gl.GL_UNPACK_ROW_LENGTH 0
-
-        super-type.__typecall cls
-            _handle = (GPUTexture handle)
-            _layer-width = layer-width
-            _layer-height = layer-height
-            _layer-count = (layer-count as u32)
-
-    case (cls, filename : String, layer-width, layer-height)
-        local filenames : (Array String)
-        'append filenames (copy filename)
-        this-function cls filenames layer-width layer-height
-
-struct SpriteBatch
-    sprites : (renderer.Mesh Sprite u16)
-    image : (Rc ArrayTexture2D)
-    _dirty? : bool
-
-    inline... __typecall (cls, image : (Rc ArrayTexture2D))
-        super-type.__typecall cls
-            sprites = ((renderer.Mesh Sprite u16) 128)
-            image = image
-            _dirty? = false
-    case (cls image-filename layer-width layer-height)
-        this-function cls
-            Rc.wrap (ArrayTexture2D image-filename layer-width layer-height)
-    case (cls image-filename)
-        this-function cls
-            Rc.wrap (ArrayTexture2D image-filename (unpack ATLAS_PAGE_SIZE))
-
-    fn add (self sprite)
-        let sprites = self.sprites
-
-        self._dirty? = true
-        local indices =
-            arrayof u16 0 2 3 3 1 0
-        idx-offset := (countof sprites.attribute-data) * 4
-        for idx in indices
-            'append sprites.index-data ((idx-offset + idx) as u16)
-        'append sprites.attribute-data sprite
-        # return sprite index
-        (countof sprites.attribute-data) - 1
-
-    fn clear (self)
-        'clear self.sprites.attribute-data
-        'clear self.sprites.index-data
-
-    fn draw (self)
-        if self._dirty?
-            'update self.sprites
-            self._dirty? = false
-        let attribute-buffer index-buffer index-count =
-            _
-                self.sprites._attribute-buffer
-                self.sprites._index-buffer
-                countof self.sprites.index-data
-
-        gl.BindBufferBase gl.GL_SHADER_STORAGE_BUFFER 0 attribute-buffer
-        gl.BindBuffer gl.GL_ELEMENT_ARRAY_BUFFER index-buffer
-        gl.BindTextures 0 1
-            &local (storagecast (view self.image._handle))
-        gl.DrawElements gl.GL_TRIANGLES (index-count as i32)
-            \ gl.GL_UNSIGNED_SHORT null
-        ;
-
-fn gl-compile-shader (source kind)
-    imply kind i32
-    source as:= rawstring
-
-    let handle = (gl.CreateShader (kind as u32))
-    gl.ShaderSource handle 1 (&local source) null
-    gl.CompileShader handle
-
-    local compilation-status : i32
-    gl.GetShaderiv handle gl.GL_COMPILE_STATUS &compilation-status
-    if (not compilation-status)
-        local log-length : i32
-        local message : (array i8 1024)
-        gl.GetShaderInfoLog handle (sizeof message) &log-length &message
-        print (default-styler 'style-error "Shader compilation error:")
-        print (string &message (log-length as usize))
-    handle
-
-fn gl-link-shader-program (vs fs)
-    let program = (gl.CreateProgram)
-    gl.AttachShader program vs
-    gl.AttachShader program fs
-    gl.LinkProgram program
-    # could make this less copy pastey by abstracting away error logging
-    local link-status : i32
-    gl.GetProgramiv program gl.GL_LINK_STATUS &link-status
-    if (not link-status)
-        local log-length : i32
-        local message : (array i8 1024)
-        gl.GetProgramInfoLog program (sizeof message) &log-length &message
-        print (default-styler 'style-error "Shader program linking error:")
-        print (string &message (log-length as usize))
-    # because we preemptively delete the shader stages, they are
-        already marked for deletion when the program is dropped.
-    gl.DeleteShader fs
-    gl.DeleteShader vs
-    program
-
-let GPUShaderProgram =
-    make-handle-type 'GPUShaderProgram u32
-        inline __drop (self)
-            gl.DeleteProgram (storagecast (view self))
-
-struct ShaderProgram
-    _handle : GPUShaderProgram
-    inline __typecall (cls vs fs)
-        let vertex-module =
-            gl-compile-shader
-                static-compile-glsl 450 'vertex (static-typify vs)
-                gl.GL_VERTEX_SHADER
-        let fragment-module =
-            gl-compile-shader
-                static-compile-glsl 450 'fragment (static-typify fs)
-                gl.GL_FRAGMENT_SHADER
-
-        let program = (gl-link-shader-program vertex-module fragment-module)
-        super-type.__typecall cls
-            _handle = (bitcast program GPUShaderProgram)
-
 inline json-array->generator (arr)
     Generator
         inline "start" ()
@@ -611,7 +359,7 @@ struct Camera plain
                 math.ortho self.viewport.x self.viewport.y
                 math.translate (floor -self.position.xy0)
         gl.UniformMatrix4fv
-            gl.GetUniformLocation shader._handle "transform"
+            gl.GetUniformLocation shader "transform"
             1
             false
             (&local transform) as (pointer f32)
@@ -671,8 +419,8 @@ fn sprite-fragment-shader ()
     uniform sprite-tex : sampler2DArray
     fcolor = (texture sprite-tex vtexcoord)
 
-global sprite-shader = (ShaderProgram sprite-vertex-shader sprite-fragment-shader)
-gl.UseProgram sprite-shader._handle
+global sprite-shader = (GPUShaderProgram sprite-vertex-shader sprite-fragment-shader)
+gl.UseProgram sprite-shader
 
 entity.init-archetypes;
 global level1 = (Scene "levels/1.json")
@@ -682,8 +430,8 @@ global main-camera : Camera
     viewport = (vec2 INTERNAL_RESOLUTION)
 
 global main-render-target : u32
-global fb-color-attachment : GPUTexture
-global fb-depth-attachment : GPUTexture
+global fb-color-attachment : GPUTexture 0
+global fb-depth-attachment : GPUTexture 0
 
 # TODO: generic function to create textures
 gl.GenTextures 1 (&fb-color-attachment as (mutable@ u32))
@@ -922,7 +670,7 @@ fn draw ()
     gl.Clear (gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
     gl.Uniform2f
-        gl.GetUniformLocation sprite-shader._handle "layer_size"
+        gl.GetUniformLocation sprite-shader "layer_size"
         level1.tileset.tile-width as f32
         level1.tileset.tile-height as f32
 
