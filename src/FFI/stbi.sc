@@ -8,7 +8,6 @@ define-scope stbi
 
     using header.extern filter "^stbi_"
 
-define-scope stbiw
     let header =
         include
             options (.. "-I" module-dir "/../../3rd-party/stb")
@@ -16,4 +15,4 @@ define-scope stbiw
 
     using header.extern filter "^stbi_"
 
-sanitize-scope (stbi .. stbiw) "^stbi_"
+sanitize-scope stbi "^stbi_"
