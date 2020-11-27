@@ -15,6 +15,7 @@ using import Option
 import .renderer
 import .math
 import .entity
+using import .common
 
 let argc argv = (launch-args)
 
@@ -243,14 +244,6 @@ struct ArrayTexture2D
         local filenames : (Array String)
         'append filenames (copy filename)
         this-function cls filenames layer-width layer-height
-
-struct Sprite plain
-    position : vec2
-    scale : vec2 = (vec2 1)
-    pivot : vec2
-    rotation : f32
-    texcoords : vec4 = (vec4 0 0 1 1)
-    page : u32
 
 struct SpriteBatch
     sprites : (renderer.Mesh Sprite u16)
