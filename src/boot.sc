@@ -53,6 +53,10 @@ let ig = (import .FFI.imgui)
 
 # DEPENDENCY INITIALIZATION
 # ================================================================================
+
+# NOTE: subsequent modules depend on it, so it must be initialized first.
+filesystem.init argv
+
 glfw.SetErrorCallback
     fn "glfw-error" (error-code message)
         assert false (string message)
@@ -81,7 +85,6 @@ local io = (ig.GetIO)
 ig.impl.Glfw_InitForOpenGL main-window true
 ig.impl.OpenGL3_Init null
 
-filesystem.init argv
 
 run-stage;
 
