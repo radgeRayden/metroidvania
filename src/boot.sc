@@ -51,6 +51,24 @@ let cjson = (import .FFI.cjson)
 let c2 = (import .FFI.c2)
 let ig = (import .FFI.imgui)
 
+inline json-array->generator (arr)
+    Generator
+        inline "start" ()
+            arr.child
+        inline "valid?" (self)
+            self != null
+        inline "at" (self)
+            self
+        inline "next" (self)
+            self.next
+
+typedef+ (mutable@ cjson.cJSON)
+    inline __as (selfT otherT)
+        static-if (otherT == Generator)
+            json-array->generator
+
+run-stage;
+
 # DEPENDENCY INITIALIZATION
 # ================================================================================
 
@@ -90,17 +108,6 @@ run-stage;
 
 # HELPERS AND TYPES
 # ================================================================================
-inline json-array->generator (arr)
-    Generator
-        inline "start" ()
-            arr.child
-        inline "valid?" (self)
-            self != null
-        inline "at" (self)
-            self
-        inline "next" (self)
-            self.next
-
 struct TileProperties
     solid? : bool
 
