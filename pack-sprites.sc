@@ -43,7 +43,6 @@ fn paste-image (src dst dx dy)
             inline (offset)
                 dst.data @ (dst-texel + offset) = (src.data @ (src-texel + offset))
             va-range 4
-    print "success"
     ;
 
 let base-path = "Roguelike Dungeon - Asset Bundle/Sprites/Monsters/Skeleton/Variant1"
@@ -56,7 +55,6 @@ loop (idx x y = 0 0:usize 0:usize)
 
     let img = (ImageData (base-path .. "/" .. (string cur)))
     try
-        print x y
         paste-image img sheet x y
     else
         ;
