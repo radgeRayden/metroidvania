@@ -1123,7 +1123,6 @@ fn draw ()
         for component in ent.components
             dispatch component
             case Sprite (s)
-                print s.page
                 'add level1.entity-sprites
                     Sprite
                         position = s.position
