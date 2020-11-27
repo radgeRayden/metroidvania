@@ -15,6 +15,7 @@ using import Option
 import .renderer
 import .math
 import .entity
+import .filesystem
 using import .common
 
 let argc argv = (launch-args)
@@ -45,7 +46,6 @@ let C = (import .radlib.libc)
 
 let glfw = (import .FFI.glfw)
 let gl = (import .FFI.glad)
-let physfs = (import .FFI.physfs)
 let stbi = (import .FFI.stbi)
 let cjson = (import .FFI.cjson)
 let c2 = (import .FFI.c2)
@@ -95,37 +95,20 @@ glfw.SwapInterval 1
 
 renderer.init;
 
-if (not (physfs.init (argv @ 0)))
-    error "Failed to initialize PHYSFS."
-physfs.mount "../data" "/" true
-physfs.setWriteDir "."
-
 ig.CreateContext null
 local io = (ig.GetIO)
 
 ig.impl.Glfw_InitForOpenGL main-window true
 ig.impl.OpenGL3_Init null
 
+filesystem.init argv
+
 run-stage;
 
 # HELPERS AND TYPES
 # ================================================================================
-fn load-full-file (filename)
-    let file = (physfs.openRead filename)
-    if (file == null)
-        hide-traceback;
-        error (.. "could not open file " (string filename))
-
-    let size = (physfs.fileLength file)
-    local data : (Array i8)
-    'resize data size
-    let read = (physfs.readBytes file data (size as u64))
-    assert (read == size)
-
-    data
-
 fn load-image-data (filename)
-    let data = (load-full-file filename)
+    let data = (filesystem.load-full-file filename)
     local x : i32
     local y : i32
     local n : i32
@@ -379,7 +362,7 @@ struct Tileset
     global tileset-cache : (Map String (Rc this-type))
     inline __typecall (cls filename)
         fn load-tiled-tileset (filename)
-            let data = (load-full-file filename)
+            let data = (filesystem.load-full-file filename)
             let json-data = (cjson.ParseWithLength data (countof data))
             let image-name =
                 cjson.GetStringValue
@@ -475,7 +458,7 @@ struct Scene
 
     inline __typecall (cls filename)
         fn load-tiled-level (filename)
-            let tiled-scene = (cjson.Parse (load-full-file filename))
+            let tiled-scene = (cjson.Parse (filesystem.load-full-file filename))
 
             # we'll assume a single tileset per level atm
             let tileset =
