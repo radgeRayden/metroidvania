@@ -4,24 +4,28 @@
             "name": "Skeleton_Death",
             "images": [
                 {
+                    "page": 0,
                     "x": 0,
                     "y": 0,
                     "width": 40,
                     "height": 40
                 },
                 {
+                    "page": 0,
                     "x": 40,
                     "y": 0,
                     "width": 40,
                     "height": 40
                 },
                 {
+                    "page": 0,
                     "x": 80,
                     "y": 0,
                     "width": 40,
                     "height": 40
                 },
                 {
+                    "page": 0,
                     "x": 120,
                     "y": 0,
                     "width": 40,
@@ -33,24 +37,28 @@
             "name": "Skeleton_Walk",
             "images": [
                 {
+                    "page": 0,
                     "x": 160,
                     "y": 0,
                     "width": 40,
                     "height": 40
                 },
                 {
+                    "page": 0,
                     "x": 200,
                     "y": 0,
                     "width": 40,
                     "height": 40
                 },
                 {
+                    "page": 0,
                     "x": 240,
                     "y": 0,
                     "width": 40,
                     "height": 40
                 },
                 {
+                    "page": 0,
                     "x": 280,
                     "y": 0,
                     "width": 40,
@@ -63,18 +71,21 @@
             "name": "adve",
             "images": [
                 {
+                    "page": 0,
                     "x": 320,
                     "y": 0,
                     "width": 8,
                     "height": 8
                 },
                 {
+                    "page": 0,
                     "x": 328,
                     "y": 0,
                     "width": 8,
                     "height": 8
                 },
                 {
+                    "page": 0,
                     "x": 328,
                     "y": 8,
                     "width": 8,

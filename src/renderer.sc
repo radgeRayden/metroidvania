@@ -385,7 +385,7 @@ typedef GPUShaderProgram <:: u32
 
 # GAME DRAWING CODE
 # ================================================================================
-global sprite-metadata : (Map String (Array vec4))
+global sprite-metadata : (Map String (Array Sprite))
 global sprite-layers : (Array SpriteBatch 4)
 
 fn init ()
@@ -416,21 +416,27 @@ fn init ()
                 let rawstr = (cjson.GetStringValue (cjson.GetObjectItem group "name"))
                 String rawstr (C.string.strlen rawstr)
 
-        local texcoords : (Array vec4)
+        local sprites : (Array Sprite)
         let images = (cjson.GetObjectItem group "images")
         for image in images
-            let x y width height =
+            let page x y width height =
+                (cjson.GetObjectItem image "page") . valueint
                 (cjson.GetObjectItem image "x") . valueint
                 (cjson.GetObjectItem image "y") . valueint
                 (cjson.GetObjectItem image "width") . valueint
                 (cjson.GetObjectItem image "height") . valueint
-            'emplace-append texcoords
-                x / ATLAS_PAGE_SIZE.x
-                y / ATLAS_PAGE_SIZE.y
-                (x + width) / ATLAS_PAGE_SIZE.x
-                (y + height) / ATLAS_PAGE_SIZE.y
+            'append sprites
+                Sprite
+                    scale = (vec2 width height)
+                    page = (page as u32)
+                    texcoords =
+                        vec4
+                            x / ATLAS_PAGE_SIZE.x
+                            y / ATLAS_PAGE_SIZE.y
+                            (x + width) / ATLAS_PAGE_SIZE.x
+                            (y + height) / ATLAS_PAGE_SIZE.y
 
-        'set sprite-metadata group-name (deref texcoords)
+        'set sprite-metadata group-name (deref sprites)
 
     cjson.Delete metadata-json
 

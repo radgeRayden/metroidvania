@@ -152,6 +152,24 @@
                  "width":8,
                  "x":174,
                  "y":129.25
+                }, 
+                {
+                 "gid":211,
+                 "height":8,
+                 "id":11,
+                 "name":"skeeleton",
+                 "properties":[
+                        {
+                         "name":"archetype",
+                         "type":"int",
+                         "value":2
+                        }],
+                 "rotation":0,
+                 "type":"entity",
+                 "visible":true,
+                 "width":8,
+                 "x":84.75,
+                 "y":130.25
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -160,7 +178,7 @@
          "y":0
         }],
  "nextlayerid":4,
- "nextobjectid":10,
+ "nextobjectid":12,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.4.2",

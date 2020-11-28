@@ -254,15 +254,17 @@ struct Scene
                 let id = (tile.valueint as u32)
                 'append level-data id
                 'append collision-matrix ((tileset-obj.tile-properties @ (id - 1)) . solid?)
+
+            let tile-width tile-height = tileset-obj.tile-width tileset-obj.tile-height
             local background-sprites =
-                SpriteBatch tileset-obj.image tileset-obj.tile-width tileset-obj.tile-height
+                SpriteBatch tileset-obj.image tile-width tile-height
             for i x y in (enumerate (dim scene-width-tiles scene-height-tiles))
                 let tile = (level-data @ i)
                 let scale =
                     if (tile == 0)
                         vec2; # invisible tile
                     else
-                        vec2 1
+                        vec2 tile-width tile-height
                 'add background-sprites
                     Sprite
                         position =
@@ -387,7 +389,6 @@ fn sprite-vertex-shader ()
             data : (array Sprite)
 
     uniform transform : mat4
-    uniform layer_size : vec2
 
     out vtexcoord : vec3
         location = 2
@@ -419,7 +420,7 @@ fn sprite-vertex-shader ()
     # TODO: explain what this does in a comment
     gl_Position =
         * transform
-            vec4 (origin + pivot + (math.rotate ((vertex * layer_size * scale) - pivot) orientation)) 0 1
+            vec4 (origin + pivot + (math.rotate ((vertex * scale) - pivot) orientation)) 0 1
     vtexcoord = (vec3 (texcoords @ (idx % 4)) sprite.page)
 
 fn sprite-fragment-shader ()
@@ -688,10 +689,6 @@ fn draw ()
     gl.ClearColor 1.0 0.2 0.2 1.0
     gl.Clear (gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
-    gl.Uniform2f
-        gl.GetUniformLocation sprite-shader "layer_size"
-        level1.tileset.tile-width as f32
-        level1.tileset.tile-height as f32
 
     for layer in renderer.sprite-layers
         'clear layer

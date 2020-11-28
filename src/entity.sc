@@ -17,6 +17,7 @@ let EntityId = u32
 enum EntityKind plain
     Player = 0
     Ducky = 1
+    Skeleton = 2
     inline __hash (self)
         hash (self as i32)
 
@@ -86,7 +87,7 @@ global archetypes : ArchetypeMap
 inline set-archetype (tag f)
     'set archetypes tag (static-typify f)
 
-fn get-texcoords (group-name)
+fn get-sprite-group (group-name)
     try
         'get renderer.sprite-metadata group-name
     else
@@ -102,9 +103,7 @@ fn init-archetypes ()
                     ComponentList
                         components.Sprite
                             layer = 0
-                            Sprite
-                                page = 0
-                                texcoords = ((get-texcoords "adve") @ 1)
+                            (get-sprite-group "adve") @ 1
     set-archetype EntityKind.Ducky
         fn ()
             Entity
@@ -113,9 +112,17 @@ fn init-archetypes ()
                     ComponentList
                         components.Sprite
                             layer = 0
-                            Sprite
-                                page = 0
-                                texcoords = ((get-texcoords "adve") @ 0)
+                            (get-sprite-group "adve") @ 0
+
+    set-archetype EntityKind.Skeleton
+        fn ()
+            Entity
+                tag = EntityKind.Skeleton
+                components =
+                    ComponentList
+                        components.Sprite
+                            layer = 0
+                            (get-sprite-group "Skeleton_Walk") @ 2
     locals;
 
 do
