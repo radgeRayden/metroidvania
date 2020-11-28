@@ -1,5 +1,5 @@
-let C = (import radlib.libc)
-using import radlib.stringtools
+let C = (import .src.radlib.libc)
+using import .src.radlib.stringtools
 let libname =
     switch operating-system
     case 'linux
