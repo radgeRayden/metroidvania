@@ -351,7 +351,7 @@ struct Camera plain
         let target = (world->screen self target)
         # define focus box
         center := self.viewport / 2
-        focus-box-size := self.viewport * 0.5
+        focus-box-size := self.viewport.0y * 0.5
         f0 := center - (focus-box-size / 2)
         f1 := f0 + focus-box-size
 
@@ -582,7 +582,7 @@ fn player-move (pos)
 
 let jump-force = 120.
 let gravity = -240.
-let player-speed = 60.
+let player-speed = 40.
 let accel = 180.
 
 glfw.SetKeyCallback main-window
@@ -678,8 +678,7 @@ fn update (dt)
         yvel = 0
     else
         yvel = (clamp (yvel + (gravity * dt)) -100. 200.)
-    player-move (player.position + (vec2 (player.velocity.x * dt) 0))
-    player-move (player.position + (vec2 0 (player.velocity.y * dt)))
+    player-move (player.position + player.velocity * dt)
 
     'follow main-camera player.position
     'update level1.entities
