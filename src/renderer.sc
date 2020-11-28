@@ -9,6 +9,7 @@ using import glm
 
 let gl = (import .FFI.glad)
 let cjson = (import .FFI.cjson)
+let glfw = (import .FFI.glfw)
 let C = (import .radlib.libc)
 
 import .filesystem
@@ -383,12 +384,21 @@ typedef GPUShaderProgram <:: u32
     inline __drop (self)
         gl.DeleteProgram (storagecast (view self))
 
-# GAME DRAWING CODE
+# INTERFACE
 # ================================================================================
 global sprite-metadata : (Map String (Array Sprite))
 global sprite-layers : (Array SpriteBatch 4)
 
-fn init ()
+global main-render-target : u32
+global fb-color-attachment : GPUTexture 0
+global fb-depth-attachment : GPUTexture 0
+
+global main-window : (mutable@ glfw.window)
+
+fn init (window)
+    # TODO: this won't be necessary once windowing code
+    # is moved to a dedicated module.
+    main-window = window
     init-gl;
 
     local atlases : (Array String)
@@ -440,8 +450,89 @@ fn init ()
 
     cjson.Delete metadata-json
 
+    # TODO: generic function to create textures
+    gl.GenTextures 1 (&fb-color-attachment as (mutable@ u32))
+    gl.BindTexture gl.GL_TEXTURE_2D fb-color-attachment
+    gl.TexStorage2D gl.GL_TEXTURE_2D 1
+        gl.GL_SRGB8_ALPHA8
+        INTERNAL_RESOLUTION.x
+        INTERNAL_RESOLUTION.y
+
+    gl.GenTextures 1 (&fb-depth-attachment as (mutable@ u32))
+    gl.BindTexture gl.GL_TEXTURE_2D fb-depth-attachment
+    gl.TexStorage2D gl.GL_TEXTURE_2D 1
+        gl.GL_DEPTH_COMPONENT24
+        INTERNAL_RESOLUTION.x
+        INTERNAL_RESOLUTION.y
+
+    gl.CreateFramebuffers 1 &main-render-target
+    gl.NamedFramebufferTexture main-render-target gl.GL_COLOR_ATTACHMENT0 fb-color-attachment 0
+    gl.NamedFramebufferTexture main-render-target gl.GL_DEPTH_ATTACHMENT fb-depth-attachment 0
+
+    let fbo-status = (gl.CheckNamedFramebufferStatus main-render-target gl.GL_FRAMEBUFFER)
+    assert (fbo-status == gl.GL_FRAMEBUFFER_COMPLETE) "failed creating main render target"
+
+fn begin-frame ()
+    gl.BindFramebuffer gl.GL_FRAMEBUFFER main-render-target
+    gl.Viewport 0 0 INTERNAL_RESOLUTION.x INTERNAL_RESOLUTION.y
+    gl.ClearColor 1.0 0.2 0.2 1.0
+    gl.Clear (gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+
+    for layer in sprite-layers
+        'clear layer
+
+
+fn end-frame ()
+    for layer in sprite-layers
+        'update layer.sprites
+        'draw layer
+
+    gl.BindFramebuffer gl.GL_FRAMEBUFFER 0
+    gl.ClearColor 0.005 0.005 0.005 1.0
+    gl.Clear (gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+
+    # preserve aspect ratio
+    local window-width : i32
+    local window-height : i32
+    glfw.GetFramebufferSize main-window &window-width &window-height
+
+    let game-aspect-ratio = (INTERNAL_RESOLUTION.x / INTERNAL_RESOLUTION.y)
+    let window-aspect-ratio = (window-width / window-height)
+
+    let blit-size blit-offset =
+        do
+            window-width as:= f32
+            window-height as:= f32
+            if (window-aspect-ratio > game-aspect-ratio)
+                blit-width := window-height * game-aspect-ratio
+                _
+                    ivec2 blit-width window-height
+                    ivec2 ((window-width - blit-width) / 2) 0
+            else
+                blit-height := window-width / game-aspect-ratio
+                _
+                    ivec2 window-width blit-height
+                    ivec2 0 ((window-height - blit-height) / 2)
+
+    let blit-begin blit-end = blit-offset (blit-offset + blit-size)
+
+    gl.BlitNamedFramebuffer main-render-target 0
+        # src rect
+        0
+        0
+        INTERNAL_RESOLUTION.x
+        INTERNAL_RESOLUTION.y
+        # dest rect
+        blit-begin.x
+        blit-begin.y
+        blit-end.x
+        blit-end.y
+        gl.GL_COLOR_BUFFER_BIT
+        gl.GL_NEAREST
+
+
 do
-    let init
+    let
         GPUBuffer
         Mesh
         ArrayTexture2D
@@ -451,4 +542,8 @@ do
 
         sprite-layers
         sprite-metadata
+
+        init
+        begin-frame
+        end-frame
     locals;
