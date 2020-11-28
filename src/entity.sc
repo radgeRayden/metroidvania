@@ -123,6 +123,13 @@ global archetypes : ArchetypeMap
 inline set-archetype (tag f)
     'set archetypes tag (static-typify f)
 
+fn get-texcoords (group-name)
+    try
+        'get renderer.sprite-metadata group-name
+    else
+        assert false "unknown sprite group"
+        unreachable;
+
 fn init-archetypes ()
     set-archetype EntityKind.Player
         fn ()
@@ -134,7 +141,7 @@ fn init-archetypes ()
                             layer = 0
                             Sprite
                                 page = 0
-                                texcoords = (vec4 (320 / 1024) 0 (328 / 1024) (8 / 1024))
+                                texcoords = ((get-texcoords "adve") @ 1)
     locals;
 
 do

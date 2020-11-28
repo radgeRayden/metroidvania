@@ -4,8 +4,12 @@ using import struct
 using import Array
 using import String
 using import Rc
+using import Map
+using import glm
 
 let gl = (import .FFI.glad)
+let cjson = (import .FFI.cjson)
+let C = (import .radlib.libc)
 
 import .filesystem
 using import .common
@@ -381,6 +385,7 @@ typedef GPUShaderProgram <:: u32
 
 # GAME DRAWING CODE
 # ================================================================================
+global sprite-metadata : (Map String (Array vec4))
 global sprite-layers : (Array SpriteBatch 4)
 
 fn init ()
@@ -398,6 +403,37 @@ fn init ()
         'append sprite-layers
             SpriteBatch (copy mega-atlas)
 
+    let metadata-json =
+        do
+            let file = (filesystem.load-full-file "sprites/metadata.json")
+            cjson.ParseWithLength file (countof file)
+
+    let sprite-groups = (cjson.GetObjectItem metadata-json "groups")
+
+    for group in sprite-groups
+        let group-name =
+            do
+                let rawstr = (cjson.GetStringValue (cjson.GetObjectItem group "name"))
+                String rawstr (C.string.strlen rawstr)
+
+        local texcoords : (Array vec4)
+        let images = (cjson.GetObjectItem group "images")
+        for image in images
+            let x y width height =
+                (cjson.GetObjectItem image "x") . valueint
+                (cjson.GetObjectItem image "y") . valueint
+                (cjson.GetObjectItem image "width") . valueint
+                (cjson.GetObjectItem image "height") . valueint
+            'emplace-append texcoords
+                x / ATLAS_PAGE_SIZE.x
+                y / ATLAS_PAGE_SIZE.y
+                (x + width) / ATLAS_PAGE_SIZE.x
+                (y + height) / ATLAS_PAGE_SIZE.y
+
+        'set sprite-metadata group-name (deref texcoords)
+
+    cjson.Delete metadata-json
+
 do
     let init
         GPUBuffer
@@ -408,4 +444,5 @@ do
         GPUTexture
 
         sprite-layers
+        sprite-metadata
     locals;
