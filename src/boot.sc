@@ -180,8 +180,6 @@ struct Tileset
     fn clear-cache ()
         'clear tileset-cache
 
-global player : (Rc entity.Entity)
-
 # NOTE: for a game this size, I opted to load all the sprite textures
 # at once, in a single ArrayTexture where they can be indexed by position in
 # the atlas and page (array layer). To make this easier to work with we use
@@ -280,39 +278,44 @@ struct Scene
 
             local entities : entity.EntityList
 
-            # HACK: extracting player position from the tileset objects while
-            # reusing the tileset image. Later I'll have entities separate, very likely
-            # using their own sprite sheet.
             let obj-layer =
                 cjson.GetArrayItem
                     cjson.GetObjectItem tiled-scene "layers"
                     1
+
             let obj-layer-type = (cjson.GetStringValue (cjson.GetObjectItem obj-layer "type"))
             assert ((C.string.strcmp obj-layer-type "objectgroup") == 0)
-            let player-obj =
-                cjson.GetArrayItem
-                    cjson.GetObjectItem obj-layer "objects"
-                    0
-            let player-obj-name = (cjson.GetStringValue (cjson.GetObjectItem player-obj "name"))
-            assert ((C.string.strcmp player-obj-name "player") == 0)
-            let px py =
-                cjson.GetNumberValue (cjson.GetObjectItem player-obj "x")
-                cjson.GetNumberValue (cjson.GetObjectItem player-obj "y")
-            # TODO: make this a helper function outside of this and use it everywhere
-            # to convert from y-down to y-up.
-            inline tiled->worldpos (x y)
-                vec2
-                    x
-                    (scene-height-px as i32) - 1 - (y as i32)
+            let objects = (cjson.GetObjectItem obj-layer "objects")
 
-            player =
-                copy
+            for obj in objects
+                let x y =
+                    cjson.GetNumberValue (cjson.GetObjectItem obj "x")
+                    cjson.GetNumberValue (cjson.GetObjectItem obj "y")
+                # TODO: make this a helper function outside of this and use it everywhere
+                # to convert from y-down to y-up.
+                inline tiled->worldpos (x y)
+                    vec2
+                        x
+                        (scene-height-px as i32) - 1 - (y as i32)
+
+                let props = (cjson.GetObjectItem obj "properties")
+                let archetype =
+                    fold (archetype = -1) for prop in props
+                        let prop-name = (cjson.GetObjectItem prop "name")
+                        if ((C.string.strcmp (cjson.GetStringValue prop-name) "archetype") == 0)
+                            break
+                                deref
+                                    (cjson.GetObjectItem prop "value") . valueint
+                        archetype
+                if (archetype == -1)
+                    # misconfigured entity
+                    continue;
+                let ent =
                     'add entities
                         call
-                            'get entity.archetypes entity.EntityKind.Player
+                            'get entity.archetypes (archetype as entity.EntityKind)
 
-            player.position = (tiled->worldpos px py)
-            # end of the hack
+                ent.position = (tiled->worldpos x y)
 
             cjson.Delete tiled-scene
 
@@ -467,6 +470,12 @@ assert (fbo-status == gl.GL_FRAMEBUFFER_COMPLETE) "failed creating main render t
 
 # GAME CODE
 # ================================================================================
+global player : (Rc entity.Entity)
+for ent in level1.entities
+    if (ent.tag == entity.EntityKind.Player)
+        player = (copy ent)
+        break;
+
 global window-width : i32
 global window-height : i32
 

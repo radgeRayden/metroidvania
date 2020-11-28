@@ -43,6 +43,7 @@ enum Component
 
 enum EntityKind plain
     Player = 0
+    Ducky = 1
     inline __hash (self)
         hash (self as i32)
 
@@ -142,6 +143,17 @@ fn init-archetypes ()
                             Sprite
                                 page = 0
                                 texcoords = ((get-texcoords "adve") @ 1)
+    set-archetype EntityKind.Ducky
+        fn ()
+            Entity
+                tag = EntityKind.Ducky
+                components =
+                    ComponentList
+                        SpriteComponent
+                            layer = 0
+                            Sprite
+                                page = 0
+                                texcoords = ((get-texcoords "adve") @ 0)
     locals;
 
 do
