@@ -2,6 +2,7 @@ using import .radlib.core-extensions
 
 using import .common
 import .renderer
+using import .component
 
 using import enum
 using import struct
@@ -12,34 +13,6 @@ using import Array
 using import Rc
 
 let EntityId = u32
-
-typedef ComponentBase < Struct
-    fn update (...)
-        ;
-    fn draw (...)
-        ;
-
-struct SpriteComponent < ComponentBase
-    layer : u32
-    sprite : Sprite
-
-    fn update (self parent)
-        self.sprite.position = (floor parent.position)
-        ;
-
-    fn draw (self parent)
-        'add (renderer.sprite-layers @ self.layer) self.sprite
-        ;
-
-enum Component
-    Sprite : SpriteComponent
-    let __typecall = enum-class-constructor
-    inline update (self parent)
-        'apply self
-            (T self) -> ('update self parent)
-    inline draw (self parent)
-        'apply self
-            (T self) -> ('draw self parent)
 
 enum EntityKind plain
     Player = 0
@@ -55,18 +28,7 @@ struct Entity
     position : vec2
     velocity : vec2
     grounded? : bool
-    components : (Array Component)
-
-let ComponentList = (Array Component)
-typedef+ ComponentList
-    inline __typecall (cls ...)
-        local arr = (super-type.__typecall cls)
-        va-map
-            inline (c)
-                'emplace-append arr
-                    c
-            ...
-        deref arr
+    components : ComponentList
 
 enum EntityError plain
     StaleReference
@@ -138,7 +100,7 @@ fn init-archetypes ()
                 tag = EntityKind.Player
                 components =
                     ComponentList
-                        SpriteComponent
+                        components.Sprite
                             layer = 0
                             Sprite
                                 page = 0
@@ -149,7 +111,7 @@ fn init-archetypes ()
                 tag = EntityKind.Ducky
                 components =
                     ComponentList
-                        SpriteComponent
+                        components.Sprite
                             layer = 0
                             Sprite
                                 page = 0
