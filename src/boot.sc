@@ -180,24 +180,6 @@ struct Tileset
     fn clear-cache ()
         'clear tileset-cache
 
-# NOTE: for a game this size, I opted to load all the sprite textures
-# at once, in a single ArrayTexture where they can be indexed by position in
-# the atlas and page (array layer). To make this easier to work with we use
-# this singleton.
-fn game-texture-atlas ()
-    global atlas : (Option (Rc ArrayTexture2D))
-    if (not atlas)
-        local images : (Array String)
-        # TODO: for the moment I'm loading the test tileset
-        # as if it were one of the atlas images. Should be substituted
-        # for proper texture atlas, possibly with a naming convention
-        # such that this list doesn't need to be filled in explicitly.
-        'append images (String "levels/adve.png")
-        atlas =
-            Rc.wrap (ArrayTexture2D images 8 8)
-
-    copy ('force-unwrap atlas)
-
 struct Scene
     tileset : (Rc Tileset)
     width : u32
@@ -210,7 +192,6 @@ struct Scene
     collision-matrix : (Array bool)
     background-sprites : SpriteBatch
     entities : entity.EntityList
-    entity-sprites : SpriteBatch
 
     inline __typecall (cls filename)
         fn load-tiled-level (filename)
@@ -329,7 +310,6 @@ struct Scene
                 level-data = level-data
                 collision-matrix = collision-matrix
                 entities = (deref entities)
-                entity-sprites = (SpriteBatch (game-texture-atlas))
         load-tiled-level filename
 
 struct Camera plain

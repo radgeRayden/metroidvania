@@ -407,6 +407,9 @@ fn init (window)
         if match?
             'append atlases ("sprites/" .. name)
 
+    # NOTE: for a game this size, I opted to load all the sprite textures
+    # at once, in a single ArrayTexture where they can be indexed by position in
+    # the atlas and page (array layer).
     let mega-atlas =
         Rc.wrap (ArrayTexture2D atlases ATLAS_PAGE_SIZE.x ATLAS_PAGE_SIZE.y)
     for i in (range ('capacity sprite-layers))
