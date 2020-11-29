@@ -347,7 +347,7 @@ struct Camera plain
             clamp new-pos (imply bounds.st vec2) (bounds.pq - self.viewport)
         ;
 
-    fn apply (self shader)
+    fn apply (self)
         let transform =
             *
                 math.translate (vec3 -1 -1 0)
@@ -356,69 +356,11 @@ struct Camera plain
                 # math.scale self.scale.xy1
                 math.ortho self.viewport.x self.viewport.y
                 math.translate (floor -self.position.xy0)
-        gl.UniformMatrix4fv
-            gl.GetUniformLocation shader "transform"
-            1
-            false
-            (&local transform) as (pointer f32)
+        renderer.set-world-transform transform
         ;
 
 # RESOURCE INITIALIZATION
 # ================================================================================
-fn sprite-vertex-shader ()
-    using import glsl
-    buffer attributes :
-        struct AttributeArray plain
-            data : (array Sprite)
-
-    uniform transform : mat4
-
-    out vtexcoord : vec3
-        location = 2
-
-    local vertices =
-        arrayof vec2
-            vec2 0 0 # top left
-            vec2 1 0 # top right
-            vec2 0 1 # bottom left
-            vec2 1 1 # bottom right
-
-    let sprites = attributes.data
-    idx         := gl_VertexID
-    sprite      := sprites @ (idx // 4)
-    origin      := sprite.position
-    vertex      := vertices @ (idx % 4)
-    orientation := sprite.rotation
-    pivot       := sprite.pivot
-    scale       := sprite.scale
-    stexcoords  := sprite.texcoords
-
-    local texcoords =
-        arrayof vec2
-            stexcoords.sq
-            stexcoords.pq
-            stexcoords.st
-            stexcoords.pt
-
-    # TODO: explain what this does in a comment
-    gl_Position =
-        * transform
-            vec4 (origin + pivot + (math.rotate ((vertex * scale) - pivot) orientation)) 0 1
-    vtexcoord = (vec3 (texcoords @ (idx % 4)) sprite.page)
-
-fn sprite-fragment-shader ()
-    using import glsl
-    in vtexcoord : vec3
-        location = 2
-    out fcolor : vec4
-        location = 0
-
-    uniform sprite-tex : sampler2DArray
-    fcolor = (texture sprite-tex vtexcoord)
-
-global sprite-shader = (GPUShaderProgram sprite-vertex-shader sprite-fragment-shader)
-gl.UseProgram sprite-shader
-
 entity.init-archetypes;
 global level1 = (Scene "levels/1.json")
 global main-camera : Camera
@@ -648,7 +590,7 @@ fn draw ()
         for component in ent.components
             'draw component ent
 
-    'apply main-camera sprite-shader
+    'apply main-camera
 
     'update level1.background-sprites.sprites
     'draw level1.background-sprites

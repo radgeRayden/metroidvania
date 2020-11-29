@@ -14,7 +14,8 @@ let C = (import .radlib.libc)
 
 import .filesystem
 using import .common
-using constants
+using constants # common.constants
+import .math
 
 # LOW LEVEL BASE
 # ================================================================================
@@ -363,7 +364,7 @@ typedef GPUShaderProgram <:: u32
         gl.DeleteShader vs
         program
 
-    inline __typecall (cls vs fs)
+    inline... __typecall (cls vs fs)
         let vertex-module =
             compile-shader
                 static-compile-glsl 450 'vertex (static-typify vs)
@@ -375,6 +376,8 @@ typedef GPUShaderProgram <:: u32
 
         let program = (link-program vertex-module fragment-module)
         bitcast program this-type
+    case (cls handle)
+        bitcast handle this-type
 
     inline __imply (selfT otherT)
         static-if (otherT == (storageof this-type))
@@ -384,7 +387,60 @@ typedef GPUShaderProgram <:: u32
     inline __drop (self)
         gl.DeleteProgram (storagecast (view self))
 
-# INTERFACE
+# SHADER DEFINITIONS
+# ================================================================================
+fn sprite-vertex-shader ()
+    using import glsl
+    buffer attributes :
+        struct AttributeArray plain
+            data : (array Sprite)
+
+    uniform transform : mat4
+
+    out vtexcoord : vec3
+        location = 2
+
+    local vertices =
+        arrayof vec2
+            vec2 0 0 # top left
+            vec2 1 0 # top right
+            vec2 0 1 # bottom left
+            vec2 1 1 # bottom right
+
+    let sprites = attributes.data
+    idx         := gl_VertexID
+    sprite      := sprites @ (idx // 4)
+    origin      := sprite.position
+    vertex      := vertices @ (idx % 4)
+    orientation := sprite.rotation
+    pivot       := sprite.pivot
+    scale       := sprite.scale
+    stexcoords  := sprite.texcoords
+
+    local texcoords =
+        arrayof vec2
+            stexcoords.sq
+            stexcoords.pq
+            stexcoords.st
+            stexcoords.pt
+
+    # TODO: explain what this does in a comment
+    gl_Position =
+        * transform
+            vec4 (origin + pivot + (math.rotate ((vertex * scale) - pivot) orientation)) 0 1
+    vtexcoord = (vec3 (texcoords @ (idx % 4)) sprite.page)
+
+fn sprite-fragment-shader ()
+    using import glsl
+    in vtexcoord : vec3
+        location = 2
+    out fcolor : vec4
+        location = 0
+
+    uniform sprite-tex : sampler2DArray
+    fcolor = (texture sprite-tex vtexcoord)
+
+# INTERNAL MODULE STATE
 # ================================================================================
 global sprite-metadata : (Map String (Array Sprite))
 global sprite-layers : (Array SpriteBatch 4)
@@ -395,6 +451,11 @@ global fb-depth-attachment : GPUTexture 0
 
 global main-window : (mutable@ glfw.window)
 
+global game-shader : GPUShaderProgram 0
+global world-transform : mat4
+
+# INTERFACE
+# ================================================================================
 fn init (window)
     # TODO: this won't be necessary once windowing code
     # is moved to a dedicated module.
@@ -475,6 +536,9 @@ fn init (window)
     let fbo-status = (gl.CheckNamedFramebufferStatus main-render-target gl.GL_FRAMEBUFFER)
     assert (fbo-status == gl.GL_FRAMEBUFFER_COMPLETE) "failed creating main render target"
 
+    game-shader = (GPUShaderProgram sprite-vertex-shader sprite-fragment-shader)
+    gl.UseProgram game-shader
+
 fn begin-frame ()
     gl.BindFramebuffer gl.GL_FRAMEBUFFER main-render-target
     gl.Viewport 0 0 INTERNAL_RESOLUTION.x INTERNAL_RESOLUTION.y
@@ -533,6 +597,12 @@ fn end-frame ()
         gl.GL_COLOR_BUFFER_BIT
         gl.GL_NEAREST
 
+fn set-world-transform (transform)
+    gl.UniformMatrix4fv
+        gl.GetUniformLocation game-shader "transform"
+        1
+        false
+        (&local transform) as (pointer f32)
 
 do
     let
@@ -549,4 +619,5 @@ do
         init
         begin-frame
         end-frame
+        set-world-transform
     locals;
