@@ -632,7 +632,10 @@ fn update (dt)
         yvel = 0
     else
         yvel = (clamp (yvel + (gravity * dt)) -100. 200.)
-    player-move (player.position + player.velocity * dt)
+
+    let fdt = (dt / 4)
+    for i in (range 4)
+        player-move (player.position + player.velocity * fdt)
 
     'follow main-camera player.position
     'update level1.entities
