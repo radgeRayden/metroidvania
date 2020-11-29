@@ -328,7 +328,10 @@ struct Camera plain
                 max scene-size self.viewport
 
     fn follow (self target)
-        let target = (world->screen self target)
+        # NOTE: we floor target to simulate tracking the sprite instead of the entity
+        # position. This is important so our clamp can't get desync'd from the visual element
+        # it's tracking.
+        let target = (world->screen self (floor target))
         # define focus box
         center := self.viewport / 2
         focus-box-size := self.viewport.0y * 0.5
@@ -341,7 +344,7 @@ struct Camera plain
         let bounds = self._bounds
         self.position =
             # max has to be adjusted because position is at top left corner of viewport
-            clamp (floor new-pos) (imply bounds.st vec2) (bounds.pq - self.viewport)
+            clamp new-pos (imply bounds.st vec2) (bounds.pq - self.viewport)
         ;
 
     fn apply (self shader)
