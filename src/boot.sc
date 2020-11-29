@@ -341,7 +341,7 @@ struct Camera plain
         let bounds = self._bounds
         self.position =
             # max has to be adjusted because position is at top left corner of viewport
-            clamp new-pos (imply bounds.st vec2) (bounds.pq - self.viewport)
+            clamp (floor new-pos) (imply bounds.st vec2) (bounds.pq - self.viewport)
         ;
 
     fn apply (self shader)
