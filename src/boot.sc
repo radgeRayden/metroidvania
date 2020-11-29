@@ -1,4 +1,3 @@
-# TODO: import as submodule
 using import .radlib.core-extensions
 using import .radlib.stringtools
 
@@ -481,7 +480,6 @@ fn player-move (pos)
             # when bumping on the ceiling and sometimes sliding down walls.
             let normal = (vec2 manifold.n.x manifold.n.y)
             if (normal.y < 0)
-                # TODO: set a grounded flag
                 player.velocity.y = 0
             if (normal.x != 0)
                 player.velocity.x = 0
