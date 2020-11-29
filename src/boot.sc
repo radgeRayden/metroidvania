@@ -193,7 +193,7 @@ struct Scene
     background-sprites : SpriteBatch
     entities : entity.EntityList
 
-    inline __typecall (cls filename)
+    inline... __typecall (cls filename)
         fn load-tiled-level (filename)
             let tiled-scene = (cjson.Parse (filesystem.load-full-file filename))
 
@@ -362,30 +362,44 @@ struct Camera plain
 # RESOURCE INITIALIZATION
 # ================================================================================
 entity.init-archetypes;
-global level1 = (Scene "levels/1.json")
+
+# TODO: move the tilemap sprites to a renderer sprite layer, so we can have an initialized
+# version of Scene without Option, since it won't be dependent on opengl anymore.
+global current-scene = (Scene "levels/1.json")
 global main-camera : Camera
     position = (vec2)
     scale = (vec2 6)
     viewport = (vec2 INTERNAL_RESOLUTION)
 
+global player : (Rc entity.Entity)
+fn start-game ()
+    try
+        current-scene = (Scene "levels/1.json")
+        for ent in current-scene.entities
+            if (ent.tag == entity.EntityKind.Player)
+                player = (copy ent)
+                break;
+    except (ex)
+        'dump ex
+start-game;
+
 # GAME CODE
 # ================================================================================
-global player : (Rc entity.Entity)
-for ent in level1.entities
-    if (ent.tag == entity.EntityKind.Player)
-        player = (copy ent)
-        break;
+let jump-force = 120.
+let gravity = -240.
+let player-speed = 40.
+let accel = 180.
 
 global window-width : i32
 global window-height : i32
 
-'set-bounds main-camera (vec2) (vec2 level1.width level1.height)
+'set-bounds main-camera (vec2) (vec2 current-scene.width current-scene.height)
 
 fn solid-tile? (pos)
-    let tile-size = (vec2 level1.tileset.tile-width level1.tileset.tile-height)
+    let tile-size = (vec2 current-scene.tileset.tile-width current-scene.tileset.tile-height)
     let lw lh =
-        (level1.width as f32) / tile-size.x
-        (level1.height as f32) / tile-size.y
+        (current-scene.width as f32) / tile-size.x
+        (current-scene.height as f32) / tile-size.y
 
     let t = (floor (pos / tile-size))
 
@@ -399,7 +413,7 @@ fn solid-tile? (pos)
 
     # again remember our world space is y up
     idx := (lh - 1 - t.y) * lw + t.x
-    deref (level1.collision-matrix @ (idx as usize))
+    deref (current-scene.collision-matrix @ (idx as usize))
 
 fn grounded? ()
     # NOTE: because currently the player AABB is hardcoded at 8x8, we know
@@ -418,15 +432,15 @@ fn player-move (pos)
     if (or
         (pos.x < 0)
         (pos.y < 0)
-        (pos.x > (level1.width as f32))
-        (pos.y > (level1.height as f32)))
+        (pos.x > (current-scene.width as f32))
+        (pos.y > (current-scene.height as f32)))
         player.position = pos
         return;
 
-    let tile-size = (vec2 level1.tileset.tile-width level1.tileset.tile-height)
+    let tile-size = (vec2 current-scene.tileset.tile-width current-scene.tileset.tile-height)
     let lw lh =
-        (level1.width as f32) / tile-size.x
-        (level1.height as f32) / tile-size.y
+        (current-scene.width as f32) / tile-size.x
+        (current-scene.height as f32) / tile-size.y
 
     # find all tiles that intersect the player AABB and test against them
     init-tx := (floor (pos.x / tile-size.x))
@@ -445,7 +459,7 @@ fn player-move (pos)
 
         # again remember our world space is y up
         idx := (lh - 1 - t.y) * lw + t.x
-        solid? := level1.collision-matrix @ (idx as usize)
+        solid? := current-scene.collision-matrix @ (idx as usize)
 
         local manifold : c2.Manifold
         if solid?
@@ -479,11 +493,6 @@ fn player-move (pos)
 
     player.position = pos
 
-let jump-force = 120.
-let gravity = -240.
-let player-speed = 40.
-let accel = 180.
-
 glfw.SetKeyCallback main-window
     fn (window _key scancode action mods)
         # application keybindings
@@ -491,6 +500,12 @@ glfw.SetKeyCallback main-window
         if ((_key == glfw.GLFW_KEY_ESCAPE) and (action == glfw.GLFW_RELEASE))
             glfw.SetWindowShouldClose main-window true
 
+        # restart game
+        if (and
+            ((mods & glfw.GLFW_MOD_CONTROL) as bool)
+            (_key == glfw.GLFW_KEY_R)
+            (action == glfw.GLFW_PRESS))
+            start-game;
         # go fullscreen
         if (and
             ((mods & glfw.GLFW_MOD_ALT) as bool)
@@ -593,17 +608,17 @@ fn update (dt)
         player-move (player.position + player.velocity * fdt)
 
     'follow main-camera player.position
-    'update level1.entities
+    'update current-scene.entities
 
 fn draw ()
-    for ent in level1.entities
+    for ent in current-scene.entities
         for component in ent.components
             'draw component ent
 
     'apply main-camera
 
-    'update level1.background-sprites.sprites
-    'draw level1.background-sprites
+    'update current-scene.background-sprites.sprites
+    'draw current-scene.background-sprites
 
 global last-time = (glfw.GetTime)
 while (not (glfw.WindowShouldClose main-window))
