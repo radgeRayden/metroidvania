@@ -649,7 +649,18 @@ while (not (glfw.WindowShouldClose main-window))
     global player-stats-open? : bool true
     if player-stats-open?
         ig.Begin "Debug Info" &player-stats-open? 0
-        ig.Text "position: %.3f %.3f" player.position.x player.position.y
+
+        # position in tiles
+        let tile-p =
+            do
+                let tile-dimensions =
+                    vec2
+                        current-scene.tileset.tile-width
+                        current-scene.tileset.tile-height
+                let tile-p = (ivec2 (floor (player.position / tile-dimensions)))
+
+        ig.Text "position: %.3f %.3f (%d %d)" player.position.x player.position.y
+            \ tile-p.x tile-p.y
         ig.Text "velocity: %.3f %.3f" (unpack (player.velocity * step-size))
         ig.Text f"grounded?: ${player.grounded?}"
         ig.End;
