@@ -579,7 +579,7 @@ fn update (dt)
     else
         let friction = (-accel * (sign xvel) * 1.5)
         xvel = (xvel + friction * dt)
-        if ((abs xvel) < 1.5)
+        if ((abs xvel) <= (friction * dt))
             xvel = 0
 
     if (xvel != 0)
