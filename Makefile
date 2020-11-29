@@ -56,6 +56,9 @@ endif
 SHARED_LIBS = $(addprefix ./lib/, $(LIBGAME_SHARED) $(PHYSFS_SHARED) $(GLFW_SHARED) $(CIMGUI_SHARED))
 
 all:$(SHARED_LIBS)
+	cp $(shell realpath $(PHYSFS_BUILD)/$(PHYSFS_SHARED)) ./lib/$(PHYSFS_SHARED)
+	cp $(shell realpath $(GLFW_BUILD)/src/$(GLFW_SHARED)) ./lib/$(GLFW_SHARED)
+	cp $(shell realpath $(CIMGUI_BUILD)/$(CIMGUI_SHARED)) ./lib/$(CIMGUI_SHARED)
 	@echo "Build complete."
 
 $(MAIN_OBJ):
@@ -92,26 +95,25 @@ lib/$(PHYSFS_SHARED):
 	mkdir -p $(PHYSFS_BUILD)
 	cmake -G "$(MAKEFILE_FLAVOR) Makefiles" -DCMAKE_C_COMPILER=$(CC) -DCMAKE_C_FLAGS="$(CFLAGS)" -S $(PHYSFS_SRC) -B $(PHYSFS_BUILD)
 	${MAKE} -C $(PHYSFS_BUILD)
-	cp $(shell realpath $(PHYSFS_BUILD)/$(PHYSFS_SHARED)) ./lib/$(PHYSFS_SHARED)
 
 lib/$(GLFW_SHARED):
 	mkdir -p ./lib
 	mkdir -p $(GLFW_BUILD)
 	cmake -G "$(MAKEFILE_FLAVOR) Makefiles" -DCMAKE_C_COMPILER=$(CC) -DCMAKE_C_FLAGS="$(CFLAGS)" $(GLFW_OPTIONS) -DBUILD_SHARED_LIBS=on -S $(GLFW_SRC) -B $(GLFW_BUILD)
 	${MAKE} -C $(GLFW_BUILD)
-	cp $(shell realpath $(GLFW_BUILD)/src/$(GLFW_SHARED)) ./lib/$(GLFW_SHARED)
 
 lib/$(CIMGUI_SHARED):
 	mkdir -p ./lib
 	mkdir -p $(CIMGUI_BUILD)
 	cmake -G "$(MAKEFILE_FLAVOR) Makefiles" -DCMAKE_C_COMPILER=$(CC) -DCMAKE_C_FLAGS="$(CFLAGS)" -S $(CIMGUI_SRC) -B $(CIMGUI_BUILD)
 	${MAKE} -C $(CIMGUI_BUILD)
-	cp $(shell realpath $(CIMGUI_BUILD)/$(CIMGUI_SHARED)) ./lib/$(CIMGUI_SHARED)
 
 clean:
 	${MAKE} -C $(PHYSFS_BUILD) clean
 	${MAKE} -C $(GLFW_BUILD) clean
+	${MAKE} -C $(CIMGUI_BUILD) clean
 	rm -f $(LIBGAME_DEPS)
 	rm -rf ./lib
+	rm -rf ./bin
 
 .PHONY: all clean
