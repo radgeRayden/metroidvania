@@ -569,6 +569,16 @@ fn update (dt)
         if ((abs xvel) < 1.5)
             xvel = 0
 
+    if (xvel != 0)
+        using import .component
+        sprite := ('unsafe-extract-payload (player.components @ 0) Component.Sprite.Type) . sprite
+        sprite.pivot = (vec2 4)
+        sprite.rotation += -xvel * dt * 0.3
+    else
+        using import .component
+        sprite := ('unsafe-extract-payload (player.components @ 0) Component.Sprite.Type) . sprite
+        sprite.rotation = 0
+
     # apply gravity
     # NOTE: we check for yvel <= 0 so we are still able to jump, since
     # the jump sets the yvel to be positive, but it would immediately be set to 0
