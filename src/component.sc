@@ -1,6 +1,8 @@
 using import enum
 using import struct
 using import Array
+using import Rc
+using import glm
 
 sugar enum-from-scope (name scope-name)
     name as:= Symbol
@@ -24,6 +26,7 @@ run-stage;
 using import .radlib.core-extensions
 import .common
 import .renderer
+import .collision
 
 typedef ComponentBase < Struct
     fn init (...)
@@ -47,6 +50,22 @@ do
 
         fn draw (self parent)
             'add (renderer.sprite-layers @ self.layer) self.sprite
+            ;
+
+    struct Hitbox < ComponentBase
+        offset : vec2
+        size : vec2
+        collider : (Rc collision.Collider)
+
+        fn init (self parent)
+            aabb-min := parent.position + self.offset
+            aabb-max := aabb-min + self.size
+            self.collider.aabb =
+                typeinit
+                    aabb-min
+                    aabb-max
+
+            collision.register-object (copy self.collider)
             ;
 
     locals;

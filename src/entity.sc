@@ -3,6 +3,7 @@ using import .radlib.core-extensions
 using import .common
 import .renderer
 using import .component
+import .collision
 
 using import enum
 using import struct
@@ -102,22 +103,34 @@ fn get-sprite-group (group-name)
 fn init-archetypes ()
     set-archetype EntityKind.Player
         fn ()
+            sprite := (get-sprite-group "adve") @ 1
+            let hitbox-size = (copy sprite.scale)
+
             Entity
                 tag = EntityKind.Player
                 components =
                     ComponentList
                         components.Sprite
                             layer = 0
-                            (get-sprite-group "adve") @ 1
+                            sprite
+                        components.Hitbox
+                            size = hitbox-size
+                            collider = (Rc.wrap (collision.Collider))
     set-archetype EntityKind.Ducky
         fn ()
+            sprite := (get-sprite-group "adve") @ 0
+            let hitbox-size = (copy sprite.scale)
+
             Entity
                 tag = EntityKind.Ducky
                 components =
                     ComponentList
                         components.Sprite
                             layer = 0
-                            (get-sprite-group "adve") @ 0
+                            sprite
+                        components.Hitbox
+                            size = hitbox-size
+                            collider = (Rc.wrap (collision.Collider))
 
     set-archetype EntityKind.Skeleton
         fn ()
@@ -128,6 +141,10 @@ fn init-archetypes ()
                         components.Sprite
                             layer = 0
                             (get-sprite-group "Skeleton_Walk") @ 2
+                        components.Hitbox
+                            offset = (vec2 14 0)
+                            size = (vec2 11 22)
+                            collider = (Rc.wrap (collision.Collider))
     locals;
 
 do
