@@ -395,6 +395,8 @@ let accel = 180.
 global window-width : i32
 global window-height : i32
 
+global show-colliders? : bool
+
 'set-bounds main-camera (vec2) (vec2 current-scene.width current-scene.height)
 
 fn solid-tile? (pos)
@@ -557,6 +559,9 @@ glfw.SetKeyCallback main-window
                 scaled := INTERNAL_RESOLUTION * scale
                 glfw.SetWindowSize main-window scaled.x scaled.y
 
+        if ((_key == glfw.GLFW_KEY_F3) and (action == glfw.GLFW_RELEASE))
+            show-colliders? = (not show-colliders?)
+
         # game controls
         if ((_key == glfw.GLFW_KEY_SPACE) and (action == glfw.GLFW_PRESS))
             if player.grounded?
@@ -611,6 +616,87 @@ fn update (dt)
     'follow main-camera player.position
     'update current-scene.entities dt
 
+global debug-gizmos : (Mesh vec2 u16) 128
+
+fn gizmo-vshader ()
+    using import glsl
+    buffer vertices :
+        struct VertexArray plain
+            data : (array vec2)
+
+    uniform transform : mat4
+
+    let vertex = (vertices.data @ gl_VertexID)
+    gl_Position = transform * (vec4 vertex 0 1)
+
+fn gizmo-fshader ()
+    using import glsl
+    out fcolor : vec4
+        location = 0
+
+    fcolor = (vec4 1)
+
+global gizmo-shader =
+    renderer.GPUShaderProgram gizmo-vshader gizmo-fshader
+
+fn draw-colliders ()
+    'clear debug-gizmos.attribute-data
+    'clear debug-gizmos.index-data
+
+    import .collision
+
+    # polyline algorithm
+    for obj in collision.objects
+        let aabb = obj.aabb
+        let aabb-min aabb-max =
+            floor (imply aabb.min vec2)
+            floor (imply aabb.max vec2)
+        local points =
+            # 3 - 2
+            # |   |
+            # 0 - 1
+            arrayof vec2
+                aabb.min
+                vec2 aabb-max.x aabb-min.y
+                aabb-max
+                vec2 aabb-min.x aabb-max.y
+                aabb-min
+
+        let vertex-offset = (countof debug-gizmos.attribute-data)
+        for i in (range ((countof points) - 1))
+            this-point := points @ i
+            next-point := points @ (i + 1)
+
+            dir := (normalize (next-point - this-point))
+            perp := (math.rotate dir (pi / 2))
+            'append debug-gizmos.attribute-data this-point
+            'append debug-gizmos.attribute-data (this-point + perp)
+            'append debug-gizmos.attribute-data next-point
+            'append debug-gizmos.attribute-data (next-point + perp)
+
+        for i in (range ((countof points) - 1))
+            let segment-start = (vertex-offset + (i * 4))
+            let left right left-e right-e =
+                segment-start
+                segment-start + 1
+                segment-start + 2
+                segment-start + 3
+            'append debug-gizmos.index-data (left as u16)
+            'append debug-gizmos.index-data (right as u16)
+            'append debug-gizmos.index-data (right-e as u16)
+            'append debug-gizmos.index-data (right-e as u16)
+            'append debug-gizmos.index-data (left-e as u16)
+            'append debug-gizmos.index-data (left as u16)
+
+    'update debug-gizmos
+
+    local prev-shader : i32
+    gl.GetIntegerv gl.GL_CURRENT_PROGRAM &prev-shader
+    gl.UseProgram gizmo-shader
+    'apply main-camera
+    'draw debug-gizmos
+    gl.UseProgram (prev-shader as u32)
+
 fn draw ()
     for ent in current-scene.entities
         for component in ent.components
@@ -620,6 +706,9 @@ fn draw ()
 
     'update current-scene.background-sprites.sprites
     'draw current-scene.background-sprites
+
+    if show-colliders?
+        draw-colliders;
 
 global last-time = (glfw.GetTime)
 while (not (glfw.WindowShouldClose main-window))

@@ -34,5 +34,7 @@ do
     let
         Collider
 
+        objects
+
         register-object
     locals;
