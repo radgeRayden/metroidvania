@@ -163,6 +163,21 @@ typedef Mesh < Struct
                 gl.NamedBufferSubData self._index-buffer 0 (self._index-buffer-size as i64)
                     (imply self.index-data pointer) as voidstar
 
+            fn draw (self)
+                gl.BindBufferBase gl.GL_SHADER_STORAGE_BUFFER 0 self._attribute-buffer
+                gl.BindBuffer gl.GL_ELEMENT_ARRAY_BUFFER self._index-buffer
+                let indexT =
+                    static-match IndexFormat
+                    case u16
+                        gl.GL_UNSIGNED_SHORT
+                    case u32
+                        gl.GL_UNSIGNED_INT
+                    default
+                        assert false "invalid index format"
+
+                gl.DrawElements gl.GL_TRIANGLES ((countof self.index-data) as i32)
+                    \ gl.GL_UNSIGNED_SHORT null
+
             inline __typecall (cls expected-attr-count)
                 let expected-index-count = ((expected-attr-count * 1.5) as usize) # estimate
                 let attr-store-size = ((sizeof AttributeType) * expected-attr-count)
@@ -311,18 +326,9 @@ struct SpriteBatch
         if self._dirty?
             'update self.sprites
             self._dirty? = false
-        let attribute-buffer index-buffer index-count =
-            _
-                self.sprites._attribute-buffer
-                self.sprites._index-buffer
-                countof self.sprites.index-data
-
-        gl.BindBufferBase gl.GL_SHADER_STORAGE_BUFFER 0 attribute-buffer
-        gl.BindBuffer gl.GL_ELEMENT_ARRAY_BUFFER index-buffer
         gl.BindTextures 0 1
             &local (storagecast (view self.image._handle))
-        gl.DrawElements gl.GL_TRIANGLES (index-count as i32)
-            \ gl.GL_UNSIGNED_SHORT null
+        'draw self.sprites
         ;
 
 typedef GPUShaderProgram <:: u32
