@@ -99,13 +99,15 @@ fn init-gl ()
     gl.BindVertexArray VAO
 
 typedef GPUBuffer <:: u32
-    inline __typecall (cls kind size)
+    inline... __typecall (cls kind size)
         local handle : u32
         gl.GenBuffers 1 &handle
         gl.BindBuffer (kind as u32) handle
         gl.NamedBufferStorage handle (size as i64) null
             gl.GL_DYNAMIC_STORAGE_BIT
         bitcast handle this-type
+    case (cls)
+        bitcast 0 this-type
 
     inline __drop (self)
         local handle : u32 = (storagecast (view self))
@@ -178,7 +180,7 @@ typedef Mesh < Struct
                 gl.DrawElements gl.GL_TRIANGLES ((countof self.index-data) as i32)
                     \ indexT null
 
-            inline __typecall (cls expected-attr-count)
+            inline... __typecall (cls, expected-attr-count : usize)
                 let expected-index-count = ((expected-attr-count * 1.5) as usize) # estimate
                 let attr-store-size = ((sizeof AttributeType) * expected-attr-count)
                 let ibuffer-store-size = ((sizeof IndexFormat) * expected-index-count)
@@ -202,9 +204,15 @@ typedef Mesh < Struct
                     _index-buffer = ibuffer-handle
                     _index-buffer-size = ibuffer-store-size
 
+            # default initialize to zero
+            case (cls)
+                super-type.__typecall cls
+
 typedef GPUTexture <:: u32
-    inline __typecall (cls handle)
+    inline... __typecall (cls handle)
         bitcast handle this-type
+    case (cls)
+        bitcast 0 this-type
 
     inline __drop (self)
         gl.DeleteTextures 1 (&local (storagecast (view self)))
@@ -384,6 +392,8 @@ typedef GPUShaderProgram <:: u32
         bitcast program this-type
     case (cls handle)
         bitcast handle this-type
+    case (cls)
+        bitcast 0 this-type
 
     inline __imply (selfT otherT)
         static-if (otherT == (storageof this-type))
