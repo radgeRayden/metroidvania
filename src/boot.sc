@@ -378,6 +378,9 @@ fn start-game ()
             if (ent.tag == entity.EntityKind.Player)
                 player = (copy ent)
                 break;
+
+        'init current-scene.entities
+
     except (ex)
         'dump ex
 start-game;

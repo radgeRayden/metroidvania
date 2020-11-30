@@ -63,6 +63,11 @@ struct EntityList
                 'pop self._entities
                 'discard self._entity-lookup ent.id
 
+    fn init (self)
+        for ent in self
+            for component in ent.components
+                'init component ent
+
     fn update (self dt)
         for ent in self
             for component in ent.components

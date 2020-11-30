@@ -26,6 +26,8 @@ import .common
 import .renderer
 
 typedef ComponentBase < Struct
+    fn init (...)
+        ;
     fn update (...)
         ;
     fn draw (...)
@@ -57,6 +59,10 @@ run-stage;
 enum-from-scope Component components
 typedef+ Component
     let __typecall = enum-class-constructor
+
+    inline init (self parent)
+        'apply self
+            (T self) -> ('init self parent)
 
     inline update (self dt parent)
         'apply self
