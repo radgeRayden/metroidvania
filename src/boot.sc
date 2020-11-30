@@ -606,7 +606,7 @@ fn update (dt)
         player-move (player.position + player.velocity * fdt)
 
     'follow main-camera player.position
-    'update current-scene.entities
+    'update current-scene.entities dt
 
 fn draw ()
     for ent in current-scene.entities

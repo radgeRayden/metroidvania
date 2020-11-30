@@ -63,10 +63,10 @@ struct EntityList
                 'pop self._entities
                 'discard self._entity-lookup ent.id
 
-    fn update (self)
+    fn update (self dt)
         for ent in self
             for component in ent.components
-                'update component ent
+                'update component dt ent
 
 let EntityConstructor = (@ (function (uniqueof Entity -1)))
 let ArchetypeMap = (Map EntityKind EntityConstructor)

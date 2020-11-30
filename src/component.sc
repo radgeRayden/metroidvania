@@ -39,7 +39,7 @@ do
         layer : u32
         sprite : common.Sprite
 
-        fn update (self parent)
+        fn update (self dt parent)
             self.sprite.position = (floor parent.position)
             ;
 
@@ -58,9 +58,9 @@ enum-from-scope Component components
 typedef+ Component
     let __typecall = enum-class-constructor
 
-    inline update (self parent)
+    inline update (self dt parent)
         'apply self
-            (T self) -> ('update self parent)
+            (T self) -> ('update self dt parent)
 
     inline draw (self parent)
         'apply self
