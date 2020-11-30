@@ -176,7 +176,7 @@ typedef Mesh < Struct
                         assert false "invalid index format"
 
                 gl.DrawElements gl.GL_TRIANGLES ((countof self.index-data) as i32)
-                    \ gl.GL_UNSIGNED_SHORT null
+                    \ indexT null
 
             inline __typecall (cls expected-attr-count)
                 let expected-index-count = ((expected-attr-count * 1.5) as usize) # estimate
