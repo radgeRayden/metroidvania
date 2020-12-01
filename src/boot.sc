@@ -670,7 +670,7 @@ fn draw-colliders ()
             # |   |
             # 0 - 1
             arrayof vec2
-                aabb.min
+                aabb-min
                 vec2 aabb-max.x aabb-min.y
                 aabb-max
                 vec2 aabb-min.x aabb-max.y
