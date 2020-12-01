@@ -18,6 +18,7 @@ using import .common
 import .renderer
 using renderer
 using constants
+import .collision
 
 let argc argv = (launch-args)
 
@@ -379,6 +380,7 @@ fn start-game ()
                 player = (copy ent)
                 break;
 
+        'clear collision.objects
         'init current-scene.entities
 
     except (ex)
