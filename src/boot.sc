@@ -19,6 +19,7 @@ import .renderer
 using renderer
 using constants
 import .collision
+import .component
 
 let argc argv = (launch-args)
 
@@ -102,7 +103,6 @@ local io = (ig.GetIO)
 
 ig.impl.Glfw_InitForOpenGL main-window true
 ig.impl.OpenGL3_Init null
-
 
 run-stage;
 
@@ -372,12 +372,20 @@ global main-camera : Camera
     viewport = (vec2 INTERNAL_RESOLUTION)
 
 global player : (Rc entity.Entity)
+global player-collider : (Rc collision.Collider)
+
 fn start-game ()
     try
         current-scene = (Scene "levels/1.json")
         for ent in current-scene.entities
             if (ent.tag == entity.EntityKind.Player)
                 player = (copy ent)
+
+                let hitbox =
+                    'unsafe-extract-payload (player.components @ 1)
+                        component.Component.Hitbox.Type
+                player-collider =
+                    copy hitbox.collider
                 break;
 
         'clear collision.objects
@@ -497,6 +505,10 @@ fn player-move (pos)
         t + (vec2 1 0)
 
     player.position = pos
+    let aabb-min aabb-max = player-collider.aabb.min player-collider.aabb.max
+    let pos-diff = (pos - aabb-min)
+    aabb-min = pos
+    aabb-max += pos-diff
 
 glfw.SetKeyCallback main-window
     fn (window _key scancode action mods)
