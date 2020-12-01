@@ -707,9 +707,6 @@ fn draw ()
     'update current-scene.background-sprites.sprites
     'draw current-scene.background-sprites
 
-    if show-colliders?
-        draw-colliders;
-
 global last-time = (glfw.GetTime)
 while (not (glfw.WindowShouldClose main-window))
     glfw.PollEvents;
@@ -730,9 +727,13 @@ while (not (glfw.WindowShouldClose main-window))
         dt-accum -= step-size
         update step-size
 
-    renderer.begin-frame;
+    renderer.begin;
     draw;
-    renderer.end-frame;
+    renderer.submit;
+
+    if show-colliders?
+        draw-colliders;
+    renderer.present;
 
     ig.impl.OpenGL3_NewFrame;
     ig.impl.Glfw_NewFrame;

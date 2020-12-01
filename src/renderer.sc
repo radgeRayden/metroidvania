@@ -555,7 +555,7 @@ fn init (window)
     game-shader = (GPUShaderProgram sprite-vertex-shader sprite-fragment-shader)
     gl.UseProgram game-shader
 
-fn begin-frame ()
+fn begin ()
     gl.BindFramebuffer gl.GL_FRAMEBUFFER main-render-target
     gl.Viewport 0 0 INTERNAL_RESOLUTION.x INTERNAL_RESOLUTION.y
     gl.ClearColor 1.0 0.2 0.2 1.0
@@ -565,11 +565,12 @@ fn begin-frame ()
         'clear layer
 
 
-fn end-frame ()
+fn submit ()
     for layer in sprite-layers
         'update layer.sprites
         'draw layer
 
+fn present ()
     gl.BindFramebuffer gl.GL_FRAMEBUFFER 0
     gl.ClearColor 0.005 0.005 0.005 1.0
     gl.Clear (gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
@@ -633,7 +634,8 @@ do
         sprite-metadata
 
         init
-        begin-frame
-        end-frame
+        begin
+        submit
+        present
         set-world-transform
     locals;
