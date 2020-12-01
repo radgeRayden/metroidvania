@@ -505,10 +505,7 @@ fn player-move (pos)
         t + (vec2 1 0)
 
     player.position = pos
-    let aabb-min aabb-max = player-collider.aabb.min player-collider.aabb.max
-    let pos-diff = (pos - aabb-min)
-    aabb-min = pos
-    aabb-max += pos-diff
+    'try-move player-collider pos
 
 glfw.SetKeyCallback main-window
     fn (window _key scancode action mods)
