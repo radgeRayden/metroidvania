@@ -648,7 +648,7 @@ fn gizmo-fshader ()
     out fcolor : vec4
         location = 0
 
-    fcolor = (vec4 1)
+    fcolor = (vec4 1 1 1 .25)
 
 global gizmo-shader =
     renderer.GPUShaderProgram gizmo-vshader gizmo-fshader
