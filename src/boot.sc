@@ -389,15 +389,38 @@ fn start-game ()
                 break;
 
         'clear collision.objects
-        local matrix-copy : (Array bool)
-        for el in current-scene.collision-matrix
-            'append matrix-copy (copy el)
-        collision.configure-level
-            collision.LevelCollisionInfo
-                matrix = matrix-copy
-                level-size = (vec2 current-scene.width current-scene.height)
-                tile-size =
-                    vec2 current-scene.tileset.tile-width current-scene.tileset.tile-height
+        let tsize =
+            vec2 current-scene.tileset.tile-width current-scene.tileset.tile-height
+        let tw th =
+            (floor ((current-scene.width as f32) / tsize.x)) as u32
+            (floor ((current-scene.height as f32) / tsize.y)) as u32
+
+        using import itertools
+        for idx x y in (enumerate (dim tw th))
+            let id = (current-scene.level-data @ idx)
+            if ((current-scene.tileset.tile-properties @ (id - 1)) . solid?)
+                local col = (collision.Collider)
+                let tmin =
+                    vec2
+                        (x as f32) * tsize.x
+                        ((th - 1 - y) as f32) * tsize.y
+                col.aabb =
+                    typeinit
+                        # slight bias so colliders don't overlap
+                        tmin + 0.001
+                        tmin + tsize
+                collision.register-object (Rc.wrap (deref col))
+
+        # NOTE: code left out commented in case I decide to use tile lookup again.
+        # local matrix-copy : (Array bool)
+        # for el in current-scene.collision-matrix
+        #     'append matrix-copy (copy el)
+        # collision.configure-level
+        #     collision.LevelCollisionInfo
+        #         matrix = matrix-copy
+        #         level-size = (vec2 current-scene.width current-scene.height)
+        #         tile-size =
+        #             vec2 current-scene.tileset.tile-width current-scene.tileset.tile-height
         'init current-scene.entities
 
     except (ex)

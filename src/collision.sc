@@ -153,9 +153,10 @@ struct Collider
     fn try-move (self pos)
         """"Moves the Collider while resolving collisions with terrain and other colliders.
             Returns the normal and the contact point of the last collision, if any.
-        let map-collision = (resolve-object<->map self pos)
-        let object-collision = (resolve-object<->objects self (imply self.Position vec2))
-        map-collision or object-collision
+        # let map-collision = (resolve-object<->map self pos)
+        # let object-collision = (resolve-object<->objects self (imply self.Position vec2))
+        let object-collision = (resolve-object<->objects self pos)
+        # map-collision or object-collision
 
     global gid-counter : usize
     inline __typecall (cls)
