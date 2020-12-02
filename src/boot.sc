@@ -561,9 +561,6 @@ fn update (dt)
         sprite.rotation = 0
 
     # apply gravity
-    # NOTE: we check for yvel <= 0 so we are still able to jump, since
-    # the jump sets the yvel to be positive, but it would immediately be set to 0
-    # because grounded.
     if ((deref player.grounded?) and (yvel <= 0))
         yvel = -1
     else
