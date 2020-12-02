@@ -566,9 +566,7 @@ fn update (dt)
     else
         yvel = (clamp (yvel + (gravity * dt)) -100. 200.)
 
-    let fdt = (dt / 4)
-    for i in (range 4)
-        player-move (player.position + player.velocity * fdt)
+    player-move (player.position + player.velocity * dt)
 
     'follow main-camera player.position
     'update current-scene.entities dt
