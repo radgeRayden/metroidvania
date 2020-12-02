@@ -450,7 +450,18 @@ fn grounded? ()
         solid-tile? (vec2 (pos.x + 7) (pos.y - 1))
 
 fn player-move (pos)
-    'try-move player-collider pos
+    let collision = ('try-move player-collider pos)
+    try
+        let col = ('unwrap collision)
+        if (col.normal.y < 0)
+            player.grounded? = true
+        elseif (col.normal.y > 0)
+            player.velocity.y = 0
+        elseif (col.normal != 0)
+            player.velocity.x = 0
+    else
+        player.grounded? = false
+        ;
     player.position = player-collider.Position
 
 glfw.SetKeyCallback main-window
@@ -529,7 +540,7 @@ fn update (dt)
     fn key-down? (code)
         (glfw.GetKey main-window code) as bool
 
-    player.grounded? = (grounded?)
+    # player.grounded? = (grounded?)
 
     let yvel = player.velocity.y
     let xvel = player.velocity.x
@@ -564,7 +575,7 @@ fn update (dt)
     # the jump sets the yvel to be positive, but it would immediately be set to 0
     # because grounded.
     if ((deref player.grounded?) and (yvel <= 0))
-        yvel = 0
+        yvel = -1
     else
         yvel = (clamp (yvel + (gravity * dt)) -100. 200.)
 

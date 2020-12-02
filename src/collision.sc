@@ -5,6 +5,7 @@ using import Array
 using import glm
 using import Rc
 using import property
+using import Option
 
 let c2 = (import .FFI.c2)
 import .math
@@ -22,8 +23,10 @@ typedef+ c2.AABB
             min = position
             max = (position + size)
 
-# WORLD INTERNAL STATE
-# ================================================================================
+struct Collision plain
+    normal : vec2
+    contact : vec2
+
 struct Collider
 global objects : (Array (Rc Collider))
 
@@ -35,6 +38,7 @@ struct LevelCollisionInfo
 global level-info : LevelCollisionInfo
 
 fn resolve-object<->map (obj new-pos)
+    local last-collision : (Option Collision)
     let aabb = obj.aabb
     # scene is all on positive atm, so just do whatever. Could also
     # block, but I think it might be useful to not do that (eg. to transition rooms)
@@ -44,7 +48,7 @@ fn resolve-object<->map (obj new-pos)
         (new-pos.x > level-info.level-size.x)
         (new-pos.y > level-info.level-size.y))
         obj.Position = new-pos
-        return;
+        return last-collision
 
     let tile-size = level-info.tile-size
     level-size-tiles := level-info.level-size / tile-size
@@ -74,7 +78,7 @@ fn resolve-object<->map (obj new-pos)
                     false
 
         if (not solid?)
-            continue;
+            repeat new-pos
 
         local manifold : c2.Manifold
         c2.AABBtoAABBManifold
@@ -83,7 +87,12 @@ fn resolve-object<->map (obj new-pos)
                 tile * tile-size
                 (tile + 1) * tile-size
             &manifold
+
         if (manifold.count > 0)
+            last-collision =
+                Collision
+                    manifold.n
+                    manifold.contact_points @ 0
             collided? = true
             let normal = (imply manifold.n vec2)
             let depth = (manifold.depths @ 0)
@@ -91,30 +100,43 @@ fn resolve-object<->map (obj new-pos)
 
             pos := new-pos - pvec
             obj.Position = pos
+
             repeat pos
         new-pos
 
     if (not collided?)
         obj.Position = new-pos
 
+    deref last-collision
+
 fn resolve-object<->objects (moving new-pos)
     local collided? : bool
-    for obj in objects
+    local last-collision : (Option Collision)
+    fold (new-pos = new-pos) for obj in objects
         if (obj.id == moving.id)
-            continue;
+            repeat new-pos
         local manifold : c2.Manifold
         c2.AABBtoAABBManifold
             'project moving.aabb new-pos
             obj.aabb
             &manifold
         if (manifold.count > 0)
+            last-collision =
+                Collision
+                    manifold.n
+                    manifold.contact_points @ 0
             collided? = true
             let normal = (imply manifold.n vec2)
             let depth = (manifold.depths @ 0)
-            moving.Position = (new-pos - (normal * depth))
+            let pos = (new-pos - (normal * depth))
+            moving.Position = pos
+            repeat pos
+        new-pos
 
     if (not collided?)
         moving.Position = new-pos
+
+    deref last-collision
 
 struct Collider
     id : usize
@@ -129,8 +151,11 @@ struct Collider
                 ;
 
     fn try-move (self pos)
-        resolve-object<->map self pos
-        resolve-object<->objects self (imply self.Position vec2)
+        """"Moves the Collider while resolving collisions with terrain and other colliders.
+            Returns the normal and the contact point of the last collision, if any.
+        let map-collision = (resolve-object<->map self pos)
+        let object-collision = (resolve-object<->objects self (imply self.Position vec2))
+        map-collision or object-collision
 
     global gid-counter : usize
     inline __typecall (cls)
