@@ -7,6 +7,7 @@ using import Rc
 using import property
 
 let c2 = (import .FFI.c2)
+import .math
 
 semantically-bind-types c2.v vec2
     inline "conv-to" (self)
@@ -26,6 +27,71 @@ typedef+ c2.AABB
 struct Collider
 global objects : (Array (Rc Collider))
 
+struct LevelCollisionInfo
+    matrix : (Array bool)
+    level-size : vec2
+    tile-size : vec2
+
+global level-info : LevelCollisionInfo
+
+fn resolve-object<->map (obj new-pos)
+    let aabb = obj.aabb
+    # scene is all on positive atm, so just do whatever. Could also
+    # block, but I think it might be useful to not do that (eg. to transition rooms)
+    if (or
+        (new-pos.x < 0)
+        (new-pos.y < 0)
+        (new-pos.x > level-info.level-size.x)
+        (new-pos.y > level-info.level-size.y))
+        obj.Position = new-pos
+        return;
+
+    let tile-size = level-info.tile-size
+    level-size-tiles := level-info.level-size / tile-size
+
+    # go through all tiles that potentially intersect our object
+    let region-min = (floor (aabb.min / tile-size))
+    let region-max = (math.ceil (aabb.max / tile-size))
+    region-size := region-max - region-min
+
+    let positive-size? = ((region-size.x > 0) and (region-size.y > 0))
+    assert positive-size? "invalid level info"
+
+    using import itertools
+    local collided? : bool
+    for ox oy in (dim (region-size.x as u32) (region-size.y as u32))
+        tile := region-min + (vec2 ox oy)
+
+        # sample tilemap
+        let solid? =
+            do
+                let inw inh = (unpack (tile < level-size-tiles))
+                if (and inw inh)
+                    idx := (level-size-tiles.y - 1 - tile.y) * level-size-tiles.x + tile.x
+                    deref
+                        level-info.matrix @ (idx as usize)
+                else
+                    false
+
+        if (not solid?)
+            continue;
+
+        local manifold : c2.Manifold
+        c2.AABBtoAABBManifold
+            'project aabb new-pos
+            c2.AABB
+                tile * tile-size
+                (tile + 1) * tile-size
+            &manifold
+        if (manifold.count > 0)
+            collided? = true
+            let normal = (imply manifold.n vec2)
+            let depth = (manifold.depths @ 0)
+            obj.Position = (new-pos - (normal * depth))
+
+    if (not collided?)
+        obj.Position = new-pos
+
 struct Collider
     id : usize
     aabb : c2.AABB
@@ -39,6 +105,8 @@ struct Collider
                 ;
 
     fn try-move (self pos)
+        resolve-object<->map self pos
+        let pos = self.Position
         local collided? : bool
         for obj in objects
             if (obj.id == self.id)
@@ -64,14 +132,19 @@ struct Collider
         super-type.__typecall cls
             id = new-id
 
+fn configure-level (collision-info)
+    level-info = collision-info
+
 fn register-object (col)
     'append objects col
 
 do
     let
         Collider
+        LevelCollisionInfo
 
         objects
 
         register-object
+        configure-level
     locals;

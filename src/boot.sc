@@ -389,6 +389,15 @@ fn start-game ()
                 break;
 
         'clear collision.objects
+        local matrix-copy : (Array bool)
+        for el in current-scene.collision-matrix
+            'append matrix-copy (copy el)
+        collision.configure-level
+            collision.LevelCollisionInfo
+                matrix = matrix-copy
+                level-size = (vec2 current-scene.width current-scene.height)
+                tile-size =
+                    vec2 current-scene.tileset.tile-width current-scene.tileset.tile-height
         'init current-scene.entities
 
     except (ex)
@@ -441,71 +450,8 @@ fn grounded? ()
         solid-tile? (vec2 (pos.x + 7) (pos.y - 1))
 
 fn player-move (pos)
-    # scene is all on positive atm, so just do whatever. Could also
-    # block, but I think it might be useful to not do that (eg. to transition rooms)
-    if (or
-        (pos.x < 0)
-        (pos.y < 0)
-        (pos.x > (current-scene.width as f32))
-        (pos.y > (current-scene.height as f32)))
-        player.position = pos
-        return;
-
-    let tile-size = (vec2 current-scene.tileset.tile-width current-scene.tileset.tile-height)
-    let lw lh =
-        (current-scene.width as f32) / tile-size.x
-        (current-scene.height as f32) / tile-size.y
-
-    # find all tiles that intersect the player AABB and test against them
-    init-tx := (floor (pos.x / tile-size.x))
-    # FIXME: maybe we have to subtract one pixel from the maximum? Seems to be
-    # inclusive, so we're going past the actual AABB a bit.
-    loop (t = (vec2 init-tx (floor (pos.y / tile-size.y))))
-        # player AABB is hardcoded to 8x8 for now
-        if ((t.y * tile-size.y) > (pos.y + 8))
-            break;
-        if (t.y >= lh)
-            break;
-        if ((t.x * tile-size.x) > (pos.x + 8))
-            repeat (vec2 init-tx (t.y + 1))
-        if (t.x >= lw)
-            break;
-
-        # again remember our world space is y up
-        idx := (lh - 1 - t.y) * lw + t.x
-        solid? := current-scene.collision-matrix @ (idx as usize)
-
-        local manifold : c2.Manifold
-        if solid?
-            c2.AABBtoAABBManifold
-                c2.AABB (c2.v (unpack pos)) (c2.v (unpack (pos + (vec2 8))))
-                c2.AABB
-                    c2.v (unpack (t * tile-size))
-                    c2.v (unpack ((t * tile-size) + tile-size))
-                &manifold
-        if (manifold.count > 0)
-            # TODO: investigate if we should resolve based on the velocity, and not only
-            # informed by the normal. The manifold algorithm reports the normal
-            # based on the smallest axis of penetration, which can give misleading normals
-            # when colliding with corners of boxes.
-            # Another path is to resolve collision multiple times (maybe up to a maximum) until
-            # we are completely clear. At the moment we correct once and then exit, which might leave
-            # our player character still penetrating something, causing a weird collision to be
-            # reported next frame. This is probably the cause of bugs such as getting stuck
-            # when bumping on the ceiling and sometimes sliding down walls.
-            let normal = (vec2 manifold.n.x manifold.n.y)
-            if (normal.y < 0)
-                player.velocity.y = 0
-            if (normal.x != 0)
-                player.velocity.x = 0
-            let depth = (manifold.depths @ 0)
-            player.position = (pos - (normal * depth))
-            return;
-
-        t + (vec2 1 0)
-
-    player.position = pos
     'try-move player-collider pos
+    player.position = player-collider.Position
 
 glfw.SetKeyCallback main-window
     fn (window _key scancode action mods)
