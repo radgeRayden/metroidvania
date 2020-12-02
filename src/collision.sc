@@ -97,6 +97,25 @@ fn resolve-object<->map (obj new-pos)
     if (not collided?)
         obj.Position = new-pos
 
+fn resolve-object<->objects (moving new-pos)
+    local collided? : bool
+    for obj in objects
+        if (obj.id == moving.id)
+            continue;
+        local manifold : c2.Manifold
+        c2.AABBtoAABBManifold
+            'project moving.aabb new-pos
+            obj.aabb
+            &manifold
+        if (manifold.count > 0)
+            collided? = true
+            let normal = (imply manifold.n vec2)
+            let depth = (manifold.depths @ 0)
+            moving.Position = (new-pos - (normal * depth))
+
+    if (not collided?)
+        moving.Position = new-pos
+
 struct Collider
     id : usize
     aabb : c2.AABB
@@ -111,24 +130,7 @@ struct Collider
 
     fn try-move (self pos)
         resolve-object<->map self pos
-        let pos = self.Position
-        local collided? : bool
-        for obj in objects
-            if (obj.id == self.id)
-                continue;
-            local manifold : c2.Manifold
-            c2.AABBtoAABBManifold
-                'project self.aabb pos
-                obj.aabb
-                &manifold
-            if (manifold.count > 0)
-                collided? = true
-                let normal = (imply manifold.n vec2)
-                let depth = (manifold.depths @ 0)
-                self.Position = (pos - (normal * depth))
-
-        if (not collided?)
-            self.Position = pos
+        resolve-object<->objects self (imply self.Position vec2)
 
     global gid-counter : usize
     inline __typecall (cls)
