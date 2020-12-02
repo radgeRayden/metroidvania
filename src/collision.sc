@@ -55,11 +55,11 @@ fn resolve-object<->map (obj new-pos)
     region-size := region-max - region-min
 
     let positive-size? = ((region-size.x > 0) and (region-size.y > 0))
-    assert positive-size? "invalid level info"
+    assert positive-size? (.. "invalid level info " (repr region-min) (repr region-max))
 
     using import itertools
     local collided? : bool
-    for ox oy in (dim (region-size.x as u32) (region-size.y as u32))
+    fold (new-pos = new-pos) for ox oy in (dim (region-size.x as u32) (region-size.y as u32))
         tile := region-min + (vec2 ox oy)
 
         # sample tilemap
@@ -87,7 +87,12 @@ fn resolve-object<->map (obj new-pos)
             collided? = true
             let normal = (imply manifold.n vec2)
             let depth = (manifold.depths @ 0)
-            obj.Position = (new-pos - (normal * depth))
+            let pvec = (normal * depth)
+
+            pos := new-pos - pvec
+            obj.Position = pos
+            repeat pos
+        new-pos
 
     if (not collided?)
         obj.Position = new-pos
