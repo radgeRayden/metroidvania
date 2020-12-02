@@ -670,6 +670,9 @@ while (not (glfw.WindowShouldClose main-window))
     glfw.GetFramebufferSize main-window &window-width &window-height
 
     global dt-accum : f64
+    global fps-time-accum : f64
+    global fps-samples-counter : u64
+    global avg-fps : f32
 
     let time-scale = 1
 
@@ -677,6 +680,13 @@ while (not (glfw.WindowShouldClose main-window))
     let real-dt = (now - last-time)
     last-time = now
     dt-accum += real-dt * time-scale
+
+    if (fps-time-accum > 0.5)
+        avg-fps = (1.0:f64 / (fps-time-accum / (fps-samples-counter as f64))) as f32
+        fps-time-accum -= 0.5
+        fps-samples-counter = 0
+    fps-time-accum += real-dt
+    fps-samples-counter += 1
 
     step-size := 1 / 60
 
@@ -700,6 +710,7 @@ while (not (glfw.WindowShouldClose main-window))
     if player-stats-open?
         ig.Begin "Debug Info" &player-stats-open? 0
 
+        ig.Text "avg fps: %.3f" avg-fps
         # position in tiles
         let tile-p =
             do
