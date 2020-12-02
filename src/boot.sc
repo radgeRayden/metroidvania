@@ -542,10 +542,12 @@ fn update (dt)
             xvel = 0
         xvel = (min player-speed (xvel + accel * dt))
     else
-        let friction = (-accel * (sign xvel) * 1.5)
-        xvel = (xvel + friction * dt)
-        if ((abs xvel) <= (friction * dt))
+        friction := -accel * (sign xvel) * 1.5
+        new-xvel := xvel + friction * dt
+        if ((sign xvel) != (sign new-xvel))
             xvel = 0
+        else
+            xvel = new-xvel
 
     if (xvel != 0)
         using import .component
