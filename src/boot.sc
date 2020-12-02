@@ -681,7 +681,7 @@ while (not (glfw.WindowShouldClose main-window))
 
     if (fps-time-accum > 0.5)
         avg-fps = (1.0:f64 / (fps-time-accum / (fps-samples-counter as f64))) as f32
-        fps-time-accum -= 0.5
+        fps-time-accum = 0.0
         fps-samples-counter = 0
     fps-time-accum += real-dt
     fps-samples-counter += 1
