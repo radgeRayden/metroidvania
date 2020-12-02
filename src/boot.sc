@@ -441,37 +441,6 @@ global show-colliders? : bool
 
 'set-bounds main-camera (vec2) (vec2 current-scene.width current-scene.height)
 
-fn solid-tile? (pos)
-    let tile-size = (vec2 current-scene.tileset.tile-width current-scene.tileset.tile-height)
-    let lw lh =
-        (current-scene.width as f32) / tile-size.x
-        (current-scene.height as f32) / tile-size.y
-
-    let t = (floor (pos / tile-size))
-
-    # out of bounds
-    if (or
-        (t.x < 0)
-        (t.x > lw)
-        (t.y < 0)
-        (t.y > lh))
-        return false
-
-    # again remember our world space is y up
-    idx := (lh - 1 - t.y) * lw + t.x
-    deref (current-scene.collision-matrix @ (idx as usize))
-
-fn grounded? ()
-    # NOTE: because currently the player AABB is hardcoded at 8x8, we know
-    # if it clears the tiles at its 2 lower corners then it's airborne.
-    let pos = player.position
-    or
-        solid-tile? (vec2 pos.x (pos.y - 1))
-        # NOTE: adding 7 under the assumption that the interval is [begin,end)
-        # it seems to solve a bug where we could climb walls, because it would always be grounded
-        # as long as we were touching them to the right.
-        solid-tile? (vec2 (pos.x + 7) (pos.y - 1))
-
 fn player-move (pos)
     let collision = ('try-move player-collider pos)
     try
@@ -562,8 +531,6 @@ glfw.SetKeyCallback main-window
 fn update (dt)
     fn key-down? (code)
         (glfw.GetKey main-window code) as bool
-
-    # player.grounded? = (grounded?)
 
     let yvel = player.velocity.y
     let xvel = player.velocity.x
