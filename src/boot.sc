@@ -526,6 +526,7 @@ glfw.SetKeyCallback main-window
         if ((_key == glfw.GLFW_KEY_SPACE) and (action == glfw.GLFW_PRESS))
             if player.grounded?
                 player.velocity.y = jump-force
+                player.grounded? = false
         ;
 
 fn update (dt)
