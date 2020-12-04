@@ -91,7 +91,7 @@ typedef+ Component
         'apply self
             (T self) -> ('draw self parent)
 
-let ComponentList = (Array Component)
+let ComponentList = (Array (Rc Component))
 typedef+ ComponentList
     inline __typecall (cls ...)
         local arr = (super-type.__typecall cls)
