@@ -4,6 +4,7 @@ using import .common
 import .renderer
 using import .component
 import .collision
+import .events
 
 using import enum
 using import struct
@@ -67,6 +68,7 @@ struct EntityList
     fn init (self)
         for ent in self
             for component in ent.components
+                events.register-subscriptions component
                 'init component ent
 
     fn update (self dt)
