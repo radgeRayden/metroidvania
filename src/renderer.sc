@@ -14,7 +14,7 @@ let C = (import .radlib.libc)
 
 import .filesystem
 using import .common
-using constants # common.constants
+using import .constants # common.constants
 import .math
 
 # LOW LEVEL BASE

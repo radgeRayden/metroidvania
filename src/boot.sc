@@ -14,12 +14,12 @@ using import Option
 import .math
 import .entity
 import .filesystem
-using import .common
 import .renderer
-using renderer
-using constants
 import .collision
 import .component
+using import .common
+using import .constants
+using renderer
 
 let argc argv = (launch-args)
 
