@@ -11,6 +11,7 @@ let gl = (import .FFI.glad)
 let cjson = (import .FFI.cjson)
 let glfw = (import .FFI.glfw)
 let C = (import .radlib.libc)
+let stbi = (import .FFI.stbi)
 
 import .filesystem
 using import .common
@@ -97,6 +98,38 @@ fn init-gl ()
     local VAO : gl.GLuint
     gl.GenVertexArrays 1 &VAO
     gl.BindVertexArray VAO
+
+typedef+ ImageData
+    fn load-image-data (filename)
+        let data = (filesystem.load-full-file filename)
+        local x : i32
+        local y : i32
+        local n : i32
+        let img-data =
+            stbi.load_from_memory
+                (imply data pointer) as (pointer u8)
+                (countof data) as i32
+                &x
+                &y
+                &n
+                0
+        let data-len = (x * y * n)
+        _
+            Struct.__typecall (Array u8)
+                _items = img-data
+                _count = data-len
+                _capacity = data-len
+            deref x
+            deref y
+            deref n
+
+    inline __typecall (cls filename)
+        let data w h c = (load-image-data filename)
+        super-type.__typecall cls
+            data = data
+            width = (w as usize)
+            height = (h as usize)
+            channels = (c as u32)
 
 typedef GPUBuffer <:: u32
     inline... __typecall (cls kind size)
