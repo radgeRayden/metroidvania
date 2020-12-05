@@ -27,6 +27,7 @@ using import .radlib.core-extensions
 import .common
 import .renderer
 import .collision
+import .event-system
 
 typedef ComponentBase < Struct
     fn init (...)
