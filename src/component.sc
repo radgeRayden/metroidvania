@@ -57,6 +57,7 @@ do
         offset : vec2
         size : vec2
         collider : (Rc collision.Collider)
+        trigger? : bool
 
         fn init (self parent)
             aabb-min := parent.position + self.offset
@@ -67,7 +68,11 @@ do
                     aabb-min
                     aabb-max
 
-            collision.register-object (copy self.collider)
+            if (not self.trigger?)
+                collision.register-object (copy self.collider)
+            else
+                collision.register-trigger (copy self.collider)
+            ;
             ;
 
     locals;

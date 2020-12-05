@@ -6,6 +6,7 @@ using import glm
 using import Rc
 using import property
 using import Option
+using import Map
 
 let c2 = (import .FFI.c2)
 import .math
@@ -31,7 +32,13 @@ struct Collision plain
     contact : vec2
 
 struct Collider
+
+struct Trigger
+    collider : (Rc Collider)
+    touching : (Map u32 bool)
+
 global objects : (Array (Rc Collider))
+global triggers : (Array Trigger)
 
 struct LevelCollisionInfo
     matrix : (Array bool)
@@ -143,6 +150,38 @@ fn resolve-object<->objects (moving new-pos)
 
     deref last-collision
 
+fn test-triggers (active pos)
+    for trigger in triggers
+        let touching? =
+            c2.AABBtoAABB
+                active.aabb
+                trigger.collider.aabb
+        let was-touching? = ('in? trigger.touching active.id)
+
+        using event-system
+        touching? as:= bool
+        if (touching? and (not was-touching?))
+            push-event EventType.TriggerEnter
+                Event
+                    target = active.id
+                    payload = (EventPayload.EntityId trigger.collider.id)
+            push-event EventType.TriggerEnter
+                Event
+                    target = trigger.collider.id
+                    payload = (EventPayload.EntityId active.id)
+            'set trigger.touching active.id true
+
+        if ((not touching?) and was-touching?)
+            push-event EventType.TriggerExit
+                Event
+                    target = active.id
+                    payload = (EventPayload.EntityId trigger.collider.id)
+            push-event EventType.TriggerExit
+                Event
+                    target = trigger.collider.id
+                    payload = (EventPayload.EntityId active.id)
+            'discard trigger.touching active.id
+
 struct Collider
     id : u32
     aabb : c2.AABB
@@ -173,6 +212,8 @@ struct Collider
                     target = col.passive-object
                     payload = (EventPayload.EntityId col.active-object)
 
+        # we test at the resolved position
+        test-triggers self (imply self.Position vec2)
         object-collision
         # map-collision or object-collision
 
@@ -181,6 +222,11 @@ fn configure-level (collision-info)
 
 fn register-object (col)
     'append objects col
+    ;
+
+fn register-trigger (col)
+    'append triggers (Trigger col)
+    ;
 
 do
     let
@@ -190,5 +236,6 @@ do
         objects
 
         register-object
+        register-trigger
         configure-level
     locals;

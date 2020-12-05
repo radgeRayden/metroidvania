@@ -111,6 +111,8 @@ struct EntityList
                                     callback-name component ev.payload
 
         fire-events EventType.Collision 'on-collision
+        fire-events EventType.TriggerEnter 'on-trigger-enter
+        fire-events EventType.TriggerExit 'on-trigger-exit
 
         for ent in self
             for component in ent.components
@@ -173,6 +175,7 @@ fn init-archetypes ()
                         components.Hitbox
                             size = hitbox-size
                             collider = (Rc.wrap (collision.Collider))
+                            trigger? = true
 
     set-archetype EntityKind.Skeleton
         fn ()

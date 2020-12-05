@@ -18,6 +18,8 @@ struct Event
 
 enum EventType plain
     Collision
+    TriggerEnter
+    TriggerExit
 
     inline __hash (self)
         hash (storagecast self)
