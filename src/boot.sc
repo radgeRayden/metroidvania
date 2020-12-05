@@ -239,8 +239,37 @@ struct Scene
             let tile-width tile-height = tileset-obj.tile-width tileset-obj.tile-height
             local background-sprites =
                 SpriteBatch tileset-obj.image tile-width tile-height
+
+            local entities : entity.EntityList
+
+            # we use a special entity to tie scene colliders to the scene tilemap. Later
+            # I might want to extend this so we can identify individual tiles.
+            let tilemap-entity =
+                'add entities
+                    call
+                        'get entity.archetypes entity.EntityKind.Tilemap
+
+            'clear collision.objects
             for i x y in (enumerate (dim scene-width-tiles scene-height-tiles))
                 let tile = (level-data @ i)
+                let tile-position =
+                    vec2
+                        tileset-obj.tile-width * (x as u32)
+                        # because images go y down but we go y up
+                        tileset-obj.tile-height * ((scene-height-tiles - 1 - y) as u32)
+
+                # add scene colliders
+                if ((tileset-obj.tile-properties @ (tile - 1)) . solid?)
+                    let col =
+                        collision.Collider
+                            id = tilemap-entity.id
+                            aabb =
+                                typeinit
+                                    # slight bias so colliders don't overlap
+                                    tile-position + 0.001
+                                    tile-position + (vec2 tileset-obj.tile-width tileset-obj.tile-height)
+                    collision.register-object (Rc.wrap (deref col))
+
                 let scale =
                     if (tile == 0)
                         vec2; # invisible tile
@@ -248,18 +277,13 @@ struct Scene
                         vec2 tile-width tile-height
                 'add background-sprites
                     Sprite
-                        position =
-                            vec2
-                                tileset-obj.tile-width * (x as u32)
-                                # because images go y down but we go y up
-                                tileset-obj.tile-height * ((scene-height-tiles - 1 - y) as u32)
+                        position = tile-position
                         scale = scale
                         pivot = (vec2)
                         texcoords = (vec4 0 0 1 1)
                         page = (tile - 1)
                         rotation = 0
 
-            local entities : entity.EntityList
 
             let obj-layer =
                 cjson.GetArrayItem
@@ -387,29 +411,6 @@ fn start-game ()
                 player-collider =
                     copy hitbox.collider
                 break;
-
-        'clear collision.objects
-        let tsize =
-            vec2 current-scene.tileset.tile-width current-scene.tileset.tile-height
-        let tw th =
-            (floor ((current-scene.width as f32) / tsize.x)) as u32
-            (floor ((current-scene.height as f32) / tsize.y)) as u32
-
-        using import itertools
-        for idx x y in (enumerate (dim tw th))
-            let id = (current-scene.level-data @ idx)
-            if ((current-scene.tileset.tile-properties @ (id - 1)) . solid?)
-                local col = (collision.Collider)
-                let tmin =
-                    vec2
-                        (x as f32) * tsize.x
-                        ((th - 1 - y) as f32) * tsize.y
-                col.aabb =
-                    typeinit
-                        # slight bias so colliders don't overlap
-                        tmin + 0.001
-                        tmin + tsize
-                collision.register-object (Rc.wrap (deref col))
 
         # NOTE: code left out commented in case I decide to use tile lookup again.
         # local matrix-copy : (Array bool)

@@ -31,6 +31,7 @@ enum EntityKind plain
     Player = 0
     Ducky = 1
     Skeleton = 2
+    Tilemap = 3
     inline __hash (self)
         hash (self as i32)
 
@@ -186,6 +187,10 @@ fn init-archetypes ()
                             offset = (vec2 14 0)
                             size = (vec2 11 22)
                             collider = (Rc.wrap (collision.Collider))
+    set-archetype EntityKind.Tilemap
+        fn ()
+            Entity
+                tag = EntityKind.Tilemap
     locals;
 
 do
