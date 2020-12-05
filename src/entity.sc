@@ -176,6 +176,7 @@ fn init-archetypes ()
                             size = hitbox-size
                             collider = (Rc.wrap (collision.Collider))
                             trigger? = true
+                        components.MessageBoxTrigger 0
 
     set-archetype EntityKind.Skeleton
         fn ()

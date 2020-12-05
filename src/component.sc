@@ -29,6 +29,8 @@ import .renderer
 import .collision
 import .event-system
 
+global show-msgbox : bool
+
 typedef ComponentBase < Struct
     fn init (...)
         ;
@@ -75,6 +77,12 @@ do
             ;
             ;
 
+    struct MessageBoxTrigger < ComponentBase
+        msg-index : u32
+
+        fn on-trigger-enter (...)
+            show-msgbox = true
+
     locals;
 
 # I need this for some reason
@@ -113,4 +121,6 @@ do
         Component
         ComponentList
         components
+
+        show-msgbox
     locals;

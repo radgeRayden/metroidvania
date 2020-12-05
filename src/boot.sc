@@ -726,6 +726,11 @@ while (not (glfw.WindowShouldClose main-window))
         ig.Text f"grounded?: ${player.grounded?}"
         ig.End;
 
+    if component.show-msgbox
+        ig.Begin "Message Box" &component.show-msgbox 0
+        ig.Text "Hello World! The code for this is a sin!"
+        ig.End;
+
     ig.Render;
     ig.impl.OpenGL3_RenderDrawData (ig.GetDrawData)
 

@@ -4,6 +4,7 @@ using import Array
 
 enum EventPayload
     EntityId : u32
+    TextBoxIndex : u32
 
     inline __copy (self)
         'apply self
