@@ -2,16 +2,6 @@ using import struct
 using import enum
 using import Array
 
-# spice has-symbol? (T sym)
-#     T as:= type
-#     sym as:= Symbol
-#     try
-#         let sym = ('@ T sym)
-#         `true
-#     else
-#         `false
-# run-stage;
-
 enum EventPayload
     EntityId : u32
 
@@ -53,20 +43,6 @@ fn poll-events (evtype)
         'append result (copy ev)
     'clear queue
     result
-
-# fn register-subscriptions (entity)
-#     for component in entity.components
-#         let Component = ((typeof component) . Type)
-#         'apply (imply component Component)
-#             inline (ft self)
-#                 let T = (elementof ft.Type 0)
-#                 inline subscribe (callback-name subscribe-fn)
-#                     static-if (has-symbol? T callback-name)
-#                         # TODO: change to static-typify events.EventCallback once that is implemented
-#                         subscribe-fn (copy self) (imply (getattr T callback-name) Closure)
-
-                # subscribe 'on-trigger-enter on-trigger-enter-subscribe
-                # subscribe 'on-trigger-exit on-trigger-exit-subscribe
 
 do
     let
