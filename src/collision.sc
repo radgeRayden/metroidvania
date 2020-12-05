@@ -9,6 +9,7 @@ using import Option
 
 let c2 = (import .FFI.c2)
 import .math
+import .event-system
 
 semantically-bind-types c2.v vec2
     inline "conv-to" (self)
@@ -24,6 +25,8 @@ typedef+ c2.AABB
             max = (position + size)
 
 struct Collision plain
+    active-object : u32
+    passive-object : u32
     normal : vec2
     contact : vec2
 
@@ -123,6 +126,8 @@ fn resolve-object<->objects (moving new-pos)
         if (manifold.count > 0)
             last-collision =
                 Collision
+                    moving.id
+                    obj.id
                     manifold.n
                     manifold.contact_points @ 0
             collided? = true
@@ -139,7 +144,7 @@ fn resolve-object<->objects (moving new-pos)
     deref last-collision
 
 struct Collider
-    id : usize
+    id : u32
     aabb : c2.AABB
 
     let Position =
@@ -156,14 +161,20 @@ struct Collider
         # let map-collision = (resolve-object<->map self pos)
         # let object-collision = (resolve-object<->objects self (imply self.Position vec2))
         let object-collision = (resolve-object<->objects self pos)
-        # map-collision or object-collision
+        if object-collision
+            let col = ('force-unwrap object-collision)
+            using event-system
+            push-event EventType.Collision
+                Event
+                    target = col.active-object
+                    payload = (EventPayload.EntityId col.passive-object)
+            push-event EventType.Collision
+                Event
+                    target = col.passive-object
+                    payload = (EventPayload.EntityId col.active-object)
 
-    global gid-counter : usize
-    inline __typecall (cls)
-        let new-id = (deref gid-counter)
-        gid-counter += 1
-        super-type.__typecall cls
-            id = new-id
+        object-collision
+        # map-collision or object-collision
 
 fn configure-level (collision-info)
     level-info = collision-info

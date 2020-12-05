@@ -61,6 +61,7 @@ do
         fn init (self parent)
             aabb-min := parent.position + self.offset
             aabb-max := aabb-min + self.size
+            self.collider.id = parent.id
             self.collider.aabb =
                 typeinit
                     aabb-min
