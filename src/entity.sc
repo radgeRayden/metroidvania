@@ -84,35 +84,43 @@ struct EntityList
 
     fn update (self dt)
         using event-system
-        inline fire-events (evtype callback-name)
+        inline fire-events (evtype callback-name expected-payload)
             let events = (poll-events evtype)
 
+            inline fire-event (ent payload)
+                for super-component in ent.components
+                    'apply super-component
+                        inline (ft component)
+                            let T = (elementof ft.Type 0)
+                            static-if (has-symbol? T callback-name)
+                                callback-name component payload
             for ev in events
+                assert (('literal ev.payload) == expected-payload.Literal)
+                # components.sc can't access the entity list to do entity lookups, so we must
+                # provide them with the entity directly.
+                let payload =
+                    static-if (expected-payload == EventPayload.EntityId)
+                        try
+                            'get self._entity-lookup
+                                'unsafe-extract-payload ev.payload expected-payload.Type
+                        else (continue)
+                    else
+                        ('unsafe-extract-payload ev.payload expected-payload.Type)
                 # respond to events
                 # TODO: use something less dangerous as a sentinel value, maybe an enum.
                 # If target is this special value, then every entity receives the event.
                 if (ev.target == -1:u32)
                     for ent in self._entities
-                        for super-component in ent.components
-                            'apply super-component
-                                inline (ft component)
-                                    let T = (elementof ft.Type 0)
-                                    static-if (has-symbol? T callback-name)
-                                        callback-name component ev.payload
+                        fire-event ent payload
                 else
                     let target =
                         try ('get self._entity-lookup ev.target)
                         else (continue) # entity is already dead!
-                    for super-component in target.components
-                        'apply super-component
-                            inline (ft component)
-                                let T = (elementof ft.Type 0)
-                                static-if (has-symbol? T callback-name)
-                                    callback-name component ev.payload
+                    fire-event target payload
 
-        fire-events EventType.Collision 'on-collision
-        fire-events EventType.TriggerEnter 'on-trigger-enter
-        fire-events EventType.TriggerExit 'on-trigger-exit
+        fire-events EventType.Collision 'on-collision EventPayload.EntityId
+        fire-events EventType.TriggerEnter 'on-trigger-enter EventPayload.EntityId
+        fire-events EventType.TriggerExit 'on-trigger-exit EventPayload.EntityId
 
         for ent in self
             for component in ent.components

@@ -80,8 +80,15 @@ do
     struct MessageBoxTrigger < ComponentBase
         msg-index : u32
 
-        fn on-trigger-enter (...)
-            show-msgbox = true
+        fn on-trigger-enter (self other)
+            let Tag = (typeof other.tag)
+            if (other.tag == Tag.Player)
+                show-msgbox = true
+
+        fn on-trigger-exit (self other)
+            let Tag = (typeof other.tag)
+            if (other.tag == Tag.Player)
+                show-msgbox = false
 
     locals;
 
