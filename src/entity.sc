@@ -93,7 +93,7 @@ struct EntityList
                         inline (ft component)
                             let T = (elementof ft.Type 0)
                             static-if (has-symbol? T callback-name)
-                                callback-name component payload
+                                callback-name component ent payload
             for ev in events
                 assert (('literal ev.payload) == expected-payload.Literal)
                 # components.sc can't access the entity list to do entity lookups, so we must
