@@ -32,6 +32,7 @@ enum EntityKind plain
     Ducky = 1
     Skeleton = 2
     Tilemap = 3
+    Coin = 4
     inline __hash (self)
         hash (self as i32)
 
@@ -211,10 +212,29 @@ fn init-archetypes ()
                             offset = (vec2 14 0)
                             size = (vec2 11 22)
                             collider = (Rc.wrap (collision.Collider))
+
     set-archetype EntityKind.Tilemap
         fn ()
             Entity
                 tag = EntityKind.Tilemap
+
+    set-archetype EntityKind.Coin
+        fn ()
+            sprite := (get-sprite-group "adve") @ 3
+            let hitbox-size = (copy sprite.scale)
+
+            Entity
+                tag = EntityKind.Coin
+                components =
+                    ComponentList
+                        components.Sprite
+                            layer = 0
+                            sprite
+                        components.Hitbox
+                            size = hitbox-size
+                            collider = (Rc.wrap (collision.Collider))
+                            trigger? = true
+                        components.CoinBehaviour 1
     locals;
 
 do

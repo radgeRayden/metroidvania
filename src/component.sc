@@ -99,6 +99,14 @@ do
             if (other.tag == Tag.Player)
                 show-msgbox = false
 
+    struct CoinBehaviour < ComponentBase
+        value : u32
+
+        fn on-trigger-enter (self parent other)
+            ;
+        fn on-trigger-exit (self parent other)
+            ;
+
     locals;
 
 # I need this for some reason
