@@ -77,6 +77,13 @@ do
             else
                 collision.register-trigger (copy self.collider)
             ;
+
+        fn destroy (self parent)
+            if self.trigger?
+                collision.remove-trigger parent.id
+            else
+                collision.remove-object parent.id
+
             ;
 
     struct MessageBoxTrigger < ComponentBase
@@ -86,6 +93,7 @@ do
             let Tag = (typeof other.tag)
             if (other.tag == Tag.Player)
                 show-msgbox = true
+            parent.alive? = false
 
         fn on-trigger-exit (self parent other)
             let Tag = (typeof other.tag)

@@ -220,12 +220,36 @@ struct Collider
 fn configure-level (collision-info)
     level-info = collision-info
 
+inline swap-n-pop (arr index)
+    'swap arr index ((countof arr) - 1)
+    'pop arr
+
 fn register-object (col)
     'append objects col
     ;
 
+# NOTE: we need to do this by search because we are using an Array. Unfortunately we can't
+# use a hashmap because the tilemap uses the same id for all its colliders. If that is resolved
+# it will be possible to do it that way instead.
+fn remove-object (id)
+    """"Remove a collider pertaining to an entity denoted by id.
+    for i obj in (enumerate objects)
+        if (obj.id == id)
+            swap-n-pop objects i
+            return;
+    ;
+
 fn register-trigger (col)
     'append triggers (Trigger col)
+    ;
+
+fn remove-trigger (id)
+    """"Remove a trigger pertaining to an entity denoted by id.
+    for i trigger in (enumerate triggers)
+        if (trigger.collider.id == id)
+            # TODO: emit a trigger exit event for all that are touching it
+            swap-n-pop triggers i
+            return;
     ;
 
 do
@@ -237,6 +261,8 @@ do
         triggers
 
         register-object
+        remove-object
         register-trigger
+        remove-trigger
         configure-level
     locals;

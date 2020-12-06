@@ -74,7 +74,7 @@ struct EntityList
         for i ent in (enumerate self)
             if (not ent.alive?)
                 for component in ent.components
-                    'destroy component
+                    'destroy component ent
                 'swap self._entities i ((countof self._entities) - 1)
                 'pop self._entities
                 'discard self._entity-lookup ent.id
