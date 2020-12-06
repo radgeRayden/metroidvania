@@ -1,4 +1,4 @@
-INCLUDE_DIRS = ./3rd-party/glad/include ./3rd-party/cimgui/imgui
+INCLUDE_DIRS = ./3rd-party/glad/include ./3rd-party/cimgui/imgui ./3rd-party/soloud/include
 IFLAGS = $(addprefix -I, $(INCLUDE_DIRS))
 CFLAGS = -Wall -O2 -fPIC $(IFLAGS)
 CXXFLAGS = $(CFLAGS) -DIMGUI_IMPL_API="extern \"C\"" -DIMGUI_IMPL_OPENGL_LOADER_GLAD
@@ -9,10 +9,12 @@ GLFW_SRC = ./3rd-party/glfw
 GLFW_BUILD = $(GLFW_SRC)/build
 CIMGUI_SRC = ./3rd-party/cimgui
 CIMGUI_BUILD = $(CIMGUI_SRC)/build
+SOLOUD_BUILD = ./3rd-party/soloud/build
 
 CIMGUI_STATIC = $(CIMGUI_BUILD)/cimgui.a
 PHYSFS_STATIC = $(PHYSFS_BUILD)/libphysfs.a
 GLFW_STATIC = $(GLFW_BUILD)/src/libglfw3.a
+SOLOUD_STATIC = $(SOLOUD_BUILD)/../lib/libsoloud_static_x64.a
 
 LIBGAME_DEPS += ./3rd-party/glad/src/glad.o
 LIBGAME_DEPS += ./3rd-party/cJSON/cJSON.o
@@ -20,7 +22,8 @@ LIBGAME_DEPS += ./3rd-party/stb.o
 LIBGAME_DEPS += ./3rd-party/cute.o
 LIBGAME_DEPS += ./3rd-party/cimgui/imgui/examples/imgui_impl_opengl3.o
 LIBGAME_DEPS += ./3rd-party/cimgui/imgui/examples/imgui_impl_glfw.o
-STATIC_LIBS = $(CIMGUI_STATIC) $(PHYSFS_STATIC) $(GLFW_STATIC)
+LIBGAME_DEPS += ./3rd-party/soloud/src/c_api/soloud_c.o
+STATIC_LIBS = $(CIMGUI_STATIC) $(PHYSFS_STATIC) $(GLFW_STATIC) $(SOLOUD_STATIC)
 
 MAIN_OBJ = game.o
 
@@ -36,7 +39,8 @@ ifeq ($(UNAME_S), Linux)
 	PHYSFS_SHARED = libphysfs.so
 	GLFW_SHARED = libglfw.so
 	CIMGUI_SHARED = cimgui.so
-	LFLAGS += -ldl -lX11 -Wl,-z,origin -Wl,-E
+	SOLOUD_SHARED = libsoloud_x64.so
+	LFLAGS += -ldl -lX11 -lasound -Wl,-z,origin -Wl,-E
 endif
 
 ifeq ($(OS), Windows_NT)
@@ -49,16 +53,18 @@ ifeq ($(OS), Windows_NT)
 	PHYSFS_SHARED = libphysfs.dll
 	GLFW_SHARED = glfw3.dll
 	CIMGUI_SHARED = cimgui.dll
+	SOLOUD_SHARED = soloud_x64.dll
 	LFLAGS += -Wl,--export-all -lgdi32
 	LFLAGS_LIBGAME += -Wl,--export-all
 endif
 
-SHARED_LIBS = $(addprefix ./lib/, $(LIBGAME_SHARED) $(PHYSFS_SHARED) $(GLFW_SHARED) $(CIMGUI_SHARED))
+SHARED_LIBS = $(addprefix ./lib/, $(LIBGAME_SHARED) $(PHYSFS_SHARED) $(GLFW_SHARED) $(CIMGUI_SHARED) $(SOLOUD_SHARED))
 
 all:$(SHARED_LIBS)
 	cp $(shell realpath $(PHYSFS_BUILD)/$(PHYSFS_SHARED)) ./lib/$(PHYSFS_SHARED)
 	cp $(shell realpath $(GLFW_BUILD)/src/$(GLFW_SHARED)) ./lib/$(GLFW_SHARED)
 	cp $(shell realpath $(CIMGUI_BUILD)/$(CIMGUI_SHARED)) ./lib/$(CIMGUI_SHARED)
+	cp $(shell realpath $(SOLOUD_BUILD)/../lib/$(SOLOUD_SHARED)) ./lib/$(SOLOUD_SHARED)
 	@echo "Build complete."
 
 $(MAIN_OBJ):
@@ -75,6 +81,8 @@ $(CIMGUI_STATIC):
 	${MAKE} -C $(CIMGUI_BUILD)
 
 $(PHYSFS_STATIC):./lib/$(PHYSFS_SHARED)
+
+$(SOLOUD_STATIC):./lib/$(SOLOUD_SHARED)
 
 GLFW_OPTIONS = -DGLFW_BUILD_EXAMPLES=off -DGLFW_BUILD_TESTS=off -DGLFW_BUILD_DOCS=off
 $(GLFW_STATIC):
@@ -108,10 +116,15 @@ lib/$(CIMGUI_SHARED):
 	cmake -G "$(MAKEFILE_FLAVOR) Makefiles" -DCMAKE_C_COMPILER=$(CC) -DCMAKE_C_FLAGS="$(CFLAGS)" -S $(CIMGUI_SRC) -B $(CIMGUI_BUILD)
 	${MAKE} -C $(CIMGUI_BUILD)
 
+lib/$(SOLOUD_SHARED):
+	genie --file=$(SOLOUD_BUILD)/genie.lua --with-miniaudio --with-nosound --platform=x64 gmake
+	${MAKE} -C $(SOLOUD_BUILD)/gmake config=release64
+
 clean:
 	${MAKE} -C $(PHYSFS_BUILD) clean
 	${MAKE} -C $(GLFW_BUILD) clean
 	${MAKE} -C $(CIMGUI_BUILD) clean
+	${MAKE} -C $(SOLOUD_BUILD)/gmake clean
 	rm -f $(LIBGAME_DEPS)
 	rm -rf ./lib
 	rm -rf ./bin
