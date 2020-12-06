@@ -250,6 +250,7 @@ struct Scene
                         'get entity.archetypes entity.EntityKind.Tilemap
 
             'clear collision.objects
+            'clear collision.triggers
             for i x y in (enumerate (dim scene-width-tiles scene-height-tiles))
                 let tile = (level-data @ i)
                 let tile-position =

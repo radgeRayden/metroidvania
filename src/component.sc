@@ -83,7 +83,6 @@ do
                 collision.remove-trigger parent.id
             else
                 collision.remove-object parent.id
-
             ;
 
     struct MessageBoxTrigger < ComponentBase

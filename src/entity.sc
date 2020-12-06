@@ -71,13 +71,21 @@ struct EntityList
 
     fn purge (self)
         """"Removes all dead entities.
-        for i ent in (enumerate self)
+        # iterate backwards so our deletions don't affect results
+        loop (i = ((countof self._entities) - 1))
+            let ent = (self._entities @ i)
+            let id = (deref ent.id) # will change after the swap!
             if (not ent.alive?)
                 for component in ent.components
                     'destroy component ent
                 'swap self._entities i ((countof self._entities) - 1)
                 'pop self._entities
-                'discard self._entity-lookup ent.id
+                'discard self._entity-lookup id
+
+            if (i == 0)
+                break;
+            else
+                i - 1
 
     fn init (self)
         for ent in self
@@ -85,6 +93,10 @@ struct EntityList
                 'init component ent
 
     fn update (self dt)
+        for ent in self
+            for component in ent.components
+                'update component ent dt
+
         using event-system
         inline fire-events (evtype callback-name expected-payload)
             let events = (poll-events evtype)
@@ -123,10 +135,6 @@ struct EntityList
         fire-events EventType.Collision 'on-collision EventPayload.EntityId
         fire-events EventType.TriggerEnter 'on-trigger-enter EventPayload.EntityId
         fire-events EventType.TriggerExit 'on-trigger-exit EventPayload.EntityId
-
-        for ent in self
-            for component in ent.components
-                'update component ent dt
 
         'purge self
 

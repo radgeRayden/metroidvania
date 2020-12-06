@@ -248,6 +248,16 @@ fn remove-trigger (id)
     for i trigger in (enumerate triggers)
         if (trigger.collider.id == id)
             # TODO: emit a trigger exit event for all that are touching it
+            for other in trigger.touching
+                using event-system
+                push-event EventType.TriggerExit
+                    Event
+                        target = other
+                        payload = (EventPayload.EntityId trigger.collider.id)
+                push-event EventType.TriggerExit
+                    Event
+                        target = trigger.collider.id
+                        payload = (EventPayload.EntityId other)
             swap-n-pop triggers i
             return;
     ;
