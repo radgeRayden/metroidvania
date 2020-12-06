@@ -234,6 +234,7 @@ do
         LevelCollisionInfo
 
         objects
+        triggers
 
         register-object
         register-trigger

@@ -573,25 +573,35 @@ fn update (dt)
     'follow main-camera player.position
     'update current-scene.entities dt
 
-global debug-gizmos : (Mesh vec2 u16) 128
+struct 2DVertex plain
+    position : vec2
+    color : vec4
+
+global debug-gizmos : (Mesh 2DVertex u16) 128
 
 fn gizmo-vshader ()
     using import glsl
     buffer vertices :
         struct VertexArray plain
-            data : (array vec2)
+            data : (array 2DVertex)
+
+    out vcolor : vec4
+        location = 0
 
     uniform transform : mat4
 
-    let vertex = (vertices.data @ gl_VertexID)
+    vcolor = ((vertices.data @ gl_VertexID) . color)
+    let vertex = ((vertices.data @ gl_VertexID) . position)
     gl_Position = transform * (vec4 vertex 0 1)
 
 fn gizmo-fshader ()
     using import glsl
+    in vcolor : vec4
+        location = 0
     out fcolor : vec4
         location = 0
 
-    fcolor = (vec4 1 1 1 .25)
+    fcolor = vcolor
 
 global gizmo-shader =
     renderer.GPUShaderProgram gizmo-vshader gizmo-fshader
@@ -602,8 +612,7 @@ fn draw-colliders ()
 
     import .collision
 
-    # polyline algorithm
-    for obj in collision.objects
+    fn draw-collider (obj color)
         let aabb = obj.aabb
         let aabb-min aabb-max =
             floor (imply aabb.min vec2)
@@ -626,10 +635,13 @@ fn draw-colliders ()
 
             dir := (normalize (next-point - this-point))
             perp := (math.rotate dir (pi / 2))
-            'append debug-gizmos.attribute-data this-point
-            'append debug-gizmos.attribute-data (this-point + perp)
-            'append debug-gizmos.attribute-data next-point
-            'append debug-gizmos.attribute-data (next-point + perp)
+
+            inline make-vertex (pos)
+                2DVertex pos color
+            'append debug-gizmos.attribute-data (make-vertex this-point)
+            'append debug-gizmos.attribute-data (make-vertex (this-point + perp))
+            'append debug-gizmos.attribute-data (make-vertex next-point)
+            'append debug-gizmos.attribute-data (make-vertex (next-point + perp))
 
         for i in (range ((countof points) - 1))
             let segment-start = (vertex-offset + (i * 4))
@@ -644,6 +656,11 @@ fn draw-colliders ()
             'append debug-gizmos.index-data (right-e as u16)
             'append debug-gizmos.index-data (left-e as u16)
             'append debug-gizmos.index-data (left as u16)
+    # polyline algorithm
+    for obj in collision.objects
+        draw-collider obj (vec4 1 1 1 0.25)
+    for trigger in collision.triggers
+        draw-collider trigger.collider (vec4 1 0 0 0.25)
 
     'update debug-gizmos
 
