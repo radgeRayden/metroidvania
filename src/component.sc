@@ -47,7 +47,7 @@ do
         layer : u32
         sprite : common.Sprite
 
-        fn update (self dt parent)
+        fn update (self parent dt)
             self.sprite.position = (floor parent.position)
             ;
 
@@ -105,9 +105,9 @@ typedef+ Component
         'apply self
             (T self) -> ('init self parent)
 
-    inline update (self dt parent)
+    inline update (self parent dt)
         'apply self
-            (T self) -> ('update self dt parent)
+            (T self) -> ('update self parent dt)
 
     inline draw (self parent)
         'apply self

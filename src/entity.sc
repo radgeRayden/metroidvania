@@ -124,7 +124,7 @@ struct EntityList
 
         for ent in self
             for component in ent.components
-                'update component dt ent
+                'update component ent dt
 
 let EntityConstructor = (@ (function (uniqueof Entity -1)))
 let ArchetypeMap = (Map EntityKind EntityConstructor)
