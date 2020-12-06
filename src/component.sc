@@ -38,6 +38,8 @@ typedef ComponentBase < Struct
         ;
     fn draw (...)
         ;
+    fn destroy (...)
+        ;
 
 # COMPONENT DEFINITIONS
 # ================================================================================
@@ -112,6 +114,11 @@ typedef+ Component
     inline draw (self parent)
         'apply self
             (T self) -> ('draw self parent)
+
+    inline destroy (self parent)
+        'apply self
+            (T self) -> ('destroy self parent)
+
 
 let ComponentList = (Array (Rc Component))
 typedef+ ComponentList

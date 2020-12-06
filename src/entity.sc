@@ -71,9 +71,11 @@ struct EntityList
 
     fn purge (self)
         """"Removes all dead entities.
-        for ent in self
+        for i ent in (enumerate self)
             if (not ent.alive?)
-                'swap self._entities ((countof self._entities) - 1)
+                for component in ent.components
+                    'destroy component
+                'swap self._entities i ((countof self._entities) - 1)
                 'pop self._entities
                 'discard self._entity-lookup ent.id
 
@@ -125,6 +127,8 @@ struct EntityList
         for ent in self
             for component in ent.components
                 'update component ent dt
+
+        'purge self
 
 let EntityConstructor = (@ (function (uniqueof Entity -1)))
 let ArchetypeMap = (Map EntityKind EntityConstructor)
