@@ -17,6 +17,7 @@ import .filesystem
 import .renderer
 import .collision
 import .component
+import .sound
 using import .common
 using import .constants
 using renderer
@@ -33,11 +34,13 @@ if (not BUILD_MODE_AMALGAMATED?)
         load-library "../lib/libglfw.so"
         load-library "../lib/libphysfs.so"
         load-library "../lib/cimgui.so"
+        load-library "../lib/libsoloud_x64.so"
     case 'windows
         load-library "../lib/libgame.dll"
         load-library "../lib/glfw3.dll"
         load-library "../lib/libphysfs.dll"
         load-library "../lib/cimgui.dll"
+        load-library "../lib/soloud_x64.dll"
     default
         error "Unsupported OS."
 
@@ -103,6 +106,8 @@ local io = (ig.GetIO)
 
 ig.impl.Glfw_InitForOpenGL main-window true
 ig.impl.OpenGL3_Init null
+
+sound.init;
 
 run-stage;
 
@@ -768,3 +773,5 @@ while (not (glfw.WindowShouldClose main-window))
 # ================================================================================
 glfw.DestroyWindow main-window
 glfw.Terminate;
+
+sound.cleanup;
