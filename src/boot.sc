@@ -285,7 +285,6 @@ struct Scene
                         page = (tile - 1)
                         rotation = 0
 
-
             let obj-layer =
                 cjson.GetArrayItem
                     cjson.GetObjectItem tiled-scene "layers"
@@ -458,6 +457,7 @@ fn player-move (pos)
         ;
     player.position = player-collider.Position
 
+global show-debug-info? : bool
 glfw.SetKeyCallback main-window
     fn (window _key scancode action mods)
         # application keybindings
@@ -523,6 +523,8 @@ glfw.SetKeyCallback main-window
 
         if ((_key == glfw.GLFW_KEY_F3) and (action == glfw.GLFW_RELEASE))
             show-colliders? = (not show-colliders?)
+        if ((_key == glfw.GLFW_KEY_F4) and (action == glfw.GLFW_PRESS))
+            show-debug-info? = (not show-debug-info?)
 
         # game controls
         if ((_key == glfw.GLFW_KEY_SPACE) and (action == glfw.GLFW_PRESS))
@@ -724,30 +726,38 @@ while (not (glfw.WindowShouldClose main-window))
     ig.impl.Glfw_NewFrame;
     ig.NewFrame;
 
-    global player-stats-open? : bool true
-    if player-stats-open?
-        ig.Begin "Debug Info" &player-stats-open? 0
+    if show-debug-info?
+        global player-stats-open? : bool true
+        if player-stats-open?
+            ig.Begin "Debug Info" &player-stats-open? 0
 
-        ig.Text "avg fps: %.3f" avg-fps
-        # position in tiles
-        let tile-p =
-            do
-                let tile-dimensions =
-                    vec2
-                        current-scene.tileset.tile-width
-                        current-scene.tileset.tile-height
-                let tile-p = (ivec2 (floor (player.position / tile-dimensions)))
+            ig.Text "avg fps: %.3f" avg-fps
+            # position in tiles
+            let tile-p =
+                do
+                    let tile-dimensions =
+                        vec2
+                            current-scene.tileset.tile-width
+                            current-scene.tileset.tile-height
+                    let tile-p = (ivec2 (floor (player.position / tile-dimensions)))
 
-        ig.Text "position: %.3f %.3f (%d %d)" player.position.x player.position.y
-            \ tile-p.x tile-p.y
-        ig.Text "velocity: %.3f %.3f" (unpack (player.velocity * step-size))
-        ig.Text f"grounded?: ${player.grounded?}"
-        ig.End;
+            ig.Text "position: %.3f %.3f (%d %d)" player.position.x player.position.y
+                \ tile-p.x tile-p.y
+            ig.Text "velocity: %.3f %.3f" (unpack (player.velocity * step-size))
+            ig.Text f"grounded?: ${player.grounded?}"
+            ig.End;
 
-    if component.show-msgbox
-        ig.Begin "Message Box" &component.show-msgbox 0
-        ig.Text "Hello World! The code for this is a sin!"
-        ig.End;
+        global entity-list-open? : bool true
+        if entity-list-open?
+            ig.Begin "Entity List" &entity-list-open? 0
+            for ent in current-scene.entities
+                ig.Text "%d. %s" ent.id ((tostring ent.tag) as rawstring)
+            ig.End;
+
+        if component.show-msgbox
+            ig.Begin "Message Box" &component.show-msgbox 0
+            ig.Text "Hello World! The code for this is a sin!"
+            ig.End;
 
     ig.Render;
     ig.impl.OpenGL3_RenderDrawData (ig.GetDrawData)
