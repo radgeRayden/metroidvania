@@ -1,4 +1,4 @@
-INCLUDE_DIRS = ./3rd-party/glad/include ./3rd-party/cimgui/imgui ./3rd-party/soloud/include
+INCLUDE_DIRS = ./3rd-party/glad/include ./3rd-party/cimgui/imgui ./3rd-party/soloud/include ./3rd-party/physfs-3.0.2/src ./3rd-party/glfw/include
 IFLAGS = $(addprefix -I, $(INCLUDE_DIRS))
 CFLAGS = -Wall -O2 -fPIC $(IFLAGS)
 CXXFLAGS = $(CFLAGS) -DIMGUI_IMPL_API="extern \"C\"" -DIMGUI_IMPL_OPENGL_LOADER_GLAD
@@ -41,6 +41,7 @@ ifeq ($(UNAME_S), Linux)
 	GLFW_SHARED = libglfw.so
 	CIMGUI_SHARED = cimgui.so
 	SOLOUD_SHARED = libsoloud_x64.so
+	SOLOUD_BACKENDS = portaudio
 	LFLAGS += -ldl -lX11 -lasound -Wl,-z,origin -Wl,-E
 endif
 
@@ -55,7 +56,8 @@ ifeq ($(OS), Windows_NT)
 	GLFW_SHARED = glfw3.dll
 	CIMGUI_SHARED = cimgui.dll
 	SOLOUD_SHARED = soloud_x64.dll
-	LFLAGS += -Wl,--export-all -lgdi32
+	SOLOUD_BACKENDS = wasapi miniaudio
+	LFLAGS += -Wl,--export-all -lgdi32 -lwinmm -lole32 -luuid
 	LFLAGS_LIBGAME += -Wl,--export-all
 endif
 
@@ -83,7 +85,9 @@ $(CIMGUI_STATIC):
 
 $(PHYSFS_STATIC):./lib/$(PHYSFS_SHARED)
 
-$(SOLOUD_STATIC):./lib/$(SOLOUD_SHARED)
+$(SOLOUD_STATIC):
+	genie --file=$(SOLOUD_BUILD)/genie.lua $(addprefix --with-, $(SOLOUD_BACKENDS)) --with-nosound --platform=x64 gmake
+	${MAKE} -C $(SOLOUD_BUILD)/gmake config=release64 SoloudStatic
 
 GLFW_OPTIONS = -DGLFW_BUILD_EXAMPLES=off -DGLFW_BUILD_TESTS=off -DGLFW_BUILD_DOCS=off
 $(GLFW_STATIC):
@@ -118,8 +122,8 @@ lib/$(CIMGUI_SHARED):
 	${MAKE} -C $(CIMGUI_BUILD)
 
 lib/$(SOLOUD_SHARED):
-	genie --file=$(SOLOUD_BUILD)/genie.lua --with-miniaudio --with-nosound --platform=x64 gmake
-	${MAKE} -C $(SOLOUD_BUILD)/gmake config=release64
+	genie --file=$(SOLOUD_BUILD)/genie.lua $(addprefix --with-, $(SOLOUD_BACKENDS)) --with-nosound --platform=x64 gmake
+	${MAKE} -C $(SOLOUD_BUILD)/gmake config=release64 SoloudDynamic
 
 clean:
 	${MAKE} -C $(PHYSFS_BUILD) clean
@@ -127,6 +131,7 @@ clean:
 	${MAKE} -C $(CIMGUI_BUILD) clean
 	${MAKE} -C $(SOLOUD_BUILD)/gmake clean
 	rm -f $(LIBGAME_DEPS)
+	rm -f $(MAIN_OBJ)
 	rm -rf ./lib
 	rm -rf ./bin
 
