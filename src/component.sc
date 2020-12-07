@@ -103,7 +103,15 @@ do
         value : u32
 
         fn on-trigger-enter (self parent other)
+            let soloud = (import .FFI.soloud)
+            import .sound
+            let sfxr = (soloud.Sfxr_create)
+            soloud.Sfxr_loadPreset sfxr soloud.SFXR_COIN 0
+            soloud.play sound.soloud-instance sfxr
+
+            parent.alive? = false
             ;
+
         fn on-trigger-exit (self parent other)
             ;
 

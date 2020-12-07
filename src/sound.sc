@@ -12,6 +12,7 @@ fn cleanup ()
 
 do
     let
+        soloud-instance
         init
         cleanup
     locals;
