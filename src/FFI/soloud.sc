@@ -1,5 +1,6 @@
-using import radlib.foreign
-using import radlib.core-extensions
+using import ..radlib.foreign
+using import ..radlib.core-extensions
+import .physfs
 
 define-scope soloud
     let soloud =
@@ -9,6 +10,8 @@ define-scope soloud
     using soloud.typedef
     using soloud.enum filter "^SOLOUD_"
     using soloud.define filter "^SOLOUD_"
+    let SoloudPhysFSFile_create =
+        extern 'SoloudPhysFSFile_create (function (mutable@ voidstar) voidstar)
 
 let filter-pattern =  "^Soloud_"
 let soloud = (sanitize-scope soloud filter-pattern)
