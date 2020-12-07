@@ -106,7 +106,7 @@ do
             let soloud = (import .FFI.soloud)
             import .sound
             let sfxr = (soloud.Sfxr_create)
-            soloud.Sfxr_loadPreset sfxr soloud.SFXR_COIN 0
+            soloud.Sfxr_loadPreset sfxr soloud.SFXR_COIN 1000
             soloud.play sound.soloud-instance sfxr
 
             parent.alive? = false
