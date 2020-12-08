@@ -50,11 +50,11 @@ do
         layer : u32
         sprite : common.Sprite
 
-        fn update (self parent dt)
-            self.sprite.position = (floor parent.position)
+        fn update (self owner dt)
+            self.sprite.position = (floor owner.position)
             ;
 
-        fn draw (self parent)
+        fn draw (self owner)
             'add (renderer.sprite-layers @ self.layer) self.sprite
             ;
 
@@ -64,10 +64,10 @@ do
         collider : (Rc collision.Collider)
         trigger? : bool
 
-        fn init (self parent)
-            aabb-min := parent.position + self.offset
+        fn init (self owner)
+            aabb-min := owner.position + self.offset
             aabb-max := aabb-min + self.size
-            self.collider.id = parent.id
+            self.collider.id = owner.id
             self.collider.aabb =
                 typeinit
                     aabb-min
@@ -79,23 +79,23 @@ do
                 collision.register-trigger (copy self.collider)
             ;
 
-        fn destroy (self parent)
+        fn destroy (self owner)
             if self.trigger?
-                collision.remove-trigger parent.id
+                collision.remove-trigger owner.id
             else
-                collision.remove-object parent.id
+                collision.remove-object owner.id
             ;
 
     struct MessageBoxTrigger < ComponentBase
         msg-index : u32
 
-        fn on-trigger-enter (self parent other)
+        fn on-trigger-enter (self owner other)
             let Tag = (typeof other.tag)
             if (other.tag == Tag.Player)
                 show-msgbox = true
-            parent.alive? = false
+            owner.alive? = false
 
-        fn on-trigger-exit (self parent other)
+        fn on-trigger-exit (self owner other)
             let Tag = (typeof other.tag)
             if (other.tag == Tag.Player)
                 show-msgbox = false
@@ -103,17 +103,17 @@ do
     struct CoinBehaviour < ComponentBase
         value : u32
 
-        fn on-trigger-enter (self parent other)
+        fn on-trigger-enter (self owner other)
             let soloud = (import .FFI.soloud)
             import .sound
             let sfxr = (soloud.Sfxr_create)
             soloud.Sfxr_loadPreset sfxr soloud.SFXR_COIN 1000
             soloud.play sound.soloud-instance sfxr
 
-            parent.alive? = false
+            owner.alive? = false
             ;
 
-        fn on-trigger-exit (self parent other)
+        fn on-trigger-exit (self owner other)
             ;
 
     # mockup of enemy AI
@@ -123,8 +123,8 @@ do
         velocity : vec2
         _collider : (Rc collision.Collider)
 
-        fn init (self parent)
-            for component in parent.components
+        fn init (self owner)
+            for component in owner.components
                 dispatch component
                 case Hitbox (hitbox)
                     self._collider = (copy hitbox.collider)
@@ -132,7 +132,7 @@ do
                 default
                     ;
 
-        fn update (self parent dt)
+        fn update (self owner dt)
             # copied from boot.update
             let yvel = self.velocity.y
             let xvel = self.velocity.x
@@ -143,7 +143,7 @@ do
                 yvel = (clamp (yvel + (GRAVITY * dt)) -100. 200.)
 
             # NOTE: perhaps it is confusing to have the position in the entity.
-            let pos = (parent.position + self.velocity * dt)
+            let pos = (owner.position + self.velocity * dt)
 
             # copied from player-move
             let col = ('try-move self._collider pos)
@@ -158,7 +158,7 @@ do
             else
                 self.grounded? = false
                 ;
-            parent.position = self._collider.Position
+            owner.position = self._collider.Position
             ;
 
     locals;
@@ -172,21 +172,21 @@ enum-from-scope Component components
 typedef+ Component
     let __typecall = enum-class-constructor
 
-    inline init (self parent)
+    inline init (self owner)
         'apply self
-            (T self) -> ('init self parent)
+            (T self) -> ('init self owner)
 
-    inline update (self parent dt)
+    inline update (self owner dt)
         'apply self
-            (T self) -> ('update self parent dt)
+            (T self) -> ('update self owner dt)
 
-    inline draw (self parent)
+    inline draw (self owner)
         'apply self
-            (T self) -> ('draw self parent)
+            (T self) -> ('draw self owner)
 
-    inline destroy (self parent)
+    inline destroy (self owner)
         'apply self
-            (T self) -> ('destroy self parent)
+            (T self) -> ('destroy self owner)
 
 
 let ComponentList = (Array (Rc Component))
