@@ -27,15 +27,6 @@ run-stage;
 
 let EntityId = u32
 
-enum EntityKind plain
-    Player = 0
-    Ducky = 1
-    Skeleton = 2
-    Tilemap = 3
-    Coin = 4
-    inline __hash (self)
-        hash (self as i32)
-
 struct Entity
     id : EntityId
     tag : EntityKind = EntityKind.Player

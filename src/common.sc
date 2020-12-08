@@ -1,6 +1,7 @@
 using import struct
 using import glm
 using import Array
+using import enum
 
 import .filesystem
 
@@ -18,8 +19,18 @@ struct ImageData
     height : usize
     channels : u32
 
+enum EntityKind plain
+    Player = 0
+    Ducky = 1
+    Skeleton = 2
+    Tilemap = 3
+    Coin = 4
+    inline __hash (self)
+        hash (self as i32)
+
 do
     let
         Sprite
         ImageData
+        EntityKind
     locals;

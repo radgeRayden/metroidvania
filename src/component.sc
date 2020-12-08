@@ -90,14 +90,14 @@ do
         msg-index : u32
 
         fn on-trigger-enter (self owner other)
-            let Tag = (typeof other.tag)
-            if (other.tag == Tag.Player)
+            using common
+            if (other.tag == EntityKind.Player)
                 show-msgbox = true
             owner.alive? = false
 
         fn on-trigger-exit (self owner other)
-            let Tag = (typeof other.tag)
-            if (other.tag == Tag.Player)
+            using common
+            if (other.tag == EntityKind.Player)
                 show-msgbox = false
 
     struct CoinBehaviour < ComponentBase
