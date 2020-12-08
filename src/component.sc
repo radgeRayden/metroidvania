@@ -28,6 +28,7 @@ import .common
 import .renderer
 import .collision
 import .event-system
+using import .constants
 
 global show-msgbox : bool
 
@@ -113,6 +114,51 @@ do
             ;
 
         fn on-trigger-exit (self parent other)
+            ;
+
+    # mockup of enemy AI
+    struct DuckyBehaviour < ComponentBase
+        hp : i32
+        grounded? : bool
+        velocity : vec2
+        _collider : (Rc collision.Collider)
+
+        fn init (self parent)
+            for component in parent.components
+                dispatch component
+                case Hitbox (hitbox)
+                    self._collider = (copy hitbox.collider)
+                    break;
+                default
+                    ;
+
+        fn update (self parent dt)
+            # copied from boot.update
+            let yvel = self.velocity.y
+            let xvel = self.velocity.x
+            # apply gravity
+            if ((deref self.grounded?) and (yvel <= 0))
+                yvel = -1
+            else
+                yvel = (clamp (yvel + (GRAVITY * dt)) -100. 200.)
+
+            # NOTE: perhaps it is confusing to have the position in the entity.
+            let pos = (parent.position + self.velocity * dt)
+
+            # copied from player-move
+            let col = ('try-move self._collider pos)
+            try
+                let col = ('unwrap col)
+                if (col.normal.y < 0)
+                    self.grounded? = true
+                elseif (col.normal.y > 0)
+                    self.velocity.y = 0
+                elseif (col.normal != 0)
+                    self.velocity.x = 0
+            else
+                self.grounded? = false
+                ;
+            parent.position = self._collider.Position
             ;
 
     locals;

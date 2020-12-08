@@ -196,8 +196,9 @@ fn init-archetypes ()
                         components.Hitbox
                             size = hitbox-size
                             collider = (Rc.wrap (collision.Collider))
-                            trigger? = true
-                        components.MessageBoxTrigger 0
+                            trigger? = false
+                        components.DuckyBehaviour
+                            hp = 3
 
     set-archetype EntityKind.Skeleton
         fn ()
