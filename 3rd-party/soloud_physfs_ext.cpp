@@ -8,38 +8,37 @@ namespace SoLoud
     class PhysFSFile : public SoLoud::File
     {
         public:
-        PHYSFS_File* mFileHandle;
-
-        virtual int eof();
-        virtual unsigned int read(unsigned char* aDst, unsigned int aBytes);
-		virtual unsigned int length();
-        virtual unsigned int pos();
-        virtual void seek(int aOffset);
-        virtual ~PhysFSFile();
-        PhysFSFile();
-        PhysFSFile(PHYSFS_File *fp);
+            PHYSFS_File* mFileHandle;
+            virtual int eof();
+            virtual unsigned int read(unsigned char* aDst, unsigned int aBytes);
+            virtual unsigned int length();
+            virtual unsigned int pos();
+            virtual void seek(int aOffset);
+            virtual ~PhysFSFile();
+            PhysFSFile();
+            PhysFSFile(PHYSFS_File *fp);
     };
 
     PhysFSFile::PhysFSFile(PHYSFS_File* fp):
-    mFileHandle(fp)
-    {
+        mFileHandle(fp)
+        {
 
-    }
+        }
 
     unsigned int PhysFSFile::read(unsigned char *aDst, unsigned int aBytes) {
-    auto result = PHYSFS_readBytes(mFileHandle, aDst, aBytes);
-    if (result == -1) {
-        printf("PHYSFS: %s\n", PHYSFS_getLastError());
-    }
-    return (unsigned int)result;
+        auto result = PHYSFS_readBytes(mFileHandle, aDst, aBytes);
+        if (result == -1) {
+            printf("PHYSFS: %s\n", PHYSFS_getLastError());
+        }
+        return (unsigned int)result;
     }
 
     unsigned int PhysFSFile::length() {
-    auto result = PHYSFS_fileLength(mFileHandle);
-    if (result == -1) {
-        printf("PHYSFS: %s\n", PHYSFS_getLastError());
-    }
-    return (unsigned int)result;
+        auto result = PHYSFS_fileLength(mFileHandle);
+        if (result == -1) {
+            printf("PHYSFS: %s\n", PHYSFS_getLastError());
+        }
+        return (unsigned int)result;
     }
 
     void PhysFSFile::seek(int aOffset) {
