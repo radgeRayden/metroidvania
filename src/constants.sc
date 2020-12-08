@@ -7,6 +7,8 @@ let BUILD_MODE_AMALGAMATED? = ((argc > 2) and ((string (argv @ 2)) == "-amalgama
 run-stage;
 
 do
+    # CONFIGURATION
+    # ================================================================================
     let BUILD_MODE_AMALGAMATED?
     let INTERNAL_RESOLUTION = (ivec2 (1920 // 6) (1080 // 6))
     let ATLAS_PAGE_SIZE = (ivec2 1024 1024)
@@ -26,5 +28,8 @@ do
                         merge git-log "UNKNOWN-nogit"
                     string (&str as (pointer i8)) version-size
 
+    # GAMEPLAY VALUES
+    # ================================================================================
+    let GRAVITY = -240
 
     locals;

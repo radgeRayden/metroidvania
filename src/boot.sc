@@ -436,7 +436,6 @@ start-game;
 # GAME CODE
 # ================================================================================
 let jump-force = 120.
-let gravity = -240.
 let player-speed = 40.
 let accel = 180.
 
@@ -574,7 +573,7 @@ fn update (dt)
     if ((deref player.grounded?) and (yvel <= 0))
         yvel = -1
     else
-        yvel = (clamp (yvel + (gravity * dt)) -100. 200.)
+        yvel = (clamp (yvel + (GRAVITY * dt)) -100. 200.)
 
     player-move (player.position + player.velocity * dt)
 
