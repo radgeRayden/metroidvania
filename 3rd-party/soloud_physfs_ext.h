@@ -7,6 +7,7 @@ extern "C" {
 
 typedef void* SoloudPhysFSFile;
 SoloudPhysFSFile SoloudPhysFSFile_create(void* aHandle);
+void SoloudPhysFSFile_destroy(void* aHandle);
 
 #ifdef  __cplusplus
 } // extern "C"
