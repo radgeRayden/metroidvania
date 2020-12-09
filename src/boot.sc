@@ -447,19 +447,27 @@ global show-colliders? : bool
 'set-bounds main-camera (vec2) (vec2 current-scene.width current-scene.height)
 
 fn player-move (pos)
-    let collision = ('try-move player-collider pos)
+    let col = ('try-move player-collider pos)
     try
-        let col = ('unwrap collision)
-        if (col.normal.y < 0)
-            player.grounded? = true
-        elseif (col.normal.y > 0)
+        let col = ('unwrap col)
+        if (col.normal.y > 0)
             player.velocity.y = 0
-        elseif (col.normal != 0)
+        if (col.normal.x != 0)
             player.velocity.x = 0
     else
         player.grounded? = false
         ;
     player.position = player-collider.Position
+    local probe =
+        collision.Collider
+            id = player-collider.id
+            aabb =
+                typeinit
+                    min = (player-collider.aabb.min + 0.1)
+                    max = (player-collider.aabb.max - 0.1)
+    probe.aabb = ('project probe.aabb (probe.Position - (vec2 0 1)))
+    player.grounded? =
+        collision.test-intersection probe
 
 global show-debug-info? : bool
 glfw.SetKeyCallback main-window

@@ -182,6 +182,21 @@ fn test-triggers (active pos)
                     payload = (EventPayload.EntityId active.id)
             'discard trigger.touching active.id
 
+fn test-intersection (collider)
+    """"Test if a collider would intersect any object at position.
+    local collided? : bool
+    for obj in objects
+        if (collider.id == obj.id)
+            continue;
+        if
+            c2.AABBtoAABB
+                collider.aabb
+                obj.aabb
+            return true
+
+    false
+
+
 struct Collider
     id : u32
     aabb : c2.AABB
@@ -274,5 +289,6 @@ do
         remove-object
         register-trigger
         remove-trigger
+        test-intersection
         configure-level
     locals;
