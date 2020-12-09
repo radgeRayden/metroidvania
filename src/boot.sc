@@ -18,6 +18,7 @@ import .renderer
 import .collision
 import .component
 import .sound
+import .input
 using import .common
 using import .constants
 using renderer
@@ -108,6 +109,8 @@ ig.impl.Glfw_InitForOpenGL main-window true
 ig.impl.OpenGL3_Init null
 
 sound.init;
+
+input.init main-window
 
 run-stage;
 
@@ -535,6 +538,8 @@ glfw.SetKeyCallback main-window
         ;
 
 fn update (dt)
+    input.update;
+
     fn key-down? (code)
         (glfw.GetKey main-window code) as bool
 
