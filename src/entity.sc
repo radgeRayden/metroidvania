@@ -37,6 +37,16 @@ struct Entity
     grounded? : bool
     components : ComponentList
 
+    inline get-component (self name)
+        try
+            'get self.components name
+        else
+            assert false (.. "tried to get a component " (repr name) " that was not part of entity " (repr self.tag))
+            unreachable;
+
+    inline has-component? (self name)
+        'in? self.components name
+
 enum EntityError plain
     StaleReference
 
@@ -68,7 +78,7 @@ struct EntityList
             let ent = (self._entities @ i)
             let id = (deref ent.id) # will change after the swap!
             if (not ent.alive?)
-                for component in ent.components
+                for name component in ent.components
                     'destroy component ent
                 'swap self._entities i ((countof self._entities) - 1)
                 'pop self._entities
@@ -81,12 +91,12 @@ struct EntityList
 
     fn init (self)
         for ent in self
-            for component in ent.components
+            for name component in ent.components
                 'init component ent
 
     fn update (self dt)
         for ent in self
-            for component in ent.components
+            for name component in ent.components
                 'update component ent dt
 
         using event-system
@@ -94,7 +104,7 @@ struct EntityList
             let events = (poll-events evtype)
 
             inline fire-event (ent payload)
-                for super-component in ent.components
+                for name super-component in ent.components
                     'apply super-component
                         inline (ft component)
                             let T = (elementof ft.Type 0)

@@ -3,25 +3,7 @@ using import struct
 using import Array
 using import Rc
 using import glm
-
-sugar enum-from-scope (name scope-name)
-    name as:= Symbol
-    let scope = ((sc_prove (sc_expand scope-name '() sugar-scope) ()) as Scope)
-    let tags =
-        loop (index tags = -1 '())
-            let key value index =
-                sc_scope_next scope index
-            if (index < 0)
-                break ('reverse tags)
-            _ index
-                cons
-                    qq
-                        [key] : [value]
-                    tags
-    qq
-        enum [name]
-            unquote-splice tags
-run-stage;
+using import Map
 
 using import .radlib.core-extensions
 import .common
@@ -124,13 +106,8 @@ do
         _collider : (Rc collision.Collider)
 
         fn init (self owner)
-            for component in owner.components
-                dispatch component
-                case Hitbox (hitbox)
-                    self._collider = (copy hitbox.collider)
-                    break;
-                default
-                    ;
+            hitbox := ('get-component owner 'Hitbox) as Hitbox
+            self._collider = (copy hitbox.collider)
 
         fn update (self owner dt)
             # copied from boot.update
@@ -168,9 +145,10 @@ run-stage;
 
 # INTERFACE
 # ================================================================================
-enum-from-scope Component components
-typedef+ Component
-    let __typecall = enum-class-constructor
+using import .radlib.class
+
+class Component
+    use components
 
     inline init (self owner)
         'apply self
@@ -189,16 +167,18 @@ typedef+ Component
             (T self) -> ('destroy self owner)
 
 
-let ComponentList = (Array (Rc Component))
+let ComponentList = (Map Symbol (Rc Component))
 typedef+ ComponentList
     inline __typecall (cls ...)
-        local arr = (super-type.__typecall cls)
+        local self = (super-type.__typecall cls)
         va-map
             inline (c)
-                'emplace-append arr c
+                let super = (Rc.wrap (Component c))
+                'apply super
+                    inline (T __)
+                        'set self T.Name super
             ...
-        deref arr
-
+        deref self
 do
     let
         Component

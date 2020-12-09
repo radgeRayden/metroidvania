@@ -406,15 +406,12 @@ global player-collider : (Rc collision.Collider)
 fn start-game ()
     try
         current-scene = (Scene "levels/1.json")
+        using component
         for ent in current-scene.entities
             if (ent.tag == entity.EntityKind.Player)
                 player = (copy ent)
-
-                let hitbox =
-                    'unsafe-extract-payload (player.components @ 1)
-                        component.Component.Hitbox.Type
-                player-collider =
-                    copy hitbox.collider
+                hitbox := ('get-component player 'Hitbox) as components.Hitbox
+                player-collider = (copy hitbox.collider)
                 break;
 
         # NOTE: code left out commented in case I decide to use tile lookup again.
@@ -559,14 +556,13 @@ fn update (dt)
         else
             xvel = new-xvel
 
+    using component
+    player-sprite := ('get-component player 'Sprite) as components.Sprite
+    let sprite = player-sprite.sprite
     if (xvel != 0)
-        using import .component
-        sprite := ('unsafe-extract-payload (player.components @ 0) Component.Sprite.Type) . sprite
         sprite.pivot = (vec2 4)
         sprite.rotation += -xvel * dt * 0.3
     else
-        using import .component
-        sprite := ('unsafe-extract-payload (player.components @ 0) Component.Sprite.Type) . sprite
         sprite.rotation = 0
 
     # apply gravity
@@ -680,7 +676,7 @@ fn draw-colliders ()
 
 fn draw ()
     for ent in current-scene.entities
-        for component in ent.components
+        for name component in ent.components
             'draw component ent
 
     'apply main-camera
