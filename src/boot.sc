@@ -539,7 +539,14 @@ glfw.SetKeyCallback main-window
 
 fn update (dt)
     input.update;
-
+    va-map
+        inline (button)
+            import .input
+            if (input.pressed? button)
+                print "pressed" button
+            if (input.released? button)
+                print "released" button
+        _ 'A 'B 'Left 'Right 'Up 'Down
     fn key-down? (code)
         (glfw.GetKey main-window code) as bool
 
