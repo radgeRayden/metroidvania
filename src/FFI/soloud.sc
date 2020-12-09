@@ -12,6 +12,8 @@ define-scope soloud
     using soloud.define filter "^SOLOUD_"
     let SoloudPhysFSFile_create =
         extern 'SoloudPhysFSFile_create (function (mutable@ voidstar) voidstar)
+    let SoloudPhysFSFile_destroy =
+        extern 'SoloudPhysFSFile_destroy (function void (mutable@ voidstar))
 
 let filter-pattern =  "^Soloud_"
 let soloud = (sanitize-scope soloud filter-pattern)
