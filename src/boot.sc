@@ -713,7 +713,8 @@ while (not (glfw.WindowShouldClose main-window))
     let time-scale = 1
 
     let now = (glfw.GetTime)
-    let real-dt = (now - last-time)
+    # at 15 fps the game just slows down, to avoid spiral of death / deal with sudden spikes.
+    let real-dt = (min (now - last-time) (1 / 15:f64))
     last-time = now
     dt-accum += real-dt * time-scale
 
