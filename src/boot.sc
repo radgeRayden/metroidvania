@@ -530,13 +530,6 @@ glfw.SetKeyCallback main-window
         if ((_key == glfw.GLFW_KEY_F4) and (action == glfw.GLFW_PRESS))
             show-debug-info? = (not show-debug-info?)
 
-        # game controls
-        if ((_key == glfw.GLFW_KEY_SPACE) and (action == glfw.GLFW_PRESS))
-            if player.grounded?
-                player.velocity.y = jump-force
-                player.grounded? = false
-        ;
-
 fn update (dt)
     input.update;
     va-map
@@ -547,16 +540,19 @@ fn update (dt)
             if (input.released? button)
                 print "released" button
         _ 'A 'B 'Left 'Right 'Up 'Down
-    fn key-down? (code)
-        (glfw.GetKey main-window code) as bool
+
+    if (input.pressed? 'A)
+        if player.grounded?
+            player.velocity.y = jump-force
+            player.grounded? = false
 
     let yvel = player.velocity.y
     let xvel = player.velocity.x
-    if (key-down? glfw.GLFW_KEY_LEFT)
+    if (input.down? 'Left)
         if (xvel > 0)
             xvel = 0
         xvel = (max -player-speed (xvel - accel * dt))
-    elseif (key-down? glfw.GLFW_KEY_RIGHT)
+    elseif (input.down? 'Right)
         if (xvel < 0)
             xvel = 0
         xvel = (min player-speed (xvel + accel * dt))
