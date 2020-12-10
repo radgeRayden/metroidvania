@@ -743,11 +743,9 @@ while (not (glfw.WindowShouldClose main-window))
     let flags = ig.ImGuiWindowFlags_
     ig.SetNextWindowPos (vec2 10 10) ig.ImGuiCond_.ImGuiCond_Always (vec2 0 0)
     ig.Begin "version" null
-        | flags.ImGuiWindowFlags_NoTitleBar
-            flags.ImGuiWindowFlags_NoResize
+        | flags.ImGuiWindowFlags_NoDecoration
             flags.ImGuiWindowFlags_NoBackground
-            flags.ImGuiWindowFlags_NoMove
-    ig.Text (GAME_VERSION as rawstring) avg-fps
+    ig.Text (GAME_VERSION as rawstring)
     ig.End;
 
     if show-debug-info?
