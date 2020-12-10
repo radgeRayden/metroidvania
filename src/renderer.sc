@@ -506,6 +506,7 @@ global world-transform : mat4
 
 # INTERFACE
 # ================================================================================
+let re = (import .FFI.re)
 fn init (window)
     # TODO: this won't be necessary once windowing code
     # is moved to a dedicated module.
@@ -513,7 +514,6 @@ fn init (window)
     init-gl;
 
     local atlases : (Array String)
-    let re = (import .FFI.re)
     let pattern = (re.compile "atlas[0-9]+\\.png")
     for name in (filesystem.get-directory-files (String "sprites"))
         let match? start end = (re.match? pattern name)
