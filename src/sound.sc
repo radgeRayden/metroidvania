@@ -1,3 +1,5 @@
+using import .constants
+
 let soloud = (import .FFI.soloud)
 let C = (import .radlib.libc)
 
@@ -22,8 +24,11 @@ fn init ()
             soloud.SOLOUD_AUTO
             2
     if result
-        C.stdio.puts "SOLOUD ERROR:"
-        assert false (soloud.getErrorString soloud-instance result)
+        static-if AOT_MODE?
+            C.stdio.puts "SOLOUD ERROR:"
+            assert false (soloud.getErrorString soloud-instance result)
+        else
+            error (.. "SOLOUD ERROR:" (string (soloud.getErrorString soloud-instance result)))
 
 fn cleanup ()
     soloud.deinit soloud-instance

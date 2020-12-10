@@ -521,7 +521,8 @@ global world-transform : mat4
 # ================================================================================
 let re = (import .FFI.re)
 fn init (window)
-    raising Nothing
+    static-if AOT_MODE?
+        raising Nothing
     # TODO: this won't be necessary once windowing code
     # is moved to a dedicated module.
     main-window = window
