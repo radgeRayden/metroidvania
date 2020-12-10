@@ -6,6 +6,7 @@ import .renderer
 using import .component
 import .collision
 import .event-system
+using import .constants
 
 using import enum
 using import struct
@@ -251,7 +252,6 @@ fn init-archetypes ()
                             collider = (Rc.wrap (collision.Collider))
                             trigger? = true
                         components.CoinBehaviour 1
-    locals;
 
 do
     let EntityKind EntityId Entity EntityList EntityError archetypes init-archetypes
