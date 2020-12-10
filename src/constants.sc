@@ -4,12 +4,14 @@ let C = (import .radlib.libc)
 
 let argc argv = (launch-args)
 let BUILD_MODE_AMALGAMATED? = ((argc > 2) and ((string (argv @ 2)) == "-amalgamated"))
+let AOT_MODE? = ((argc > 2) and ((string (argv @ 2)) == "-aot"))
+let PROTO_MODE? = (not (BUILD_MODE_AMALGAMATED? or AOT_MODE?))
 run-stage;
 
 do
     # CONFIGURATION
     # ================================================================================
-    let BUILD_MODE_AMALGAMATED?
+    let BUILD_MODE_AMALGAMATED? AOT_MODE? PROTO_MODE?
     let INTERNAL_RESOLUTION = (ivec2 (1920 // 6) (1080 // 6))
     let ATLAS_PAGE_SIZE = (ivec2 1024 1024)
     let GAME_VERSION =
