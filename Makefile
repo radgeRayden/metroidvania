@@ -83,7 +83,10 @@ $(CIMGUI_STATIC):
 	cmake -G "$(MAKEFILE_FLAVOR) Makefiles" -DCMAKE_C_COMPILER=$(CC) -DCMAKE_C_FLAGS="$(CFLAGS)" -DIMGUI_STATIC=on -S $(CIMGUI_SRC) -B $(CIMGUI_BUILD)
 	${MAKE} -C $(CIMGUI_BUILD)
 
-$(PHYSFS_STATIC):./lib/$(PHYSFS_SHARED)
+$(PHYSFS_STATIC):
+	mkdir -p $(PHYSFS_BUILD)
+	cmake -G "$(MAKEFILE_FLAVOR) Makefiles" -DCMAKE_C_COMPILER=$(CC) -DCMAKE_C_FLAGS="$(CFLAGS)" -S $(PHYSFS_SRC) -B $(PHYSFS_BUILD)
+	${MAKE} -C $(PHYSFS_BUILD) physfs-static
 
 $(SOLOUD_STATIC):
 	genie --file=$(SOLOUD_BUILD)/genie.lua $(addprefix --with-, $(SOLOUD_BACKENDS)) --with-nosound --platform=x64 gmake
