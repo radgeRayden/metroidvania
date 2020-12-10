@@ -1,4 +1,5 @@
 using import .radlib.core-extensions
+using import .radlib.stringtools
 
 using import .common
 import .renderer
@@ -41,7 +42,13 @@ struct Entity
         try
             'get self.components name
         else
-            assert false (.. "tried to get a component " (repr name) " that was not part of entity " (repr self.tag))
+            assert false
+                as
+                    build-String
+                        "tried to get a component "
+                        (tostring name)
+                        " that was not part of the entity."
+                    rawstring
             unreachable;
 
     inline has-component? (self name)
@@ -155,9 +162,9 @@ global archetypes : ArchetypeMap
 inline set-archetype (tag f)
     'set archetypes tag (static-typify f)
 
-fn get-sprite-group (group-name)
+inline get-sprite-group (group-name)
     try
-        'get renderer.sprite-metadata group-name
+        'get renderer.sprite-metadata (String group-name)
     else
         assert false "unknown sprite group"
         unreachable;
