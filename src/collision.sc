@@ -137,11 +137,32 @@ fn resolve-object<->objects (moving new-pos)
                     obj.id
                     manifold.n
                     manifold.contact_points @ 0
+
             collided? = true
             let normal = (imply manifold.n vec2)
             let depth = (manifold.depths @ 0)
             let pos = (new-pos - (normal * depth))
             moving.Position = pos
+
+            using event-system
+            push-event EventType.Collision
+                Event
+                    target = moving.id
+                    source = obj.id
+                    payload =
+                        typeinit
+                            EventPayload.Direction (normal * depth)
+                            EventPayload.Position (manifold.contact_points @ 0)
+
+            push-event EventType.Collision
+                Event
+                    target = obj.id
+                    source = moving.id
+                    payload =
+                        typeinit
+                            EventPayload.Direction (normal * depth)
+                            EventPayload.Position (manifold.contact_points @ 0)
+
             repeat pos
         new-pos
 
@@ -215,18 +236,6 @@ struct Collider
         # let map-collision = (resolve-object<->map self pos)
         # let object-collision = (resolve-object<->objects self (imply self.Position vec2))
         let object-collision = (resolve-object<->objects self pos)
-        if object-collision
-            let col = ('force-unwrap object-collision)
-            using event-system
-            push-event EventType.Collision
-                Event
-                    target = col.active-object
-                    source = col.passive-object
-            push-event EventType.Collision
-                Event
-                    target = col.passive-object
-                    source = col.active-object
-
         # we test at the resolved position
         test-triggers self (imply self.Position vec2)
         object-collision
