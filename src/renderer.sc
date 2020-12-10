@@ -132,15 +132,15 @@ typedef+ ImageData
             channels = (c as u32)
 
 typedef GPUBuffer <:: u32
-    inline... __typecall (cls kind size)
+    inline... __typecall (cls)
+        bitcast 0 this-type
+    case (cls kind size)
         local handle : u32
         gl.GenBuffers 1 &handle
         gl.BindBuffer (kind as u32) handle
         gl.NamedBufferStorage handle (size as i64) null
             gl.GL_DYNAMIC_STORAGE_BIT
         bitcast handle this-type
-    case (cls)
-        bitcast 0 this-type
 
     inline __drop (self)
         local handle : u32 = (storagecast (view self))
@@ -242,10 +242,10 @@ typedef Mesh < Struct
                 super-type.__typecall cls
 
 typedef GPUTexture <:: u32
-    inline... __typecall (cls handle)
-        bitcast handle this-type
-    case (cls)
+    inline... __typecall (cls)
         bitcast 0 this-type
+    case (cls handle)
+        bitcast handle this-type
 
     inline __drop (self)
         gl.DeleteTextures 1 (&local (storagecast (view self)))
@@ -411,7 +411,11 @@ typedef GPUShaderProgram <:: u32
         gl.DeleteShader vs
         program
 
-    inline... __typecall (cls vs fs)
+    inline... __typecall (cls)
+        bitcast 0 this-type
+    case (cls handle)
+        bitcast handle this-type
+    case (cls vs fs)
         let vertex-module =
             compile-shader
                 static-compile-glsl 450 'vertex (static-typify vs)
@@ -423,10 +427,6 @@ typedef GPUShaderProgram <:: u32
 
         let program = (link-program vertex-module fragment-module)
         bitcast program this-type
-    case (cls handle)
-        bitcast handle this-type
-    case (cls)
-        bitcast 0 this-type
 
     inline __imply (selfT otherT)
         static-if (otherT == (storageof this-type))
