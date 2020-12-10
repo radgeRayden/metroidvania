@@ -540,15 +540,6 @@ glfw.SetKeyCallback main-window
 
 fn update (dt)
     input.update;
-    va-map
-        inline (button)
-            import .input
-            if (input.pressed? button)
-                print "pressed" button
-            if (input.released? button)
-                print "released" button
-        _ 'A 'B 'Left 'Right 'Up 'Down
-
     if (input.pressed? 'A)
         if player.grounded?
             player.velocity.y = jump-force
@@ -765,12 +756,16 @@ while (not (glfw.WindowShouldClose main-window))
         ig.Begin "Debug Info" null 0
 
         global show-entity-list? : bool
-        global show-perf-stats? : bool
+        global show-perf-stats? : bool true
+        global show-gamepad-buttons? : bool
 
-        if (ig.Button "Entity List" (typeinit 300 20))
+        let debug-button-size = (vec2 300 20)
+        if (ig.Button "Entity List" debug-button-size)
             show-entity-list? = true
-        if (ig.Button "Performance" (typeinit 300 20))
+        if (ig.Button "Performance" debug-button-size)
             show-perf-stats? = (not show-perf-stats?)
+        if (ig.Button "Gamepad State" debug-button-size)
+            show-gamepad-buttons? = true
 
         if show-entity-list?
             ig.Begin "Entity List" &show-entity-list? 0
@@ -806,6 +801,17 @@ while (not (glfw.WindowShouldClose main-window))
                 flags.ImGuiWindowFlags_NoTitleBar | flags.ImGuiWindowFlags_NoResize | flags.ImGuiWindowFlags_NoBackground
             ig.Text "avg fps: %.3f" avg-fps
             ig.End;
+
+        if show-gamepad-buttons?
+            ig.Begin "Gamepad State" &show-perf-stats? 0
+            va-map
+                inline (button)
+                    import .input
+                    let down? = (input.down? button)
+                    ig.Text f"${button}: ${down?}"
+                _ 'A 'B 'Left 'Right 'Up 'Down
+            ig.End;
+
         ig.End;
 
     ig.Render;
