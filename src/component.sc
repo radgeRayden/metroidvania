@@ -71,13 +71,13 @@ do
     struct MessageBoxTrigger < ComponentBase
         msg-index : u32
 
-        fn on-trigger-enter (self owner other)
+        fn on-trigger-enter (self owner other args...)
             using common
             if (other.tag == EntityKind.Player)
                 show-msgbox = true
             owner.alive? = false
 
-        fn on-trigger-exit (self owner other)
+        fn on-trigger-exit (self owner other args...)
             using common
             if (other.tag == EntityKind.Player)
                 show-msgbox = false
@@ -85,7 +85,7 @@ do
     struct CoinBehaviour < ComponentBase
         value : u32
 
-        fn on-trigger-enter (self owner other)
+        fn on-trigger-enter (self owner other args...)
             let soloud = (import .FFI.soloud)
             import .sound
             let sfxr = (soloud.Sfxr_create)
@@ -95,7 +95,8 @@ do
             owner.alive? = false
             ;
 
-        fn on-trigger-exit (self owner other)
+        fn on-trigger-exit (self owner other args...)
+            ;
             ;
 
     # mockup of enemy AI

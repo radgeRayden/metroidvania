@@ -1,21 +1,30 @@
 using import struct
 using import enum
 using import Array
+using import glm
 
 enum EventPayload
-    EntityId : u32
-    TextBoxIndex : u32
+    Direction : vec2
+    Position : vec2
+    Empty
+
+    inline __typecall (cls)
+        this-type.Empty;
 
     inline __copy (self)
-        'apply self
-            (T payload) -> (T (copy payload))
+        let st = (storagecast (dupe self))
+        bitcast st this-type
 
 struct Event
+    source : u32
     target : u32
-    payload : EventPayload
+    payload : (array EventPayload 4)
 
     inline __copy (self)
-        this-type (copy self.target) (copy self.payload)
+        local arr : (array EventPayload 4)
+        for i el in (enumerate self.payload)
+            arr @ i = (copy el)
+        this-type (copy self.target) (copy self.target) arr
 
 enum EventType plain
     Collision

@@ -100,43 +100,39 @@ struct EntityList
                 'update component ent dt
 
         using event-system
-        inline fire-events (evtype callback-name expected-payload)
+        inline fire-events (evtype callback-name)
             let events = (poll-events evtype)
 
-            inline fire-event (ent payload)
+            inline fire-event (ent source payload)
                 for name super-component in ent.components
                     'apply super-component
                         inline (ft component)
                             let T = (elementof ft.Type 0)
                             static-if (has-symbol? T callback-name)
-                                callback-name component ent payload
+                                callback-name component ent source (unpack payload)
+
             for ev in events
-                assert (('literal ev.payload) == expected-payload.Literal)
                 # components.sc can't access the entity list to do entity lookups, so we must
                 # provide them with the entity directly.
-                let payload =
-                    static-if (expected-payload == EventPayload.EntityId)
-                        try
-                            'get self._entity-lookup
-                                'unsafe-extract-payload ev.payload expected-payload.Type
-                        else (continue)
-                    else
-                        ('unsafe-extract-payload ev.payload expected-payload.Type)
+                let source =
+                    try ('get self._entity-lookup ev.source)
+                    else (continue) # entity is already dead!
+
                 # respond to events
                 # TODO: use something less dangerous as a sentinel value, maybe an enum.
                 # If target is this special value, then every entity receives the event.
                 if (ev.target == -1:u32)
                     for ent in self._entities
-                        fire-event ent payload
+                        fire-event ent source ev.payload
                 else
                     let target =
                         try ('get self._entity-lookup ev.target)
                         else (continue) # entity is already dead!
-                    fire-event target payload
+                    fire-event target source ev.payload
 
-        fire-events EventType.Collision 'on-collision EventPayload.EntityId
-        fire-events EventType.TriggerEnter 'on-trigger-enter EventPayload.EntityId
-        fire-events EventType.TriggerExit 'on-trigger-exit EventPayload.EntityId
+        fire-events EventType.Collision 'on-collision
+        fire-events EventType.TriggerEnter 'on-trigger-enter
+        fire-events EventType.TriggerExit 'on-trigger-exit
 
         'purge self
 
