@@ -1,3 +1,19 @@
+""""Receives and stores events / messages to be polled or peeked later.
+
+    The following event types are supported:
+    Collision
+        Payload:
+            normal -> Direction
+            contact point -> Position
+
+    TriggerEnter
+        Payload:
+            (all empty)
+
+    TriggerExit
+        Payload:
+            (all empty)
+
 using import struct
 using import enum
 using import Array
