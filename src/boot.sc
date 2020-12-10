@@ -126,7 +126,9 @@ struct Tileset
     tile-properties : (Array TileProperties)
 
     global tileset-cache : (Map String (Rc this-type))
-    inline __typecall (cls filename)
+    inline... __typecall (cls)
+        super-type.__typecall cls
+    case (cls filename)
         fn load-tiled-tileset (filename)
             let data = (filesystem.load-full-file filename)
             let json-data = (cjson.ParseWithLength data (countof data))
@@ -198,10 +200,11 @@ struct Scene
     # to simply fill this in with tile solid value and do collision detection based on
     # that. At some point it might be better to do something like kikito's bump.
     collision-matrix : (Array bool)
-    background-sprites : SpriteBatch
     entities : entity.EntityList
 
-    inline... __typecall (cls filename)
+    inline... __typecall (cls)
+        super-type.__typecall cls
+    case (cls filename)
         fn load-tiled-level (filename)
             let tiled-scene = (cjson.Parse (filesystem.load-full-file filename))
 
@@ -245,7 +248,9 @@ struct Scene
                 'append collision-matrix ((tileset-obj.tile-properties @ (id - 1)) . solid?)
 
             let tile-width tile-height = tileset-obj.tile-width tileset-obj.tile-height
-            local background-sprites =
+
+            'clear renderer.background-layers
+            'append renderer.background-layers
                 SpriteBatch tileset-obj.image tile-width tile-height
 
             local entities : entity.EntityList
@@ -284,7 +289,7 @@ struct Scene
                         vec2; # invisible tile
                     else
                         vec2 tile-width tile-height
-                'add background-sprites
+                'add (renderer.background-layers @ 0)
                     Sprite
                         position = tile-position
                         scale = scale
@@ -336,7 +341,6 @@ struct Scene
 
             super-type.__typecall cls
                 tileset = tileset-obj
-                background-sprites = background-sprites
                 width = scene-width-px
                 height = scene-height-px
                 level-data = level-data
@@ -395,9 +399,7 @@ struct Camera plain
 # ================================================================================
 entity.init-archetypes;
 
-# TODO: move the tilemap sprites to a renderer sprite layer, so we can have an initialized
-# version of Scene without Option, since it won't be dependent on opengl anymore.
-global current-scene = (Scene "levels/1.json")
+global current-scene : Scene
 global main-camera : Camera
     position = (vec2)
     scale = (vec2 6)
@@ -632,9 +634,6 @@ fn draw ()
             'draw component ent
 
     'apply main-camera
-
-    'update current-scene.background-sprites.sprites
-    'draw current-scene.background-sprites
 
 semantically-bind-types ig.ImVec2 vec2
     inline "conv-from" (self)

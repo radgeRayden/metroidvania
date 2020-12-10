@@ -492,6 +492,7 @@ fn sprite-fragment-shader ()
 # INTERNAL MODULE STATE
 # ================================================================================
 global sprite-metadata : (Map String (Array Sprite))
+global background-layers : (Array SpriteBatch 4)
 global sprite-layers : (Array SpriteBatch 4)
 
 global main-render-target : u32
@@ -599,6 +600,9 @@ fn begin ()
 
 
 fn submit ()
+    for layer in background-layers
+        'update layer.sprites
+        'draw layer
     for layer in sprite-layers
         'update layer.sprites
         'draw layer
@@ -663,6 +667,7 @@ do
         GPUShaderProgram
         GPUTexture
 
+        background-layers
         sprite-layers
         sprite-metadata
 
