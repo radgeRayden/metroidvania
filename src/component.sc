@@ -167,6 +167,9 @@ class Component
         'apply self
             (T self) -> ('destroy self owner)
 
+'append Component.__typecall
+    inline... (cls : type)
+        Component.Undefined;
 
 let ComponentList = (Map Symbol (Rc Component))
 typedef+ ComponentList
