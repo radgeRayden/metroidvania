@@ -364,6 +364,7 @@ fn start-game ()
         #         tile-size =
         #             vec2 current-scene.tileset.tile-width current-scene.tileset.tile-height
         'init current-scene.entities
+        'set-bounds main-camera (vec2) (vec2 current-scene.width current-scene.height)
 
     except (ex)
         ;

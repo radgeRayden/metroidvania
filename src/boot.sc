@@ -87,7 +87,6 @@ else
                 locals;
             (globals)
 
-
 static-if (not BUILD_MODE_AMALGAMATED?)
     switch operating-system
     case 'linux
