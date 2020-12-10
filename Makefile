@@ -129,7 +129,7 @@ clean:
 	${MAKE} -C $(PHYSFS_BUILD) clean | true
 	${MAKE} -C $(GLFW_BUILD) clean | true
 	${MAKE} -C $(CIMGUI_BUILD) clean | true
-	${MAKE} -C $(SOLOUD_BUILD)/gmake clean
+	${MAKE} -C $(SOLOUD_BUILD)/gmake clean | true
 	rm -f $(LIBGAME_DEPS)
 	rm -f $(MAIN_OBJ)
 	rm -rf ./lib
