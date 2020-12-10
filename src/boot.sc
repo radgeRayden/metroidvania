@@ -760,6 +760,8 @@ while (not (glfw.WindowShouldClose main-window))
     ig.End;
 
     if show-debug-info?
+        ig.SetNextWindowPos (vec2 (window-width - 320) 5) ig.ImGuiCond_.ImGuiCond_FirstUseEver (vec2 0 0)
+        ig.SetNextWindowCollapsed true ig.ImGuiCond_.ImGuiCond_FirstUseEver
         ig.Begin "Debug Info" null 0
 
         global show-entity-list? : bool
