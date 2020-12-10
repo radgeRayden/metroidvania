@@ -15,6 +15,11 @@ enum EventPayload
         let st = (storagecast (dupe self))
         bitcast st this-type
 
+    inline extract (self tag)
+        let ft = (getattr this-type tag)
+        assert (('literal self) == ft.Literal)
+        'unsafe-extract-payload self ft.Type
+
 struct Event
     source : u32
     target : u32
