@@ -126,9 +126,9 @@ lib/$(SOLOUD_SHARED):
 	${MAKE} -C $(SOLOUD_BUILD)/gmake config=release64 SoloudDynamic
 
 clean:
-	${MAKE} -C $(PHYSFS_BUILD) clean
-	${MAKE} -C $(GLFW_BUILD) clean
-	${MAKE} -C $(CIMGUI_BUILD) clean
+	${MAKE} -C $(PHYSFS_BUILD) clean | true
+	${MAKE} -C $(GLFW_BUILD) clean | true
+	${MAKE} -C $(CIMGUI_BUILD) clean | true
 	${MAKE} -C $(SOLOUD_BUILD)/gmake clean
 	rm -f $(LIBGAME_DEPS)
 	rm -f $(MAIN_OBJ)
