@@ -20,7 +20,7 @@ fn init ()
     if (status == 0)
         let puts = (extern 'puts (function i32 rawstring))
         puts "failed to initialize opengl"
-        exit 1
+        assert false
 
 do
     using gl
