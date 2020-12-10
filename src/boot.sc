@@ -749,10 +749,6 @@ while (not (glfw.WindowShouldClose main-window))
     ig.impl.Glfw_NewFrame;
     ig.NewFrame;
 
-    if show-debug-info?
-        global player-stats-open? : bool true
-        if player-stats-open?
-            ig.Begin "Debug Info" &player-stats-open? 0
     let flags = ig.ImGuiWindowFlags_
     ig.SetNextWindowPos (vec2 10 10) ig.ImGuiCond_.ImGuiCond_Always (vec2 0 0)
     ig.Begin "version" null
@@ -763,33 +759,52 @@ while (not (glfw.WindowShouldClose main-window))
     ig.Text (GAME_VERSION as rawstring) avg-fps
     ig.End;
 
+    if show-debug-info?
+        ig.Begin "Debug Info" null 0
+
+        global show-entity-list? : bool
+        global show-perf-stats? : bool
+
+        if (ig.Button "Entity List" (typeinit 300 20))
+            show-entity-list? = true
+        if (ig.Button "Performance" (typeinit 300 20))
+            show-perf-stats? = (not show-perf-stats?)
+
+        if show-entity-list?
+            ig.Begin "Entity List" &show-entity-list? 0
+            for i ent in (enumerate current-scene.entities)
+                using import .radlib.stringtools
+
+                global selected : i32 -1
+                let selected? = (selected == i)
+                if (ig.SelectableBool (f"${ent.id} ${ent.tag}" as rawstring) selected? 0 (typeinit 300 20))
+                    selected = i
+                if selected?
+                    ig.Begin (tostring ent.tag) null 0
+                    # position in tiles
+                    vvv bind tile-p
+                    do
+                        let tile-dimensions =
+                            vec2
+                                current-scene.tileset.tile-width
+                                current-scene.tileset.tile-height
+                        let tile-p = (ivec2 (floor (player.position / tile-dimensions)))
+
+                    ig.Text "position: %.3f %.3f (%d %d)" ent.position.x ent.position.y
+                        \ tile-p.x tile-p.y
+                    ig.Text "velocity: %.3f %.3f" (unpack (ent.velocity * step-size))
+                    ig.Text f"grounded?: ${ent.grounded?}"
+                    ig.End;
+
+            ig.End;
+
+        if show-perf-stats?
+            ig.SetNextWindowPos (vec2 (window-width - 100) (window-height - 100)) ig.ImGuiCond_.ImGuiCond_FirstUseEver (vec2 0 0)
+            ig.Begin "Performance" &show-perf-stats?
+                flags.ImGuiWindowFlags_NoTitleBar | flags.ImGuiWindowFlags_NoResize | flags.ImGuiWindowFlags_NoBackground
             ig.Text "avg fps: %.3f" avg-fps
-            # position in tiles
-            let tile-p =
-                do
-                    let tile-dimensions =
-                        vec2
-                            current-scene.tileset.tile-width
-                            current-scene.tileset.tile-height
-                    let tile-p = (ivec2 (floor (player.position / tile-dimensions)))
-
-            ig.Text "position: %.3f %.3f (%d %d)" player.position.x player.position.y
-                \ tile-p.x tile-p.y
-            ig.Text "velocity: %.3f %.3f" (unpack (player.velocity * step-size))
-            ig.Text f"grounded?: ${player.grounded?}"
             ig.End;
-
-        global entity-list-open? : bool true
-        if entity-list-open?
-            ig.Begin "Entity List" &entity-list-open? 0
-            for ent in current-scene.entities
-                ig.Text "%d. %s" ent.id ((tostring ent.tag) as rawstring)
-            ig.End;
-
-        if component.show-msgbox
-            ig.Begin "Message Box" &component.show-msgbox 0
-            ig.Text "Hello World! The code for this is a sin!"
-            ig.End;
+        ig.End;
 
     ig.Render;
     ig.impl.OpenGL3_RenderDrawData (ig.GetDrawData)
