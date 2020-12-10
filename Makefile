@@ -1,4 +1,5 @@
 INCLUDE_DIRS = ./3rd-party/glad/include ./3rd-party/cimgui/imgui ./3rd-party/soloud/include ./3rd-party/physfs-3.0.2/src ./3rd-party/glfw/include
+INCLUDE_DIRS += ./3rd-party/xxHash
 IFLAGS = $(addprefix -I, $(INCLUDE_DIRS))
 CFLAGS = -Wall -O2 -fPIC $(IFLAGS)
 CXXFLAGS = $(CFLAGS) -DIMGUI_IMPL_API="extern \"C\"" -DIMGUI_IMPL_OPENGL_LOADER_GLAD
@@ -25,12 +26,14 @@ LIBGAME_DEPS += ./3rd-party/cimgui/imgui/examples/imgui_impl_glfw.o
 LIBGAME_DEPS += ./3rd-party/soloud/src/c_api/soloud_c.o
 LIBGAME_DEPS += ./3rd-party/soloud_physfs_ext.o
 LIBGAME_DEPS += ./3rd-party/tiny-regex-c/re.o
+LIBGAME_DEPS += ./3rd-party/hash.o
 STATIC_LIBS = $(CIMGUI_STATIC) $(PHYSFS_STATIC) $(GLFW_STATIC) $(SOLOUD_STATIC)
 
 MAIN_OBJ = game.o
 
 LFLAGS_LIBGAME =
-LFLAGS = -Wl,-rpath='$$ORIGIN' -L. -Wl,--whole-archive $(addprefix -l:, $(STATIC_LIBS)) -Wl,--no-whole-archive -lpthread -lm -L./bin -lscopesrt 
+LFLAGS = -Wl,-rpath='$$ORIGIN' -L. -Wl,--whole-archive $(addprefix -l:, $(STATIC_LIBS)) -Wl,--no-whole-archive -lpthread -lm -L./bin -lscopesrt
+LFLAGS_AOT = -L. $(addprefix -l:, $(STATIC_LIBS)) -lpthread -lm
 
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S), Linux)
@@ -44,6 +47,7 @@ ifeq ($(UNAME_S), Linux)
 	SOLOUD_SHARED = libsoloud_x64.so
 	SOLOUD_BACKENDS = portaudio
 	LFLAGS += -ldl -lX11 -lasound -Wl,-z,origin -Wl,-E
+	LFLAGS_AOT += -ldl -lX11 -lasound
 endif
 
 ifeq ($(OS), Windows_NT)
@@ -59,6 +63,7 @@ ifeq ($(OS), Windows_NT)
 	SOLOUD_SHARED = soloud_x64.dll
 	SOLOUD_BACKENDS = wasapi miniaudio
 	LFLAGS += -Wl,--export-all -lgdi32 -lwinmm -lole32 -luuid
+	LFLAGS_AOT += -lgdi32 -lwinmm -lole32 -luuid
 	LFLAGS_LIBGAME += -Wl,--export-all
 endif
 
@@ -78,7 +83,10 @@ amalgamated: $(STATIC_LIBS) $(LIBGAME_DEPS) $(MAIN_OBJ)
 	mkdir -p ./bin
 	mkdir -p ./lib/scopes
 	scopes copyscdeps.sc
-	$(CXX) -g -o ./bin/game $(LIBGAME_DEPS) game.o $(LFLAGS) 
+	$(CXX) -g -o ./bin/game $(LIBGAME_DEPS) game.o $(LFLAGS)
+
+aot: $(STATIC_LIBS) $(LIBGAME_DEPS)
+	$(CXX) -g -o ./build/game $(LIBGAME_DEPS) ./build/game.o $(LFLAGS_AOT)
 
 $(CIMGUI_STATIC):
 	cmake -G "$(MAKEFILE_FLAVOR) Makefiles" -DCMAKE_C_COMPILER=$(CC) -DCMAKE_C_FLAGS="$(CFLAGS)" -DIMGUI_STATIC=on -S $(CIMGUI_SRC) -B $(CIMGUI_BUILD)

@@ -108,10 +108,12 @@ run-stage;
 
 using import .main
 static-if AOT_MODE?
+    let C = (import .radlib.libc)
+    C.stdlib.system "mkdir -p ../build"
     compile-object
         default-target-triple
         compiler-file-kind-object
-        module-dir .. "/game.o"
+        module-dir .. "/../build/game.o"
         do
             let main = (static-typify main i32 (mutable@ rawstring))
             locals;
