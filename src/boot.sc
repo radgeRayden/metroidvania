@@ -94,7 +94,7 @@ glfw.WindowHint glfw.GLFW_OPENGL_DEBUG_CONTEXT true
 glfw.WindowHint glfw.GLFW_OPENGL_PROFILE glfw.GLFW_OPENGL_CORE_PROFILE
 # glfw.WindowHint glfw.GLFW_SAMPLES 4
 
-let main-window = (glfw.CreateWindow 1280 720 ("untitled metroidvania - " .. GAME_VERSION) null null)
+let main-window = (glfw.CreateWindow 1280 720 "untitled metroidvania" null null)
 if (main-window == null)
     error "Failed to create a window with specified settings."
 glfw.MakeContextCurrent main-window
@@ -700,6 +700,12 @@ fn draw ()
     'update current-scene.background-sprites.sprites
     'draw current-scene.background-sprites
 
+semantically-bind-types ig.ImVec2 vec2
+    inline "conv-from" (self)
+        vec2 self.x self.y
+    inline "conv-to" (other)
+        ig.ImVec2 other.x other.y
+
 global last-time = (glfw.GetTime)
 while (not (glfw.WindowShouldClose main-window))
     glfw.PollEvents;
@@ -747,6 +753,15 @@ while (not (glfw.WindowShouldClose main-window))
         global player-stats-open? : bool true
         if player-stats-open?
             ig.Begin "Debug Info" &player-stats-open? 0
+    let flags = ig.ImGuiWindowFlags_
+    ig.SetNextWindowPos (vec2 10 10) ig.ImGuiCond_.ImGuiCond_Always (vec2 0 0)
+    ig.Begin "version" null
+        | flags.ImGuiWindowFlags_NoTitleBar
+            flags.ImGuiWindowFlags_NoResize
+            flags.ImGuiWindowFlags_NoBackground
+            flags.ImGuiWindowFlags_NoMove
+    ig.Text (GAME_VERSION as rawstring) avg-fps
+    ig.End;
 
             ig.Text "avg fps: %.3f" avg-fps
             # position in tiles
