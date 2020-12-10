@@ -164,22 +164,22 @@ fn test-triggers (active pos)
             push-event EventType.TriggerEnter
                 Event
                     target = active.id
-                    payload = (EventPayload.EntityId trigger.collider.id)
+                    source = trigger.collider.id
             push-event EventType.TriggerEnter
                 Event
                     target = trigger.collider.id
-                    payload = (EventPayload.EntityId active.id)
+                    source = active.id
             'set trigger.touching active.id true
 
         if ((not touching?) and was-touching?)
             push-event EventType.TriggerExit
                 Event
                     target = active.id
-                    payload = (EventPayload.EntityId trigger.collider.id)
+                    source = trigger.collider.id
             push-event EventType.TriggerExit
                 Event
                     target = trigger.collider.id
-                    payload = (EventPayload.EntityId active.id)
+                    source = active.id
             'discard trigger.touching active.id
 
 fn test-intersection (collider)
@@ -221,11 +221,11 @@ struct Collider
             push-event EventType.Collision
                 Event
                     target = col.active-object
-                    payload = (EventPayload.EntityId col.passive-object)
+                    source = col.passive-object
             push-event EventType.Collision
                 Event
                     target = col.passive-object
-                    payload = (EventPayload.EntityId col.active-object)
+                    source = col.active-object
 
         # we test at the resolved position
         test-triggers self (imply self.Position vec2)
@@ -268,11 +268,11 @@ fn remove-trigger (id)
                 push-event EventType.TriggerExit
                     Event
                         target = other
-                        payload = (EventPayload.EntityId trigger.collider.id)
+                        source = trigger.collider.id
                 push-event EventType.TriggerExit
                     Event
                         target = trigger.collider.id
-                        payload = (EventPayload.EntityId other)
+                        source = other
             swap-n-pop triggers i
             return;
     ;
