@@ -178,6 +178,8 @@ fn init-archetypes ()
                         components.Hitbox
                             size = hitbox-size
                             collider = (Rc.wrap (collision.Collider))
+                        components.PlayerController;
+
     set-archetype EntityKind.Ducky
         fn ()
             sprite := (get-sprite-group "adve") @ 0

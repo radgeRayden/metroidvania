@@ -10,6 +10,7 @@ import .common
 import .renderer
 import .collision
 import .event-system
+import .input
 using import .constants
 
 global show-msgbox : bool
@@ -26,8 +27,14 @@ typedef ComponentBase < Struct
 
 # COMPONENT DEFINITIONS
 # ================================================================================
+enum Component
 vvv bind components
 do
+    struct Undefined < ComponentBase
+        """"Default state of Component when no subtype is supplied to the
+            constructor.
+        dummy-field : u8 # just so we aren't empty
+
     struct Sprite < ComponentBase
         layer : u32
         sprite : common.Sprite
@@ -138,6 +145,76 @@ do
                 ;
             owner.position = self._collider.Position
             ;
+
+    struct PlayerController < ComponentBase
+        _dummy : i32
+        _hitbox : (Rc Component)
+
+        let JumpForce = 120.
+        let Speed = 40.
+        let Acceleration = 180.
+
+        fn init (self owner)
+            self._hitbox = (copy ('get-component owner 'Hitbox))
+            ;
+
+        fn update (self owner dt)
+            if (input.pressed? 'A)
+                if owner.grounded?
+                    owner.velocity.y = JumpForce
+                    owner.grounded? = false
+
+            let yvel = owner.velocity.y
+            let xvel = owner.velocity.x
+            if (input.down? 'Left)
+                if (xvel > 0)
+                    xvel = 0
+                xvel = (max -Speed (xvel - Acceleration * dt))
+            elseif (input.down? 'Right)
+                if (xvel < 0)
+                    xvel = 0
+                xvel = (min Speed (xvel + Acceleration * dt))
+            else
+                friction := -Acceleration * (sign xvel) * 1.5
+                new-xvel := xvel + friction * dt
+                if ((sign xvel) != (sign new-xvel))
+                    xvel = 0
+                else
+                    xvel = new-xvel
+
+            # apply gravity
+            if ((deref owner.grounded?) and (yvel <= 0))
+                yvel = 0
+            else
+                yvel = (clamp (yvel + (GRAVITY * dt)) -100. 200.)
+
+            hitbox := (self._hitbox as Hitbox)
+            'try-move hitbox.collider
+                owner.position + owner.velocity * dt
+
+            owner.position = hitbox.collider.Position
+
+            local probe =
+                collision.Collider
+                    id = owner.id
+                    aabb =
+                        typeinit
+                            min = (hitbox.collider.aabb.min + 0.1)
+                            max = (hitbox.collider.aabb.max - 0.1)
+            probe.aabb = ('project probe.aabb (probe.Position - (vec2 0 1)))
+            owner.grounded? =
+                collision.test-intersection probe
+            ;
+
+        fn on-collision (self owner source normal contact ...)
+            let normal contact =
+                'extract normal 'Direction
+                'extract contact 'Position
+
+            if (normal.y > 0)
+                owner.velocity.y = 0
+            if (normal.x != 0)
+                owner.velocity.x = 0
 
     locals;
 

@@ -435,39 +435,12 @@ start-game;
 
 # GAME CODE
 # ================================================================================
-let jump-force = 120.
-let player-speed = 40.
-let accel = 180.
-
 global window-width : i32
 global window-height : i32
 
 global show-colliders? : bool
 
 'set-bounds main-camera (vec2) (vec2 current-scene.width current-scene.height)
-
-fn player-move (pos)
-    let col = ('try-move player-collider pos)
-    try
-        let col = ('unwrap col)
-        if (col.normal.y > 0)
-            player.velocity.y = 0
-        if (col.normal.x != 0)
-            player.velocity.x = 0
-    else
-        player.grounded? = false
-        ;
-    player.position = player-collider.Position
-    local probe =
-        collision.Collider
-            id = player-collider.id
-            aabb =
-                typeinit
-                    min = (player-collider.aabb.min + 0.1)
-                    max = (player-collider.aabb.max - 0.1)
-    probe.aabb = ('project probe.aabb (probe.Position - (vec2 0 1)))
-    player.grounded? =
-        collision.test-intersection probe
 
 global show-debug-info? : bool
 glfw.SetKeyCallback main-window
@@ -540,30 +513,10 @@ glfw.SetKeyCallback main-window
 
 fn update (dt)
     input.update;
-    if (input.pressed? 'A)
-        if player.grounded?
-            player.velocity.y = jump-force
-            player.grounded? = false
-
-    let yvel = player.velocity.y
-    let xvel = player.velocity.x
-    if (input.down? 'Left)
-        if (xvel > 0)
-            xvel = 0
-        xvel = (max -player-speed (xvel - accel * dt))
-    elseif (input.down? 'Right)
-        if (xvel < 0)
-            xvel = 0
-        xvel = (min player-speed (xvel + accel * dt))
-    else
-        friction := -accel * (sign xvel) * 1.5
-        new-xvel := xvel + friction * dt
-        if ((sign xvel) != (sign new-xvel))
-            xvel = 0
-        else
-            xvel = new-xvel
 
     using component
+    let yvel = player.velocity.y
+    let xvel = player.velocity.x
     player-sprite := ('get-component player 'Sprite) as components.Sprite
     let sprite = player-sprite.sprite
     if (xvel != 0)
@@ -571,14 +524,6 @@ fn update (dt)
         sprite.rotation += -xvel * dt * 0.3
     else
         sprite.rotation = 0
-
-    # apply gravity
-    if ((deref player.grounded?) and (yvel <= 0))
-        yvel = -1
-    else
-        yvel = (clamp (yvel + (GRAVITY * dt)) -100. 200.)
-
-    player-move (player.position + player.velocity * dt)
 
     'follow main-camera player.position
     'update current-scene.entities dt
