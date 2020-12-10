@@ -24,6 +24,7 @@ spice aot-assert (args...)
     let anchor-text = (repr anchor)
     'tag `(check-assertion expr [anchor-text] (msg as rawstring)) anchor
 
+# FIXME: will break with duplicate enum tags
 spice gen-cenum-cstr (value)
     let T = ('typeof value)
     let sw = (sc_switch_new value)
