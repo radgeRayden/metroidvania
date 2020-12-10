@@ -1,4 +1,5 @@
 let soloud = (import .FFI.soloud)
+let C = (import .radlib.libc)
 
 global soloud-instance : (mutable@ soloud.Soloud)
 fn init ()
@@ -21,8 +22,8 @@ fn init ()
             soloud.SOLOUD_AUTO
             2
     if result
-        error ("SOLOUD ERROR: " .. (string (soloud.getErrorString soloud-instance result)))
-    print (string (soloud.getBackendString soloud-instance))
+        C.stdio.puts "SOLOUD ERROR:"
+        assert false (soloud.getErrorString soloud-instance result)
 
 fn cleanup ()
     soloud.deinit soloud-instance

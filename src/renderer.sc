@@ -35,31 +35,31 @@ fn init-gl ()
         fn openGL-error-callback (source _type id severity _length message user-param)
             inline gl-debug-source (source)
                 match source
-                case gl.GL_DEBUG_SOURCE_API                "API"
-                case gl.GL_DEBUG_SOURCE_WINDOW_SYSTEM      "Window System"
-                case gl.GL_DEBUG_SOURCE_SHADER_COMPILER    "Shader Compiler"
-                case gl.GL_DEBUG_SOURCE_THIRD_PARTY        "Third Party"
-                case gl.GL_DEBUG_SOURCE_APPLICATION        "Application"
-                case gl.GL_DEBUG_SOURCE_OTHER              "Other"
-                default                                    "?"
+                case gl.GL_DEBUG_SOURCE_API                ("API" as rawstring)
+                case gl.GL_DEBUG_SOURCE_WINDOW_SYSTEM      ("Window System" as rawstring)
+                case gl.GL_DEBUG_SOURCE_SHADER_COMPILER    ("Shader Compiler" as rawstring)
+                case gl.GL_DEBUG_SOURCE_THIRD_PARTY        ("Third Party" as rawstring)
+                case gl.GL_DEBUG_SOURCE_APPLICATION        ("Application" as rawstring)
+                case gl.GL_DEBUG_SOURCE_OTHER              ("Other" as rawstring)
+                default                                    ("?" as rawstring)
 
             inline gl-debug-type (type_)
                 match type_
-                case gl.GL_DEBUG_TYPE_ERROR                "Error"
-                case gl.GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR  "Deprecated"
-                case gl.GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR   "Undefined Behavior"
-                case gl.GL_DEBUG_TYPE_PORTABILITY          "Portability"
-                case gl.GL_DEBUG_TYPE_PERFORMANCE          "Performance"
-                case gl.GL_DEBUG_TYPE_OTHER                "Other"
-                default                                    "?"
+                case gl.GL_DEBUG_TYPE_ERROR                ("Error" as rawstring)
+                case gl.GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR  ("Deprecated" as rawstring)
+                case gl.GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR   ("Undefined Behavior" as rawstring)
+                case gl.GL_DEBUG_TYPE_PORTABILITY          ("Portability" as rawstring)
+                case gl.GL_DEBUG_TYPE_PERFORMANCE          ("Performance" as rawstring)
+                case gl.GL_DEBUG_TYPE_OTHER                ("Other" as rawstring)
+                default                                    ("?" as rawstring)
 
             inline gl-debug-severity (severity)
                 match severity
-                case gl.GL_DEBUG_SEVERITY_HIGH             "High"
-                case gl.GL_DEBUG_SEVERITY_MEDIUM           "Medium"
-                case gl.GL_DEBUG_SEVERITY_LOW              "Low"
-                case gl.GL_DEBUG_SEVERITY_NOTIFICATION     "Notification"
-                default                                    "?"
+                case gl.GL_DEBUG_SEVERITY_HIGH             ("High" as rawstring)
+                case gl.GL_DEBUG_SEVERITY_MEDIUM           ("Medium" as rawstring)
+                case gl.GL_DEBUG_SEVERITY_LOW              ("Low" as rawstring)
+                case gl.GL_DEBUG_SEVERITY_NOTIFICATION     ("Notification" as rawstring)
+                default                                    ("?" as rawstring)
 
             using OpenGLDebugLevel
             match severity
@@ -77,15 +77,15 @@ fn init-gl ()
             default
                 ;
 
-            print
-                "source:"
-                gl-debug-source source
-                "| type:"
-                gl-debug-type _type
-                "| severity:"
-                gl-debug-severity severity
-                "| message:"
-                string message
+            C.stdio.printf "%s %s %s %s %s %s %s %s"
+                "source:" as rawstring
+                (gl-debug-source source) as rawstring
+                "| type:" as rawstring
+                (gl-debug-type _type) as rawstring
+                "| severity:" as rawstring
+                (gl-debug-severity severity) as rawstring
+                "| message:" as rawstring
+                message as rawstring
             ;
 
     gl.Enable gl.GL_DEBUG_OUTPUT
@@ -101,7 +101,11 @@ fn init-gl ()
 
 typedef+ ImageData
     fn load-image-data (filename)
-        let data = (filesystem.load-full-file filename)
+        :: not-found
+        let data =
+            try (filesystem.load-full-file filename)
+            else (merge not-found)
+
         local x : i32
         local y : i32
         local n : i32
@@ -114,7 +118,7 @@ typedef+ ImageData
                 &n
                 0
         let data-len = (x * y * n)
-        _
+        return
             Struct.__typecall (Array u8)
                 _items = img-data
                 _count = data-len
@@ -122,6 +126,15 @@ typedef+ ImageData
             deref x
             deref y
             deref n
+        not-found ::
+
+        # return a single gray pixel if we couldn't find the image, just so it's not
+        # fatal.
+        local arr : (Array u8)
+        for i in (range 4)
+            'append arr 128:u8
+        _ (deref arr) 1 1 4
+
 
     inline __typecall (cls filename)
         let data w h c = (load-image-data filename)
@@ -387,8 +400,8 @@ typedef GPUShaderProgram <:: u32
             local log-length : i32
             local message : (array i8 1024)
             gl.GetShaderInfoLog handle (sizeof message) &log-length &message
-            print (default-styler 'style-error "Shader compilation error:")
-            print (string &message (log-length as usize))
+            C.stdio.puts "Shader compilation error:"
+            C.stdio.puts (String &message (log-length as usize))
         handle
 
     fn link-program (vs fs)
@@ -403,8 +416,8 @@ typedef GPUShaderProgram <:: u32
             local log-length : i32
             local message : (array i8 1024)
             gl.GetProgramInfoLog program (sizeof message) &log-length &message
-            print (default-styler 'style-error "Shader program linking error:")
-            print (string &message (log-length as usize))
+            C.stdio.puts "Shader program linking error:"
+            C.stdio.puts (String &message (log-length as usize))
         # because we preemptively delete the shader stages, they are
             already marked for deletion when the program is dropped.
         gl.DeleteShader fs
@@ -418,11 +431,11 @@ typedef GPUShaderProgram <:: u32
     case (cls vs fs)
         let vertex-module =
             compile-shader
-                static-compile-glsl 450 'vertex (static-typify vs)
+                (static-compile-glsl 450 'vertex (static-typify vs)) as rawstring
                 gl.GL_VERTEX_SHADER
         let fragment-module =
             compile-shader
-                static-compile-glsl 450 'fragment (static-typify fs)
+                (static-compile-glsl 450 'fragment (static-typify fs)) as rawstring
                 gl.GL_FRAGMENT_SHADER
 
         let program = (link-program vertex-module fragment-module)
@@ -508,6 +521,7 @@ global world-transform : mat4
 # ================================================================================
 let re = (import .FFI.re)
 fn init (window)
+    raising Nothing
     # TODO: this won't be necessary once windowing code
     # is moved to a dedicated module.
     main-window = window
@@ -531,7 +545,12 @@ fn init (window)
 
     let metadata-json =
         do
-            let file = (filesystem.load-full-file "sprites/metadata.json")
+            let file =
+                try (filesystem.load-full-file (String "sprites/metadata.json"))
+                else
+                    # we really need this metadata!
+                    assert false "sprite metadata not found"
+                    unreachable;
             cjson.ParseWithLength file (countof file)
 
     let sprite-groups = (cjson.GetObjectItem metadata-json "groups")

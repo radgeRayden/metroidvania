@@ -6,15 +6,15 @@ let C = (import .radlib.libc)
 
 fn init (argv)
     if (not (physfs.init (argv @ 0)))
-        error "Failed to initialize PHYSFS."
+        assert false "Failed to initialize PHYSFS."
     physfs.mount "../data" "/" true
     physfs.setWriteDir "."
 
 fn load-full-file (filename)
     let file = (physfs.openRead filename)
     if (file == null)
-        hide-traceback;
-        error (.. "could not open file " (string filename))
+        C.stdio.printf "%s\n" (.. (String "could not open file ") filename)
+        raise false
 
     let size = (physfs.fileLength file)
     local data : (Array i8)

@@ -3,6 +3,8 @@ using import Map
 using import Option
 
 let glfw = (import .FFI.glfw)
+let C = (import .radlib.libc)
+let stdio = C.stdio
 
 struct InputState plain
     A : bool
@@ -26,8 +28,7 @@ fn init (window)
     main-window = window
     for i in (range glfw.GLFW_JOYSTICK_LAST)
         if (glfw.JoystickIsGamepad i)
-            print
-                f"${string (glfw.GetGamepadName i)} was enabled as primary controller"
+            stdio.printf "%s was enabled as primary controller\n" (glfw.GetGamepadName i)
             gamepad = i
             break;
 
@@ -38,18 +39,17 @@ fn init (window)
             if (event == glfw.GLFW_CONNECTED)
                 if ((not gamepad) and ((glfw.JoystickIsGamepad jid) as bool))
                     gamepad = jid
-                    print f"${string (glfw.GetGamepadName jid)} was enabled as primary controller"
+                    stdio.printf "%s was enabled as primary controller\n" (glfw.GetGamepadName jid)
 
             # however, if our assigned gamepad is disconnected, we look for
             # connected gamepads and try to switch to them before disabling
             # gamepad input.
             if ((event == glfw.GLFW_DISCONNECTED) and (jid == gamepad))
-                print "Primary controller was disconnected"
+                stdio.printf "Primary controller was disconnected"
                 gamepad = none
                 for i in (range glfw.GLFW_JOYSTICK_LAST)
                     if (glfw.JoystickIsGamepad i)
-                        print
-                            f"${string (glfw.GetGamepadName i)} was enabled as primary controller"
+                        stdio.printf "%s was enabled as primary controller\n" (glfw.GetGamepadName i)
                         gamepad = i
                         break;
   
