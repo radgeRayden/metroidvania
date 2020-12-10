@@ -24,6 +24,7 @@ LIBGAME_DEPS += ./3rd-party/cimgui/imgui/examples/imgui_impl_opengl3.o
 LIBGAME_DEPS += ./3rd-party/cimgui/imgui/examples/imgui_impl_glfw.o
 LIBGAME_DEPS += ./3rd-party/soloud/src/c_api/soloud_c.o
 LIBGAME_DEPS += ./3rd-party/soloud_physfs_ext.o
+LIBGAME_DEPS += ./3rd-party/tiny-regex-c/re.o
 STATIC_LIBS = $(CIMGUI_STATIC) $(PHYSFS_STATIC) $(GLFW_STATIC) $(SOLOUD_STATIC)
 
 MAIN_OBJ = game.o

@@ -19,3 +19,6 @@
 [submodule "3rd-party/soloud"]
 	path = 3rd-party/soloud
 	url = https://github.com/radgeRayden/soloud
+[submodule "3rd-party/tiny-regex-c"]
+	path = 3rd-party/tiny-regex-c
+	url = https://github.com/kokke/tiny-regex-c

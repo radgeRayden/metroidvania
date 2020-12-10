@@ -513,8 +513,10 @@ fn init (window)
     init-gl;
 
     local atlases : (Array String)
-    for name in (filesystem.get-directory-files "sprites")
-        let match? start end = ('match? "atlas[0-9]+.png" (name as string))
+    let re = (import .FFI.re)
+    let pattern = (re.compile "atlas[0-9]+\\.png")
+    for name in (filesystem.get-directory-files (String "sprites"))
+        let match? start end = (re.match? pattern name)
         if match?
             'append atlases ("sprites/" .. name)
 
