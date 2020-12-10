@@ -42,13 +42,22 @@ struct Entity
         try
             'get self.components name
         else
-            assert false
-                as
-                    build-String
+            static-if AOT_MODE?
+                assert false
+                    as
+                        build-String
+                            "tried to get a component "
+                            (tostring name)
+                            " that was not part of the entity."
+                        rawstring
+            else
+                assert false
+                    ..
                         "tried to get a component "
-                        (tostring name)
-                        " that was not part of the entity."
-                    rawstring
+                        repr name
+                        " that was not part of entity "
+                        repr self.tag
+
             unreachable;
 
     inline has-component? (self name)
