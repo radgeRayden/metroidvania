@@ -6,3 +6,5 @@ tmp/
 **/build/*
 lib/*
 *.o
+.doit.db
+__pycache__/**
