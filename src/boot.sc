@@ -1,6 +1,6 @@
+let C = (import .radlib.libc)
 # we redefine assert to avoid depending on the scopes runtime.
 spice aot-assert (args...)
-    let C = (import .radlib.libc)
     let printf = C.stdio.printf
     let abort = C.stdlib.abort
 
@@ -91,11 +91,11 @@ else
 static-if (not BUILD_MODE_AMALGAMATED?)
     require-from module-dir ".runtime"
 
+C.unistd.chdir module-dir
 run-stage;
 
 using import .main
 static-if AOT_MODE?
-    let C = (import .radlib.libc)
     C.stdlib.system "mkdir -p ../build"
     compile-object
         default-target-triple
