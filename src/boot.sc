@@ -1,6 +1,6 @@
 let C = (import .radlib.libc)
 # we redefine assert to avoid depending on the scopes runtime.
-spice aot-assert (args...)
+spice _aot-assert (args...)
     let printf = C.stdio.printf
     let abort = C.stdlib.abort
 
@@ -24,6 +24,13 @@ spice aot-assert (args...)
     let anchor-text = (repr anchor)
     'tag `(check-assertion expr [anchor-text] (msg as rawstring)) anchor
 
+sugar aot-assert (args...)
+    let args = (args... as list)
+    let cond msg body = (decons args 2)
+    let anchor = ('anchor cond)
+    let msg = (convert-assert-args args cond msg)
+    list ('tag `_aot-assert anchor) cond msg
+
 # FIXME: will break with duplicate enum tags
 spice gen-cenum-cstr (value)
     let T = ('typeof value)
@@ -46,14 +53,6 @@ spice has-symbol? (T sym)
         `false
 
 run-stage;
-
-inline aot-assert (cond message)
-    let message =
-        static-if (none? message)
-            ""
-        else
-            message
-    aot-assert cond message
 
 inline tocstr (v)
     static-if (not (has-symbol? (typeof v) '__tocstr))
