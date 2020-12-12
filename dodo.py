@@ -2,6 +2,11 @@ import platform
 class UnsupportedPlatform(Exception):
     pass
 
+def module_dep(name):
+    return f"./.git/modules/3rd-party/{name}/HEAD"
+
+make_flavor = ""
+
 genie_url = ""
 genie_name = ""
 
@@ -9,15 +14,23 @@ soloud_dir = "./3rd-party/soloud"
 soloud_static = f"{soloud_dir}/lib/libsoloud_static_x64.a"
 soloud_dynamic = ""
 
+cimgui_dir = "./3rd-party/cimgui"
+cimgui_build = f"{cimgui_dir}/build"
+cimgui_static = f"{cimgui_build}/cimgui.a"
+
 operating_system = platform.system()
 if "Windows" in operating_system:
+    make_flavor = "MinGW"
     genie_url = "https://github.com/bkaradzic/bx/raw/master/tools/bin/windows/genie.exe"
     genie_name = "genie.exe"
     soloud_dynamic = f"{soloud_dir}/lib/soloud_x64.dll"
+    cimgui_dynamic = f"{cimgui_build}/cimgui.dll"
 elif "Linux" in operating_system:
+    make_flavor = "Unix"
     genie_url = "https://github.com/bkaradzic/bx/raw/master/tools/bin/linux/genie"
     genie_name = "genie"
     soloud_dynamic = f"{soloud_dir}/lib/libsoloud_x64.so"
+    cimgui_dynamic = f"{cimgui_build}/cimgui.so"
 else:
     raise UnsupportedPlatform
 
@@ -51,5 +64,15 @@ def task_soloud():
     return {
         'actions': [genie_cmd, make_cmd],
         'targets': [soloud_static, soloud_dynamic],
-        'file_dep': [genie_path]
+        'file_dep': [genie_path, module_dep("soloud")]
+    }
+
+def task_cimgui():
+    cmd_static = f"cd {cimgui_build}; cmake .. -G '{make_flavor} Makefiles' -DIMGUI_STATIC=on"
+    cmd_dynamic = f"cd {cimgui_build}; cmake .. -G '{make_flavor} Makefiles' -DIMGUI_STATIC=off"
+    cmd_make = f"make -C {cimgui_build}"
+    return {
+        'actions': [f"mkdir -p {cimgui_build}", cmd_static, cmd_make, cmd_dynamic, cmd_make],
+        'targets': [cimgui_static, cimgui_dynamic],
+        'file_dep': [module_dep("cimgui")]
     }
