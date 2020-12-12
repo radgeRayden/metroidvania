@@ -13,6 +13,7 @@ genie_name = ""
 soloud_dir = "./3rd-party/soloud"
 soloud_static = f"{soloud_dir}/lib/libsoloud_static_x64.a"
 soloud_dynamic = ""
+soloud_backends = ""
 
 cimgui_dir = "./3rd-party/cimgui"
 cimgui_build = f"{cimgui_dir}/build"
@@ -25,12 +26,16 @@ if "Windows" in operating_system:
     genie_name = "genie.exe"
     soloud_dynamic = f"{soloud_dir}/lib/soloud_x64.dll"
     cimgui_dynamic = f"{cimgui_build}/cimgui.dll"
+
+    soloud_backends = "--with-miniaudio --with-wasapi"
 elif "Linux" in operating_system:
     make_flavor = "Unix"
     genie_url = "https://github.com/bkaradzic/bx/raw/master/tools/bin/linux/genie"
     genie_name = "genie"
     soloud_dynamic = f"{soloud_dir}/lib/libsoloud_x64.so"
     cimgui_dynamic = f"{cimgui_build}/cimgui.so"
+
+    soloud_backends = "--with-portaudio"
 else:
     raise UnsupportedPlatform
 
@@ -83,8 +88,7 @@ def task_soloud_dynamic():
 def task_soloud():
     genie_path = f"./3rd-party/{genie_name}"
     build_dir = f"{soloud_dir}/build"
-    backends = "--with-portaudio --with-nosound"
-    genie_cmd = f"{genie_path} --file={build_dir}/genie.lua {backends} --platform=x64 gmake"
+    genie_cmd = f"{genie_path} --file={build_dir}/genie.lua {soloud_backends} --with-nosound --platform=x64 gmake"
     make_cmd = f"make -C {build_dir}/gmake config=release64 SoloudStatic"
     return {
         'actions': [genie_cmd, make_cmd],
