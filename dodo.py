@@ -88,7 +88,7 @@ def task_soloud():
     return {
         'actions': [genie_cmd, make_cmd],
         'targets': [soloud_static],
-        'file_dep': [soloud_dynamic, module_dep("soloud")]
+        'file_dep': [genie_path, soloud_dynamic, module_dep("soloud")]
     }
 
 def task_cimgui():
