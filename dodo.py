@@ -80,6 +80,10 @@ def task_soloud_dynamic():
         raise UnsupportedPlatform
 
 def task_soloud():
+    genie_path = f"./3rd-party/{genie_name}"
+    build_dir = f"{soloud_dir}/build"
+    backends = "--with-portaudio --with-nosound"
+    genie_cmd = f"{genie_path} --file={build_dir}/genie.lua {backends} --platform=x64 gmake"
     make_cmd = f"make -C {build_dir}/gmake config=release64 SoloudStatic"
     return {
         'actions': [genie_cmd, make_cmd],
