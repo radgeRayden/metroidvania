@@ -25,6 +25,11 @@ glfw_build = f"{glfw_dir}/build"
 glfw_static = f"{glfw_build}/src/libglfw3.a"
 glfw_dynamic = ""
 
+physfs_dir = "./3rd-party/physfs-3.0.2"
+physfs_build = f"{physfs_dir}/build"
+physfs_static = f"{physfs_build}/libphysfs.a"
+physfs_dynamic = ""
+
 operating_system = platform.system()
 is_windows = operating_system.startswith("MINGW")
 if is_windows:
@@ -35,6 +40,7 @@ if is_windows:
     soloud_dynamic = f"{soloud_dir}/lib/soloud_x64.dll"
     cimgui_dynamic = f"{cimgui_dir}/cimgui.dll"
     glfw_dynamic = f"{glfw_build}/src/glfw3.dll"
+    physfs_dynamic = f"{physfs_build}/libphysfs.dll"
 
     soloud_backends = "--with-miniaudio --with-wasapi"
 elif "Linux" in operating_system:
@@ -45,11 +51,14 @@ elif "Linux" in operating_system:
     soloud_dynamic = f"{soloud_dir}/lib/libsoloud_x64.so"
     cimgui_dynamic = f"{cimgui_dir}/cimgui.so"
     glfw_dynamic = f"{glfw_build}/src/libglfw3.so"
+    physfs_dynamic = f"{physfs_build}/libphysfs.so"
 
     soloud_backends = "--with-portaudio"
 else:
     raise UnsupportedPlatform
 
+def wrap_cmake(basedir, options):
+    return f"mkdir -p {basedir}; cd {basedir}; cmake .. -G '{make_flavor} Makefiles' {options}"
 
 from doit.tools import LongRunning
 from doit.tools import run_once
@@ -125,11 +134,20 @@ def task_cimgui():
     }
 
 def task_glfw():
-    shared_cmd = f"cmake .. -G '{make_flavor} Makefiles' -DGLFW_BUILD_EXAMPLES=off -DGLFW_BUILD_TESTS=off -DGLFW_BUILD_DOCS=off -DBUILD_SHARED_LIBS=on"
-    static_cmd = f"cmake .. -G '{make_flavor} Makefiles' -DGLFW_BUILD_EXAMPLES=off -DGLFW_BUILD_TESTS=off -DGLFW_BUILD_DOCS=off -DBUILD_SHARED_LIBS=off"
+    shared_options = "-DGLFW_BUILD_EXAMPLES=off -DGLFW_BUILD_TESTS=off -DGLFW_BUILD_DOCS=off -DBUILD_SHARED_LIBS=on"
+    static_options = "-DGLFW_BUILD_EXAMPLES=off -DGLFW_BUILD_TESTS=off -DGLFW_BUILD_DOCS=off -DBUILD_SHARED_LIBS=off"
     make_cmd = f"{make} -C {glfw_build}"
     return {
-        'actions': [f"mkdir -p {glfw_build}", f"cd {glfw_build}; {shared_cmd}", make_cmd,f"cd {glfw_build}; {static_cmd}", make_cmd],
+        'actions': [wrap_cmake(glfw_build, shared_options), make_cmd, wrap_cmake(glfw_build, static_options), make_cmd],
         'targets': [glfw_static, glfw_dynamic],
         'file_dep': [module_dep("glfw")]
+    }
+
+def task_physfs():
+    make_shared = f"{make} -C {physfs_build}"
+    make_static = f"{make} -C {physfs_build} physfs-static"
+    return {
+        'actions': [wrap_cmake(physfs_build, ""), make_shared, make_static],
+        'targets': [physfs_static, physfs_dynamic],
+        'uptodate': [True]
     }
