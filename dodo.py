@@ -46,6 +46,8 @@ physfs_build = f"{physfs_dir}/build"
 physfs_static = f"{physfs_build}/libphysfs.a"
 physfs_dynamic = ""
 
+libgame_dynamic = ""
+
 operating_system = platform.system()
 is_windows = operating_system.startswith("MINGW")
 if is_windows:
@@ -60,6 +62,7 @@ if is_windows:
     cimgui_dynamic = f"{cimgui_dir}/cimgui.dll"
     glfw_dynamic = f"{glfw_build}/src/glfw3.dll"
     physfs_dynamic = f"{physfs_build}/libphysfs.dll"
+    libgame_dynamic = "./3rd-party/libgame.dll"
 
     soloud_backends = "--with-miniaudio --with-wasapi"
 elif "Linux" in operating_system:
@@ -74,6 +77,7 @@ elif "Linux" in operating_system:
     cimgui_dynamic = f"{cimgui_dir}/cimgui.so"
     glfw_dynamic = f"{glfw_build}/src/libglfw3.so"
     physfs_dynamic = f"{physfs_build}/libphysfs.so"
+    libgame_dynamic = "./3rd-party/libgame.so"
 
     soloud_backends = "--with-portaudio"
 else:
@@ -224,10 +228,11 @@ def libgame_windows():
         objs_str = objs_str + obj + " "
 
     lflags = f"-Wl,--whole-archive {glfw_static} {cimgui_static} {physfs_static} -Wl,--no-whole-archive -Wl,--export-all -lgdi32 -lwinmm -lole32 -luuid"
-    cmd = f"{cxx} -o ./build/libgame.dll {objs_str} -shared {lflags}"
+    cmd = f"{cxx} -o {libgame_dynamic} {objs_str} -shared {lflags}"
     yield {
         'basename': "libgame.dll",
-        'actions': ["mkdir -p ./build", cmd],
+        'actions': [cmd],
+        'targets': [libgame_dynamic],
         'file_dep': objs + [glfw_static, cimgui_static, physfs_static],
     }
 
@@ -243,3 +248,11 @@ def task_libgame():
         raise UnsupportedPlatform
 
 def task_runtime():
+    deps = [libgame_dynamic, glfw_dynamic, cimgui_dynamic, physfs_dynamic, soloud_dynamic]
+    def mkcopy(lib):
+        return f"cp $(realpath {lib}) ./build/"
+    copy_libs = [mkcopy(lib) for lib in deps]
+    return {
+        'actions': ["mkdir -p ./build"] + copy_libs,
+        'file_dep': deps,
+    }
