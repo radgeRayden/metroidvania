@@ -7,6 +7,22 @@ def module_dep(name):
 
 make_flavor = ""
 make = ""
+cc = ""
+cxx = ""
+include_dirs = [
+    "./3rd-party/glad/include",
+    "./3rd-party/cimgui/imgui",
+    "./3rd-party/soloud/include",
+    "./3rd-party/physfs-3.0.2/src",
+    "./3rd-party/glfw/include",
+    "./3rd-party/xxHash",
+]
+iflags = ""
+for idir in include_dirs:
+    iflags = iflags + "-I" + idir + " "
+
+cflags = f"-Wall -O2 -fPIC {iflags}"
+cxxflags = f"{cflags} -DIMGUI_IMPL_API='extern \"C\"' -DIMGUI_IMPL_OPENGL_LOADER_GLAD"
 
 genie_url = ""
 genie_name = ""
@@ -35,6 +51,9 @@ is_windows = operating_system.startswith("MINGW")
 if is_windows:
     make_flavor = "MinGW"
     make = "mingw32-make"
+    cc = "x86_64-w64-mingw32-gcc"
+    cxx = "x86_64-w64-mingw32-g++"
+
     genie_url = "https://github.com/bkaradzic/bx/raw/master/tools/bin/windows/genie.exe"
     genie_name = "genie.exe"
     soloud_dynamic = f"{soloud_dir}/lib/soloud_x64.dll"
@@ -46,6 +65,9 @@ if is_windows:
 elif "Linux" in operating_system:
     make_flavor = "Unix"
     make = "make"
+    cc = "gcc"
+    cxx = "g++"
+
     genie_url = "https://github.com/bkaradzic/bx/raw/master/tools/bin/linux/genie"
     genie_name = "genie"
     soloud_dynamic = f"{soloud_dir}/lib/libsoloud_x64.so"
@@ -151,3 +173,73 @@ def task_physfs():
         'targets': [physfs_static, physfs_dynamic],
         'uptodate': [True]
     }
+
+def gen_obj_name(src):
+    if src.endswith(".c"):
+        return src[:-2] + ".o"
+    elif src.endswith(".cpp"):
+        return src[:-4] + ".o"
+    else:
+        raise f"not a C or C++ source file {src}"
+
+def compile_source(src):
+    if src.endswith(".c"):
+        target_name = gen_obj_name(src)
+        return {
+            'basename': target_name,
+            'actions': [f"{cc} -c {src} {cflags}"],
+            'targets': [target_name],
+            'file_dep': [src]
+        }
+    elif src.endswith(".cpp"):
+        target_name = gen_obj_name(src)
+        return {
+            'basename': target_name,
+            'actions': [f"{cxx} -c {src} {cxxflags}"],
+            'targets': [target_name],
+            'file_dep': [src]
+        }
+    else:
+        raise f"not a C or C++ source file {src}"
+
+libgame_deps = [
+    "./3rd-party/glad/src/glad.c",
+    "./3rd-party/cJSON/cJSON.c",
+    "./3rd-party/stb.c",
+    "./3rd-party/cute.c",
+    "./3rd-party/cimgui/imgui/examples/imgui_impl_opengl3.cpp",
+    "./3rd-party/cimgui/imgui/examples/imgui_impl_glfw.cpp",
+    "./3rd-party/soloud_physfs_ext.cpp",
+    "./3rd-party/tiny-regex-c/re.c",
+    "./3rd-party/hash.c"
+]
+
+def libgame_windows():
+    for src in libgame_deps:
+        yield compile_source(src)
+
+    objs = [gen_obj_name(src) for src in libgame_deps]
+    objs_str = ""
+    for obj in objs:
+        objs_str = objs_str + obj + " "
+
+    lflags = f"-Wl,--whole-archive {glfw_static} {cimgui_static} {physfs_static} -Wl,--no-whole-archive -Wl,--export-all -lgdi32 -lwinmm -lole32 -luuid"
+    cmd = f"{cxx} -o ./build/libgame.dll {objs_str} -shared {lflags}"
+    yield {
+        'basename': "libgame.dll",
+        'actions': ["mkdir -p ./build", cmd],
+        'file_dep': objs + [glfw_static, cimgui_static, physfs_static],
+    }
+
+def libgame_linux():
+    return {}
+
+def task_libgame():
+    if is_windows:
+        yield libgame_windows()
+    elif "Linux" in operating_system:
+        yield libgame_linux()
+    else:
+        raise UnsupportedPlatform
+
+def task_runtime():
