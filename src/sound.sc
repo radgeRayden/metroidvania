@@ -1,4 +1,4 @@
-using import .constants
+using import .config
 
 let soloud = (import .FFI.soloud)
 let C = (import .radlib.libc)

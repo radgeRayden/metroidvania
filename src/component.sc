@@ -11,7 +11,7 @@ import .renderer
 import .collision
 import .event-system
 import .input
-using import .constants
+using import .config
 
 global show-msgbox : bool
 

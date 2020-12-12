@@ -68,7 +68,7 @@ typedef+ bool
     inline __tocstr (v)
         ? v ("true" as rawstring) ("false" as rawstring)
 
-using import .constants
+using import .config
 static-if AOT_MODE?
     set-globals!
         ..

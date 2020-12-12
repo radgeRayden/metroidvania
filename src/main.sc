@@ -20,7 +20,7 @@ import .component
 import .sound
 import .input
 using import .common
-using import .constants
+using import .config
 using renderer
 
 let C = (import .radlib.libc)

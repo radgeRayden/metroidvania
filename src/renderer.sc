@@ -15,7 +15,7 @@ let stbi = (import .FFI.stbi)
 
 import .filesystem
 using import .common
-using import .constants # common.constants
+using import .config
 import .math
 
 # LOW LEVEL BASE

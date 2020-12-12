@@ -6,7 +6,7 @@ import .renderer
 using import .component
 import .collision
 import .event-system
-using import .constants
+using import .config
 
 using import enum
 using import struct
