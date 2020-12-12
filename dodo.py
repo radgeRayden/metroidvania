@@ -6,6 +6,7 @@ def module_dep(name):
     return f"./.git/modules/3rd-party/{name}/HEAD"
 
 make_flavor = ""
+make = ""
 
 genie_url = ""
 genie_name = ""
@@ -16,24 +17,34 @@ soloud_dynamic = ""
 soloud_backends = ""
 
 cimgui_dir = "./3rd-party/cimgui"
-cimgui_static = f"{cimgui_dir}/cimgui.a"
+cimgui_static = f"{cimgui_dir}/libcimgui.a"
+cimgui_dynamic = ""
+
+glfw_dir = "./3rd-party/glfw"
+glfw_build = f"{glfw_dir}/build"
+glfw_static = f"{glfw_build}/src/libglfw3.a"
+glfw_dynamic = ""
 
 operating_system = platform.system()
 is_windows = operating_system.startswith("MINGW")
 if is_windows:
     make_flavor = "MinGW"
+    make = "mingw32-make"
     genie_url = "https://github.com/bkaradzic/bx/raw/master/tools/bin/windows/genie.exe"
     genie_name = "genie.exe"
     soloud_dynamic = f"{soloud_dir}/lib/soloud_x64.dll"
     cimgui_dynamic = f"{cimgui_dir}/cimgui.dll"
+    glfw_dynamic = f"{glfw_build}/src/glfw3.dll"
 
     soloud_backends = "--with-miniaudio --with-wasapi"
 elif "Linux" in operating_system:
     make_flavor = "Unix"
+    make = "make"
     genie_url = "https://github.com/bkaradzic/bx/raw/master/tools/bin/linux/genie"
     genie_name = "genie"
     soloud_dynamic = f"{soloud_dir}/lib/libsoloud_x64.so"
     cimgui_dynamic = f"{cimgui_dir}/cimgui.so"
+    glfw_dynamic = f"{glfw_build}/src/libglfw3.so"
 
     soloud_backends = "--with-portaudio"
 else:
@@ -97,7 +108,7 @@ def task_soloud():
     genie_path = f"./3rd-party/{genie_name}"
     build_dir = f"{soloud_dir}/build"
     genie_cmd = f"{genie_path} --file={build_dir}/genie.lua {soloud_backends} --with-nosound --platform=x64 gmake"
-    make_cmd = f"make -C {build_dir}/gmake config=release64 SoloudStatic"
+    make_cmd = f"{make} -C {build_dir}/gmake config=release64 SoloudStatic"
     return {
         'actions': [f"rm -rf {build_dir}/gmake", genie_cmd, make_cmd],
         'targets': [soloud_static],
@@ -105,10 +116,20 @@ def task_soloud():
     }
 
 def task_cimgui():
-    cmd_static = f"make -C {cimgui_dir} static"
-    cmd_dynamic = f"make -C {cimgui_dir}"
+    cmd_static = f"{make} -C {cimgui_dir} static"
+    cmd_dynamic = f"{make} -C {cimgui_dir}"
     return {
         'actions': [cmd_static, cmd_dynamic],
         'targets': [cimgui_static, cimgui_dynamic],
         'file_dep': [module_dep("cimgui")]
+    }
+
+def task_glfw():
+    shared_cmd = f"cmake .. -G '{make_flavor} Makefiles' -DGLFW_BUILD_EXAMPLES=off -DGLFW_BUILD_TESTS=off -DGLFW_BUILD_DOCS=off -DBUILD_SHARED_LIBS=on"
+    static_cmd = f"cmake .. -G '{make_flavor} Makefiles' -DGLFW_BUILD_EXAMPLES=off -DGLFW_BUILD_TESTS=off -DGLFW_BUILD_DOCS=off -DBUILD_SHARED_LIBS=off"
+    make_cmd = f"{make} -C {glfw_build}"
+    return {
+        'actions': [f"mkdir -p {glfw_build}", f"cd {glfw_build}; {shared_cmd}", make_cmd,f"cd {glfw_build}; {static_cmd}", make_cmd],
+        'targets': [glfw_static, glfw_dynamic],
+        'file_dep': [module_dep("glfw")]
     }
