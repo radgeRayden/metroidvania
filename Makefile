@@ -79,12 +79,6 @@ all:$(SHARED_LIBS)
 $(MAIN_OBJ):
 	scopes makemain.sc
 
-amalgamated: $(STATIC_LIBS) $(LIBGAME_DEPS) $(MAIN_OBJ)
-	mkdir -p ./bin
-	mkdir -p ./lib/scopes
-	scopes copyscdeps.sc
-	$(CXX) -g -o ./bin/game $(LIBGAME_DEPS) game.o $(LFLAGS)
-
 aot: $(STATIC_LIBS) $(LIBGAME_DEPS)
 	$(CXX) -g -o ./build/game $(LIBGAME_DEPS) ./build/game.o $(LFLAGS_AOT)
 
