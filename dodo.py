@@ -63,7 +63,8 @@ def task_soloud_dynamic():
         return {
             'actions': [dl_cmd, copy_cmd],
             'targets': [soloud_dynamic],
-            'file_dep': [genie_path, module_dep("cimgui")]
+            'file_dep': [genie_path],
+            'uptodate': [run_once]
         }
     elif "Linux" in operating_system:
         genie_path = f"./3rd-party/{genie_name}"
@@ -74,7 +75,7 @@ def task_soloud_dynamic():
         return {
             'actions': [genie_cmd, make_cmd],
             'targets': [soloud_dynamic],
-            'file_dep': [genie_path, module_dep("cimgui")]
+            'file_dep': [genie_path, module_dep("soloud")]
         }
     else:
         raise UnsupportedPlatform
