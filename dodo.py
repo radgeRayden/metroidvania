@@ -55,16 +55,36 @@ def task_get_genie():
         'uptodate': [run_once]
     }
 
+def task_soloud_dynamic():
+    if "Windows" in operating_system:
+        soloud_url = "http://sol.gfxile.net/soloud/soloud_20200207_lite.zip"
+        dl_cmd = f"wget {soloud_url} -O {soloud_dir}/lite.zip"
+        copy_cmd = f"unzip -j bin/soloud_x64.dll {soloud_dynamic}"
+        return {
+            'actions': [dl_cmd, copy_cmd],
+            'targets': [soloud_dynamic],
+            'file_dep': [genie_path, module_dep("cimgui")]
+        }
+    elif "Linux" in operating_system:
+        genie_path = f"./3rd-party/{genie_name}"
+        build_dir = f"{soloud_dir}/build"
+        backends = "--with-portaudio --with-nosound"
+        genie_cmd = f"{genie_path} --file={build_dir}/genie.lua {backends} --platform=x64 gmake"
+        make_cmd = f"make -C {build_dir}/gmake config=release64 SoloudDynamic"
+        return {
+            'actions': [genie_cmd, make_cmd],
+            'targets': [soloud_dynamic],
+            'file_dep': [genie_path, module_dep("cimgui")]
+        }
+    else:
+        raise UnsupportedPlatform
+
 def task_soloud():
-    genie_path = f"./3rd-party/{genie_name}"
-    build_dir = f"{soloud_dir}/build"
-    backends = "--with-portaudio --with-nosound"
-    genie_cmd = f"{genie_path} --file={build_dir}/genie.lua {backends} --platform=x64 gmake"
-    make_cmd = f"make -C {build_dir}/gmake config=release64"
+    make_cmd = f"make -C {build_dir}/gmake config=release64 SoloudStatic"
     return {
         'actions': [genie_cmd, make_cmd],
-        'targets': [soloud_static, soloud_dynamic],
-        'file_dep': [genie_path, module_dep("soloud")]
+        'targets': [soloud_static],
+        'file_dep': [soloud_dynamic, module_dep("soloud")]
     }
 
 def task_cimgui():
