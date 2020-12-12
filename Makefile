@@ -83,12 +83,15 @@ aot: $(STATIC_LIBS) $(LIBGAME_DEPS)
 	$(CXX) -g -o ./build/game $(LIBGAME_DEPS) ./build/game.o $(LFLAGS_AOT)
 
 $(CIMGUI_STATIC):
-	cmake -G "$(MAKEFILE_FLAVOR) Makefiles" -DCMAKE_C_COMPILER=$(CC) -DCMAKE_C_FLAGS="$(CFLAGS)" -DIMGUI_STATIC=on -S $(CIMGUI_SRC) -B $(CIMGUI_BUILD)
+	mkdir -p $(CIMGUI_BUILD)
+	cd $(CIMGUI_BUILD); \
+		cmake .. -G "$(MAKEFILE_FLAVOR) Makefiles" -DCMAKE_C_COMPILER=$(CC) -DCMAKE_C_FLAGS="$(CFLAGS)" -DIMGUI_STATIC=on
 	${MAKE} -C $(CIMGUI_BUILD)
 
 $(PHYSFS_STATIC):
 	mkdir -p $(PHYSFS_BUILD)
-	cmake -G "$(MAKEFILE_FLAVOR) Makefiles" -DCMAKE_C_COMPILER=$(CC) -DCMAKE_C_FLAGS="$(CFLAGS)" -S $(PHYSFS_SRC) -B $(PHYSFS_BUILD)
+	cd $(PHYSFS_BUILD); \
+		cmake .. -G "$(MAKEFILE_FLAVOR) Makefiles" -DCMAKE_C_COMPILER=$(CC) -DCMAKE_C_FLAGS="$(CFLAGS)"
 	${MAKE} -C $(PHYSFS_BUILD) physfs-static
 
 $(SOLOUD_STATIC):
@@ -99,7 +102,8 @@ GLFW_OPTIONS = -DGLFW_BUILD_EXAMPLES=off -DGLFW_BUILD_TESTS=off -DGLFW_BUILD_DOC
 $(GLFW_STATIC):
 	mkdir -p ./lib
 	mkdir -p $(GLFW_BUILD)
-	cmake -G "$(MAKEFILE_FLAVOR) Makefiles" -DCMAKE_C_COMPILER=$(CC) -DCMAKE_C_FLAGS="$(CFLAGS)" $(GLFW_OPTIONS) -DBUILD_SHARED_LIBS=off -S $(GLFW_SRC) -B $(GLFW_BUILD)
+	cd $(GLFW_BUILD); \
+		cmake .. -G "$(MAKEFILE_FLAVOR) Makefiles" -DCMAKE_C_COMPILER=$(CC) -DCMAKE_C_FLAGS="$(CFLAGS)" $(GLFW_OPTIONS) -DBUILD_SHARED_LIBS=off
 	${MAKE} -C $(GLFW_BUILD)
 
 .cpp.o:
@@ -112,19 +116,22 @@ lib/$(LIBGAME_SHARED):$(LIBGAME_DEPS)
 lib/$(PHYSFS_SHARED):
 	mkdir -p ./lib
 	mkdir -p $(PHYSFS_BUILD)
-	cmake -G "$(MAKEFILE_FLAVOR) Makefiles" -DCMAKE_C_COMPILER=$(CC) -DCMAKE_C_FLAGS="$(CFLAGS)" -S $(PHYSFS_SRC) -B $(PHYSFS_BUILD)
+	cd $(PHYSFS_BUILD); \
+		cmake .. -G "$(MAKEFILE_FLAVOR) Makefiles" -DCMAKE_C_COMPILER=$(CC) -DCMAKE_C_FLAGS="$(CFLAGS)"
 	${MAKE} -C $(PHYSFS_BUILD)
 
 lib/$(GLFW_SHARED):
 	mkdir -p ./lib
 	mkdir -p $(GLFW_BUILD)
-	cmake -G "$(MAKEFILE_FLAVOR) Makefiles" -DCMAKE_C_COMPILER=$(CC) -DCMAKE_C_FLAGS="$(CFLAGS)" $(GLFW_OPTIONS) -DBUILD_SHARED_LIBS=on -S $(GLFW_SRC) -B $(GLFW_BUILD)
+	cd $(GLFW_BUILD); \
+		cmake .. -G "$(MAKEFILE_FLAVOR) Makefiles" -DCMAKE_C_COMPILER=$(CC) -DCMAKE_C_FLAGS="$(CFLAGS)" $(GLFW_OPTIONS) -DBUILD_SHARED_LIBS=on
 	${MAKE} -C $(GLFW_BUILD)
 
 lib/$(CIMGUI_SHARED):
 	mkdir -p ./lib
 	mkdir -p $(CIMGUI_BUILD)
-	cmake -G "$(MAKEFILE_FLAVOR) Makefiles" -DCMAKE_C_COMPILER=$(CC) -DCMAKE_C_FLAGS="$(CFLAGS)" -S $(CIMGUI_SRC) -B $(CIMGUI_BUILD) -DIMGUI_STATIC=off
+	cd $(CIMGUI_BUILD); \
+		cmake .. -G "$(MAKEFILE_FLAVOR) Makefiles" -DCMAKE_C_COMPILER=$(CC) -DCMAKE_C_FLAGS="$(CFLAGS)"
 	${MAKE} -C $(CIMGUI_BUILD)
 
 lib/$(SOLOUD_SHARED):
@@ -133,9 +140,13 @@ lib/$(SOLOUD_SHARED):
 
 clean:
 	${MAKE} -C $(PHYSFS_BUILD) clean | true
+	rm -rf $(PHYSFS_BUILD)
 	${MAKE} -C $(GLFW_BUILD) clean | true
+	rm -rf $(GLFW_BUILD)
 	${MAKE} -C $(CIMGUI_BUILD) clean | true
+	rm -rf $(CIMGUI_BUILD)
 	${MAKE} -C $(SOLOUD_BUILD)/gmake clean | true
+	rm -rf $(CIMGUI_BUILD)/gmake
 	rm -f $(LIBGAME_DEPS)
 	rm -f $(MAIN_OBJ)
 	rm -rf ./lib
