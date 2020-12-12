@@ -5,18 +5,19 @@ class UnsupportedPlatform(Exception):
 genie_url = ""
 genie_name = ""
 
-soloud_static = "./3rd-party/soloud/lib/libsoloud_static_x64.a"
+soloud_dir = "./3rd-party/soloud"
+soloud_static = f"{soloud_dir}/lib/libsoloud_static_x64.a"
 soloud_dynamic = ""
 
 operating_system = platform.system()
 if "Windows" in operating_system:
     genie_url = "https://github.com/bkaradzic/bx/raw/master/tools/bin/windows/genie.exe"
     genie_name = "genie.exe"
-    soloud_dynamic = "./3rd-party/soloud/lib/soloud_x64.dll"
+    soloud_dynamic = f"{soloud_dir}/lib/soloud_x64.dll"
 elif "Linux" in operating_system:
     genie_url = "https://github.com/bkaradzic/bx/raw/master/tools/bin/linux/genie"
     genie_name = "genie"
-    soloud_dynamic = "./3rd-party/soloud/lib/libsoloud_x64.so"
+    soloud_dynamic = f"{soloud_dir}/lib/libsoloud_x64.so"
 else:
     raise UnsupportedPlatform
 
@@ -43,7 +44,7 @@ def task_get_genie():
 
 def task_soloud():
     genie_path = f"./3rd-party/{genie_name}"
-    build_dir = "./3rd-party/soloud/build"
+    build_dir = f"{soloud_dir}/build"
     backends = "--with-portaudio --with-nosound"
     genie_cmd = f"{genie_path} --file={build_dir}/genie.lua {backends} --platform=x64 gmake"
     make_cmd = f"make -C {build_dir}/gmake config=release64"
