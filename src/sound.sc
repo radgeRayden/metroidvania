@@ -1,10 +1,11 @@
-using import .config
+import .config
 
 let soloud = (import .FFI.soloud)
 let C = (import .radlib.libc)
 
 global soloud-instance : (mutable@ soloud.Soloud)
 fn init ()
+    raising Nothing
     soloud-instance = (soloud.create)
     let backend =
         static-match operating-system
@@ -24,7 +25,7 @@ fn init ()
             soloud.SOLOUD_AUTO
             2
     if result
-        static-if AOT_MODE?
+        static-if config.AOT_MODE?
             C.stdio.puts "SOLOUD ERROR:"
             assert false (soloud.getErrorString soloud-instance result)
         else

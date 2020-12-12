@@ -20,7 +20,7 @@ import .component
 import .sound
 import .input
 using import .common
-using import .config
+import .config
 using renderer
 
 let C = (import .radlib.libc)
@@ -337,7 +337,7 @@ global current-scene : Scene
 global main-camera : Camera
     position = (vec2)
     scale = (vec2 6)
-    viewport = (vec2 INTERNAL_RESOLUTION)
+    viewport = (vec2 config.INTERNAL_RESOLUTION)
 
 global player : (Rc entity.Entity)
 global player-collider : (Rc collision.Collider)
@@ -392,12 +392,12 @@ fn draw ()
     'apply main-camera
 
 fn main (argc argv)
-    static-if AOT_MODE?
+    static-if config.AOT_MODE?
         raising Nothing
     filesystem.init argv
     glfw.SetErrorCallback
         fn "glfw-error" (error-code message)
-            static-if AOT_MODE?
+            static-if config.AOT_MODE?
                 assert false message
             else
                 assert false (string message)
@@ -474,7 +474,7 @@ fn main (argc argv)
         ig.Begin "version" null
             | flags.ImGuiWindowFlags_NoDecoration
                 flags.ImGuiWindowFlags_NoBackground
-        ig.Text (GAME_VERSION as rawstring)
+        ig.Text (config.GAME_VERSION as rawstring)
         ig.End;
 
         if show-debug-info?

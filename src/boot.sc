@@ -68,44 +68,41 @@ typedef+ bool
     inline __tocstr (v)
         ? v ("true" as rawstring) ("false" as rawstring)
 
-using import .config
-static-if AOT_MODE?
-    set-globals!
-        ..
-            do
-                let assert = aot-assert
-                let tocstr
-                locals;
-            (globals)
-    # we purge the package cache so our new global namespace is recognized.
-    'set-symbol package 'modules (Scope)
-else
-    set-globals!
-        ..
-            do
-                let tocstr
-                locals;
-            (globals)
-
-static-if (not BUILD_MODE_AMALGAMATED?)
-    require-from module-dir ".runtime"
-
-C.unistd.chdir module-dir
+set-globals!
+    ..
+        do
+            let assert = aot-assert
+            let tocstr
+            locals;
+        (globals)
+# we purge the package cache so our new global namespace is recognized.
+'set-symbol package 'modules (Scope)
+require-from module-dir ".runtime"
 run-stage;
 
+import .config
+'set-symbol config 'AOT_MODE? true
+
+let argc argv = (launch-args)
+let silent? = ((argc > 2) and ((string (argv @ 2)) == "-silent"))
+run-stage;
+
+inline filter-argv ()
+    _ argc argv
+
 using import .main
-static-if AOT_MODE?
-    C.stdlib.system "mkdir -p ../build"
-    compile-object
-        default-target-triple
-        compiler-file-kind-object
-        module-dir .. "/../build/game.o"
-        do
-            let main = (static-typify main i32 (mutable@ rawstring))
-            locals;
+C.stdlib.system "mkdir -p ../bin"
+compile-object
+    default-target-triple
+    compiler-file-kind-object
+    module-dir .. "/../bin/game.o"
+    do
+        let main = (static-typify main i32 (mutable@ rawstring))
+        locals;
+
+static-if (not silent?)
     try
-        main (launch-args)
+        C.unistd.chdir module-dir
+        main (filter-argv)
     else
         ;
-else
-    main (launch-args)

@@ -11,7 +11,7 @@ import .renderer
 import .collision
 import .event-system
 import .input
-using import .config
+import .config
 
 global show-msgbox : bool
 
@@ -125,7 +125,7 @@ do
             if ((deref self.grounded?) and (yvel <= 0))
                 yvel = -1
             else
-                yvel = (clamp (yvel + (GRAVITY * dt)) -100. 200.)
+                yvel = (clamp (yvel + (config.GRAVITY * dt)) -100. 200.)
 
             # NOTE: perhaps it is confusing to have the position in the entity.
             let pos = (owner.position + self.velocity * dt)
@@ -186,7 +186,7 @@ do
             if ((deref owner.grounded?) and (yvel <= 0))
                 yvel = 0
             else
-                yvel = (clamp (yvel + (GRAVITY * dt)) -100. 200.)
+                yvel = (clamp (yvel + (config.GRAVITY * dt)) -100. 200.)
 
             hitbox := (self._hitbox as Hitbox)
             'try-move hitbox.collider

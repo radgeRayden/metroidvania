@@ -15,7 +15,7 @@ let stbi = (import .FFI.stbi)
 
 import .filesystem
 using import .common
-using import .config
+import .config
 import .math
 
 # LOW LEVEL BASE
@@ -357,7 +357,7 @@ struct SpriteBatch
             Rc.wrap (ArrayTexture2D image-filename layer-width layer-height)
     case (cls image-filename)
         this-function cls
-            Rc.wrap (ArrayTexture2D image-filename (unpack ATLAS_PAGE_SIZE))
+            Rc.wrap (ArrayTexture2D image-filename (unpack config.ATLAS_PAGE_SIZE))
 
     fn add (self sprite)
         let sprites = self.sprites
@@ -521,7 +521,7 @@ global world-transform : mat4
 # ================================================================================
 let re = (import .FFI.re)
 fn init (window)
-    static-if AOT_MODE?
+    static-if config.AOT_MODE?
         raising Nothing
     # TODO: this won't be necessary once windowing code
     # is moved to a dedicated module.
@@ -539,7 +539,7 @@ fn init (window)
     # at once, in a single ArrayTexture where they can be indexed by position in
     # the atlas and page (array layer).
     let mega-atlas =
-        Rc.wrap (ArrayTexture2D atlases ATLAS_PAGE_SIZE.x ATLAS_PAGE_SIZE.y)
+        Rc.wrap (ArrayTexture2D atlases config.ATLAS_PAGE_SIZE.x config.ATLAS_PAGE_SIZE.y)
     for i in (range ('capacity sprite-layers))
         'append sprite-layers
             SpriteBatch (copy mega-atlas)
@@ -577,10 +577,10 @@ fn init (window)
                     page = (page as u32)
                     texcoords =
                         vec4
-                            x / ATLAS_PAGE_SIZE.x
-                            y / ATLAS_PAGE_SIZE.y
-                            (x + width) / ATLAS_PAGE_SIZE.x
-                            (y + height) / ATLAS_PAGE_SIZE.y
+                            x / config.ATLAS_PAGE_SIZE.x
+                            y / config.ATLAS_PAGE_SIZE.y
+                            (x + width) / config.ATLAS_PAGE_SIZE.x
+                            (y + height) / config.ATLAS_PAGE_SIZE.y
 
         'set sprite-metadata group-name (deref sprites)
 
@@ -591,15 +591,15 @@ fn init (window)
     gl.BindTexture gl.GL_TEXTURE_2D fb-color-attachment
     gl.TexStorage2D gl.GL_TEXTURE_2D 1
         gl.GL_SRGB8_ALPHA8
-        INTERNAL_RESOLUTION.x
-        INTERNAL_RESOLUTION.y
+        config.INTERNAL_RESOLUTION.x
+        config.INTERNAL_RESOLUTION.y
 
     gl.GenTextures 1 (&fb-depth-attachment as (mutable@ u32))
     gl.BindTexture gl.GL_TEXTURE_2D fb-depth-attachment
     gl.TexStorage2D gl.GL_TEXTURE_2D 1
         gl.GL_DEPTH_COMPONENT24
-        INTERNAL_RESOLUTION.x
-        INTERNAL_RESOLUTION.y
+        config.INTERNAL_RESOLUTION.x
+        config.INTERNAL_RESOLUTION.y
 
     gl.CreateFramebuffers 1 &main-render-target
     gl.NamedFramebufferTexture main-render-target gl.GL_COLOR_ATTACHMENT0 fb-color-attachment 0
@@ -613,7 +613,7 @@ fn init (window)
 
 fn begin ()
     gl.BindFramebuffer gl.GL_FRAMEBUFFER main-render-target
-    gl.Viewport 0 0 INTERNAL_RESOLUTION.x INTERNAL_RESOLUTION.y
+    gl.Viewport 0 0 (unpack config.INTERNAL_RESOLUTION)
     gl.ClearColor 1.0 0.2 0.2 1.0
     gl.Clear (gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
@@ -639,7 +639,7 @@ fn present ()
     local window-height : i32
     glfw.GetFramebufferSize main-window &window-width &window-height
 
-    let game-aspect-ratio = (INTERNAL_RESOLUTION.x / INTERNAL_RESOLUTION.y)
+    let game-aspect-ratio = (config.INTERNAL_RESOLUTION.x / config.INTERNAL_RESOLUTION.y)
     let window-aspect-ratio = (window-width / window-height)
 
     let blit-size blit-offset =
@@ -663,8 +663,8 @@ fn present ()
         # src rect
         0
         0
-        INTERNAL_RESOLUTION.x
-        INTERNAL_RESOLUTION.y
+        config.INTERNAL_RESOLUTION.x
+        config.INTERNAL_RESOLUTION.y
         # dest rect
         blit-begin.x
         blit-begin.y

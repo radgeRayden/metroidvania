@@ -6,7 +6,7 @@ import .renderer
 using import .component
 import .collision
 import .event-system
-using import .config
+import .config
 
 using import enum
 using import struct
@@ -43,7 +43,7 @@ struct Entity
         try
             'get self.components name
         else
-            static-if AOT_MODE?
+            static-if config.AOT_MODE?
                 assert false
                     as
                         build-String
