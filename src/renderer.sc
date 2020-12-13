@@ -10,13 +10,13 @@ using import glm
 let gl = (import .FFI.glad)
 let cjson = (import .FFI.cjson)
 let glfw = (import .FFI.glfw)
-let C = (import .radlib.libc)
 let stbi = (import .FFI.stbi)
 
 import .filesystem
 using import .common
 import .config
 import .math
+import .io
 
 # LOW LEVEL BASE
 # ================================================================================
@@ -77,7 +77,7 @@ fn init-gl ()
             default
                 ;
 
-            C.stdio.printf "%s %s %s %s %s %s %s %s"
+            io.log "%s %s %s %s %s %s %s %s"
                 "source:" as rawstring
                 (gl-debug-source source) as rawstring
                 "| type:" as rawstring
@@ -400,8 +400,9 @@ typedef GPUShaderProgram <:: u32
             local log-length : i32
             local message : (array i8 1024)
             gl.GetShaderInfoLog handle (sizeof message) &log-length &message
-            C.stdio.puts "Shader compilation error:"
-            C.stdio.puts (String &message (log-length as usize))
+            io.log "Shader compilation error:\n"
+            io.log (String &message (log-length as usize))
+            io.log "\n"
         handle
 
     fn link-program (vs fs)
@@ -416,8 +417,9 @@ typedef GPUShaderProgram <:: u32
             local log-length : i32
             local message : (array i8 1024)
             gl.GetProgramInfoLog program (sizeof message) &log-length &message
-            C.stdio.puts "Shader program linking error:"
-            C.stdio.puts (String &message (log-length as usize))
+            io.log "Shader program linking error:\n"
+            io.log (String &message (log-length as usize))
+            io.log "\n"
         # because we preemptively delete the shader stages, they are
             already marked for deletion when the program is dropped.
         gl.DeleteShader fs
@@ -560,7 +562,7 @@ fn init (window)
         let group-name =
             do
                 let rawstr = (cjson.GetStringValue (cjson.GetObjectItem group "name"))
-                String rawstr (C.string.strlen rawstr)
+                String rawstr (countof rawstr)
 
         local sprites : (Array Sprite)
         let images = (cjson.GetObjectItem group "images")

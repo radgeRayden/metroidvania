@@ -2,6 +2,7 @@ import .config
 
 let soloud = (import .FFI.soloud)
 let C = (import .radlib.libc)
+import .io
 
 global soloud-instance : (mutable@ soloud.Soloud)
 fn init ()
@@ -26,7 +27,7 @@ fn init ()
             2
     if result
         static-if config.AOT_MODE?
-            C.stdio.puts "SOLOUD ERROR:"
+            io.log "SOLOUD ERROR:\n"
             assert false (soloud.getErrorString soloud-instance result)
         else
             error (.. "SOLOUD ERROR:" (string (soloud.getErrorString soloud-instance result)))

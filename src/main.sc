@@ -22,6 +22,7 @@ import .input
 using import .common
 import .config
 using renderer
+using import .strings
 
 let C = (import .radlib.libc)
 
@@ -81,7 +82,7 @@ struct Tileset
                     (cjson.GetObjectItem json-data "tileheight") . valueint
 
             let image-path =
-                (String "levels/") .. (String image-name (C.string.strlen image-name))
+                (String "levels/") .. (String image-name (countof image-name))
 
             let tiles = (cjson.GetObjectItem json-data "tiles")
             let tile-count =
@@ -98,11 +99,8 @@ struct Tileset
                 let cur-tile-props = (tile-properties @ id)
                 let props = (gci t "properties")
                 for p in (json-array->generator props)
-                    let name =
-                        do
-                            let raw = (cjson.GetStringValue (gci p "name"))
-                            String raw (C.string.strlen raw)
-                    if (name == (String "solid"))
+                    let name = (cjson.GetStringValue (gci p "name"))
+                    if ('equals? name "solid")
                         cur-tile-props.solid? = (((gci p "value") . valueint) as bool)
 
             cjson.Delete json-data
@@ -155,7 +153,7 @@ struct Scene
                     cjson.GetObjectItem tileset "source"
 
             let tileset-full-path =
-                basedir .. (String tileset-path (C.string.strlen tileset-path))
+                basedir .. (String tileset-path (countof tileset-path))
             let tileset-obj = (Tileset tileset-full-path)
 
             # we have to deref since those are references to the json object
@@ -239,7 +237,7 @@ struct Scene
                     1
 
             let obj-layer-type = (cjson.GetStringValue (cjson.GetObjectItem obj-layer "type"))
-            assert ((C.string.strcmp obj-layer-type "objectgroup") == 0)
+            assert ('equals? obj-layer-type "objectgroup")
             let objects = (cjson.GetObjectItem obj-layer "objects")
 
             for obj in objects
@@ -257,7 +255,7 @@ struct Scene
                 let archetype =
                     fold (archetype = -1) for prop in props
                         let prop-name = (cjson.GetObjectItem prop "name")
-                        if ((C.string.strcmp (cjson.GetStringValue prop-name) "archetype") == 0)
+                        if ('equals? (cjson.GetStringValue prop-name) "archetype")
                             break
                                 deref
                                     (cjson.GetObjectItem prop "value") . valueint

@@ -2,7 +2,8 @@ using import Array
 using import String
 
 let physfs = (import .FFI.physfs)
-let C = (import .radlib.libc)
+import .io
+import .strings
 
 fn init (argv)
     if (not (physfs.init (argv @ 0)))
@@ -13,7 +14,7 @@ fn init (argv)
 fn load-full-file (filename)
     let file = (physfs.openRead filename)
     if (file == null)
-        C.stdio.printf "%s\n" (.. (String "could not open file ") filename)
+        io.log "%s\n" (.. (String "could not open file ") filename)
         raise false
 
     let size = (physfs.fileLength file)
@@ -33,7 +34,7 @@ fn get-directory-files (path)
         if (current == null)
             break;
 
-        'append file-array (String current (C.string.strlen current))
+        'append file-array (String current (countof current))
         idx + 1
 
     physfs.freeList (flist as voidstar)

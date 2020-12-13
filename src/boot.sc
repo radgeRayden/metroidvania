@@ -8,9 +8,15 @@ do
                 int printf(const char *restrict format, ...);
                 int system(const char *command);
                 int chdir(const char *path);
+                int _chdir(const char *path);
 
     using header.extern
     unlet header
+    let chdir =
+        static-if (operating-system == 'windows)
+            _chdir
+        else
+            chdir
     locals;
 
 # we redefine assert to avoid depending on the scopes runtime.
@@ -102,8 +108,6 @@ inline filter-argv ()
     _ argc argv
 
 using import .main
-report "system" ("mkdir -p " .. module-dir .. "/../build")
-C.system ("mkdir -p " .. module-dir .. "/../build")
 compile-object
     default-target-triple
     compiler-file-kind-object
@@ -114,7 +118,6 @@ compile-object
 
 static-if (not silent?)
     try
-        report "chdir" module-dir
         C.chdir module-dir
         main (filter-argv)
     else
