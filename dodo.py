@@ -96,13 +96,6 @@ def wrap_cmake(basedir, options):
 from doit.tools import LongRunning
 from doit.tools import run_once
 
-def task_launch():
-    """launch the game"""
-    cmd = "scopes ./src/boot.sc"
-    return {
-            'actions': [LongRunning(cmd)]
-        }
-
 def task_get_genie():
     """get the genie executable to build soloud"""
     genie_path = f"./3rd-party/{genie_name}"
@@ -290,3 +283,11 @@ def task_fclean():
     return {
         'actions': [rm_cmd, cimgui_cmd]
     }
+
+def task_launch():
+    """launch the game"""
+    cmd = "scopes ./src/boot.sc"
+    return {
+            'actions': [LongRunning(cmd)],
+            'file_dep': runtime_targets
+        }
