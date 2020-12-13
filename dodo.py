@@ -273,21 +273,46 @@ def task_runtime():
         'targets': runtime_targets
     }
 
-def task_dist():
+def task_bin_artifact():
     scopes_cmd = "scopes ./src/boot.sc -silent"
     lflags = f"{lflags_common} {lflags_aot}"
-    cmd = f"{cxx} -g {cflags} -o ./bin/{exename} {libgame_objs_str} {soloud_c} ./build/game.o {lflags}" 
-    pkg_path = "./dist.zip"
+    compile_cmd = f"{cxx} -g {cflags} -o ./bin/{exename} {libgame_objs_str} {soloud_c} ./build/game.o {lflags}" 
+    return {
+        'actions': ["mkdir -p ./bin", scopes_cmd, compile_cmd],
+        'targets': ["./build/game.o", "./bin/{exename}"],
+        'file_dep': runtime_targets + [soloud_c],
+    }
+
+def dist_windows(pkg_path):
     libgcc = "/mingw64/bin/libgcc_s_seh-1.dll"
     libstdcpp = "/mingw64/bin/libstdc++-6.dll"
     libpthread = "/mingw64/bin/libwinpthread-1.dll"
     dlls_cmd = f"cp {libgcc} {libstdcpp} {libpthread} ./bin/"
     pkg_cmd = f"zip -r {pkg_path} ./bin ./data"
-    return {
-        'actions': ["mkdir -p ./bin", dlls_cmd, scopes_cmd, cmd, pkg_cmd],
-        'targets': ["./build/game.o", pkg_path],
-        'file_dep': runtime_targets + [soloud_c]
+    yield {
+        'basename': "package windows",
+        'actions': [dlls_cmd, pkg_cmd],
+        'targets': [pkg_path],
+        'file_dep': ["./build/game.o", "./bin/{exename}"]
     }
+
+def dist_linux(pkg_path):
+    pkg_cmd = f"zip -r {pkg_path} ./bin ./data"
+    yield {
+        'basename': "package linux",
+        'actions': [pkg_cmd],
+        'targets': [pkg_path],
+        'file_dep': ["./build/game.o", "./bin/{exename}"]
+    }
+
+def task_dist():
+    pkg_path = "./dist.zip"
+    if is_windows:
+        yield dist_windows(pkg_path)
+    elif "Linux" in operating_system:
+        yield dist_linux(pkg_path)
+    else:
+        raise UnsupportedPlatform
 
 def task_fclean():
     objs = libgame_objs_str + f"{soloud_dir}/src/c_api/soloud_c.o"
