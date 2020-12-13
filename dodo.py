@@ -275,11 +275,11 @@ def task_runtime():
 
 def task_bin_artifact():
     scopes_cmd = "scopes ./src/boot.sc -silent"
-    lflags = f"{lflags_common} {lflags_aot}"
+    lflags = f"{lflags_aot} {lflags_common}"
     compile_cmd = f"{cxx} -g {cflags} -o ./bin/{exename} {libgame_objs_str} {soloud_c} ./build/game.o {lflags}" 
     return {
         'actions': ["mkdir -p ./bin", scopes_cmd, compile_cmd],
-        'targets': ["./build/game.o", "./bin/{exename}"],
+        'targets': ["./build/game.o", f"./bin/{exename}"],
         'file_dep': runtime_targets + [soloud_c],
     }
 
@@ -290,19 +290,19 @@ def dist_windows(pkg_path):
     dlls_cmd = f"cp {libgcc} {libstdcpp} {libpthread} ./bin/"
     pkg_cmd = f"zip -r {pkg_path} ./bin ./data"
     yield {
-        'basename': "package windows",
+        'basename': "dist",
         'actions': [dlls_cmd, pkg_cmd],
         'targets': [pkg_path],
-        'file_dep': ["./build/game.o", "./bin/{exename}"]
+        'file_dep': ["./build/game.o", f"./bin/{exename}"]
     }
 
 def dist_linux(pkg_path):
     pkg_cmd = f"zip -r {pkg_path} ./bin ./data"
     yield {
-        'basename': "package linux",
+        'basename': "dist",
         'actions': [pkg_cmd],
         'targets': [pkg_path],
-        'file_dep': ["./build/game.o", "./bin/{exename}"]
+        'file_dep': ["./build/game.o", f"./bin/{exename}"]
     }
 
 def task_dist():
