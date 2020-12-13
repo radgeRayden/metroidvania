@@ -331,6 +331,7 @@ struct Camera plain
         ;
 
 global show-debug-info? : bool true
+global show-colliders? : bool
 global window-width : i32
 global window-height : i32
 global current-scene : Scene
@@ -368,6 +369,73 @@ fn start-game ()
 
     except (ex)
         ;
+
+fn keybind-handler (window _key scancode action mods)
+    # application keybindings
+    # exit game
+    if ((_key == glfw.GLFW_KEY_ESCAPE) and (action == glfw.GLFW_RELEASE))
+        glfw.SetWindowShouldClose window true
+
+    # restart game
+    if (and
+        ((mods & glfw.GLFW_MOD_CONTROL) as bool)
+        (_key == glfw.GLFW_KEY_R)
+        (action == glfw.GLFW_PRESS))
+        start-game;
+    # go fullscreen
+    if (and
+        ((mods & glfw.GLFW_MOD_ALT) as bool)
+        (_key == glfw.GLFW_KEY_ENTER)
+        (action == glfw.GLFW_RELEASE))
+
+        global fullscreen? : bool false
+        global prev-x : i32
+        global prev-y : i32
+        global prev-width : i32
+        global prev-height : i32
+
+        let monitor = (glfw.GetPrimaryMonitor)
+        if (not fullscreen?)
+            fullscreen? = true
+            glfw.GetWindowSize window &prev-width &prev-height
+            glfw.GetWindowPos window &prev-x &prev-y
+            let video-mode = (glfw.GetVideoMode monitor)
+            glfw.SetWindowMonitor window monitor 0 0
+                video-mode.width
+                video-mode.height
+                glfw.GLFW_DONT_CARE as i32
+        else
+            fullscreen? = false
+            glfw.SetWindowMonitor window null prev-x prev-y
+                prev-width
+                prev-height
+                glfw.GLFW_DONT_CARE as i32
+
+    if (((mods & glfw.GLFW_MOD_ALT) as bool) and (action == glfw.GLFW_PRESS))
+        let scale =
+            switch _key
+            case glfw.GLFW_KEY_1
+                1
+            case glfw.GLFW_KEY_2
+                2
+            case glfw.GLFW_KEY_3
+                3
+            case glfw.GLFW_KEY_4
+                4
+            case glfw.GLFW_KEY_5
+                5
+            default
+                -1
+        if (scale == -1)
+            ; # do nothing, wrong keybinding
+        else
+            scaled := config.INTERNAL_RESOLUTION * scale
+            glfw.SetWindowSize window scaled.x scaled.y
+
+    if ((_key == glfw.GLFW_KEY_F3) and (action == glfw.GLFW_RELEASE))
+        show-colliders? = (not show-colliders?)
+    if ((_key == glfw.GLFW_KEY_F4) and (action == glfw.GLFW_PRESS))
+        show-debug-info? = (not show-debug-info?)
 
 fn update (dt)
     using component
@@ -417,6 +485,8 @@ fn main (argc argv)
         assert false "Failed to create a window with specified settings."
     glfw.MakeContextCurrent main-window
     glfw.SwapInterval 1
+
+    glfw.SetKeyCallback main-window keybind-handler
 
     renderer.init main-window
     sound.init;
