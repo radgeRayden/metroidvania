@@ -281,6 +281,7 @@ def task_bin_artifact():
         'actions': ["mkdir -p ./bin", scopes_cmd, compile_cmd],
         'targets': ["./build/game.o", f"./bin/{exename}"],
         'file_dep': runtime_targets + [soloud_c],
+        'uptodate': [False]
     }
 
 def dist_windows(pkg_path):
