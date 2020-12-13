@@ -1,15 +1,26 @@
-let C = (import .radlib.libc)
+# To avoid cluttering the package namespace, lets import all C functions
+  we make use of at this stage.
+vvv bind C
+do
+    let header =
+        include
+            """"void abort();
+                int printf(const char *restrict format, ...);
+                int system(const char *command);
+                int chdir(const char *path);
+
+    using header.extern
+    unlet header
+    locals;
+
 # we redefine assert to avoid depending on the scopes runtime.
 spice _aot-assert (args...)
-    let printf = C.stdio.printf
-    let abort = C.stdlib.abort
-
     inline check-assertion (result anchor msg)
         if (not result)
-            printf "%s assertion failed: %s \n"
+            C.printf "%s assertion failed: %s \n"
                 anchor as rawstring
                 msg
-            abort;
+            C.abort;
 
     let argc = ('argcount args)
     verify-count argc 2 2
@@ -91,7 +102,8 @@ inline filter-argv ()
     _ argc argv
 
 using import .main
-C.stdlib.system "mkdir -p ../build"
+report "system" ("mkdir -p " .. module-dir .. "/../build")
+C.system ("mkdir -p " .. module-dir .. "/../build")
 compile-object
     default-target-triple
     compiler-file-kind-object
@@ -102,7 +114,8 @@ compile-object
 
 static-if (not silent?)
     try
-        C.unistd.chdir module-dir
+        report "chdir" module-dir
+        C.chdir module-dir
         main (filter-argv)
     else
         ;
