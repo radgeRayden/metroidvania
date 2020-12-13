@@ -275,10 +275,14 @@ def task_dist():
     pkg_path = "./dist.zip"
     libgcc = "/mingw64/bin/libgcc_s_seh-1.dll"
     libstdcpp = "/mingw64/bin/libstdc++-6.dll"
-    dlls_cmd = f"cp {libgcc} {libstdcpp} ./bin/"
+    libpthread = "/mingw64/bin/libwinpthread-1.dll"
+    dlls_cmd = f"cp {libgcc} {libstdcpp} {libpthread} ./bin/"
     pkg_cmd = f"zip -r {pkg_path} ./bin ./data"
     return {
         'actions': ["mkdir -p ./bin", dlls_cmd, scopes_cmd, cmd, pkg_cmd],
         'targets': ["./build/game.o", pkg_path],
         'file_dep': runtime_targets + [soloud_c]
     }
+
+# def task_clean():
+#     return {}
