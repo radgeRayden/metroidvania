@@ -199,7 +199,7 @@ def compile_source(src):
         target_name = gen_obj_name(src)
         return {
             'basename': target_name,
-            'actions': [f"{cc} -c {src} {cflags} -o ./build/{os.path.split(src)[1]}"],
+            'actions': [f"{cc} -c {src} {cflags} -o {target_name}"],
             'targets': [target_name],
             'file_dep': [src]
         }
@@ -207,7 +207,7 @@ def compile_source(src):
         target_name = gen_obj_name(src)
         return {
             'basename': target_name,
-            'actions': [f"{cxx} -c {src} {cxxflags} -o ./build/{os.path.split(src)[1]}"],
+            'actions': [f"{cxx} -c {src} {cxxflags} -o {target_name}"],
             'targets': [target_name],
             'file_dep': [src]
         }
@@ -231,7 +231,6 @@ libgame_objs = [gen_obj_name(src) for src in libgame_src]
 libgame_objs_str = ""
 for obj in libgame_objs:
     libgame_objs_str = libgame_objs_str + obj + " "
-
 
 def libgame_windows():
     for src in libgame_src:
