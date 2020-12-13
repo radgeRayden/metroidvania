@@ -23,6 +23,7 @@ for idir in include_dirs:
 
 cflags = f"-Wall -O2 -fPIC {iflags}"
 cxxflags = f"{cflags} -DIMGUI_IMPL_API='extern \"C\"' -DIMGUI_IMPL_OPENGL_LOADER_GLAD"
+exename = ""
 
 genie_url = ""
 genie_name = ""
@@ -48,6 +49,8 @@ physfs_dynamic = ""
 
 libgame_dynamic = ""
 
+lflags_aot = f"-L. -l:{soloud_static} -l:{cimgui_static} -l:{glfw_static} -l:{physfs_static} -lpthread -lm"
+
 operating_system = platform.system()
 is_windows = operating_system.startswith("MINGW")
 if is_windows:
@@ -55,6 +58,8 @@ if is_windows:
     make = "mingw32-make"
     cc = "x86_64-w64-mingw32-gcc"
     cxx = "x86_64-w64-mingw32-g++"
+    lflags_aot = lflags_aot + " -lgdi32 -lwinmm -lole32 -luuid"
+    exename = "game.exe"
 
     genie_url = "https://github.com/bkaradzic/bx/raw/master/tools/bin/windows/genie.exe"
     genie_name = "genie.exe"
@@ -70,6 +75,8 @@ elif "Linux" in operating_system:
     make = "make"
     cc = "gcc"
     cxx = "g++"
+    lflags_aot = lflags_aot + " -ldl -lX11 -lasound"
+    exename = "game"
 
     genie_url = "https://github.com/bkaradzic/bx/raw/master/tools/bin/linux/genie"
     genie_name = "genie"
@@ -186,12 +193,13 @@ def gen_obj_name(src):
     else:
         raise f"not a C or C++ source file {src}"
 
+import os
 def compile_source(src):
     if src.endswith(".c"):
         target_name = gen_obj_name(src)
         return {
             'basename': target_name,
-            'actions': [f"{cc} -c {src} {cflags}"],
+            'actions': [f"{cc} -c {src} {cflags} -o ./build/{os.path.split(src)[1]}"],
             'targets': [target_name],
             'file_dep': [src]
         }
@@ -199,14 +207,14 @@ def compile_source(src):
         target_name = gen_obj_name(src)
         return {
             'basename': target_name,
-            'actions': [f"{cxx} -c {src} {cxxflags}"],
+            'actions': [f"{cxx} -c {src} {cxxflags} -o ./build/{os.path.split(src)[1]}"],
             'targets': [target_name],
             'file_dep': [src]
         }
     else:
         raise f"not a C or C++ source file {src}"
 
-libgame_deps = [
+libgame_src = [
     "./3rd-party/glad/src/glad.c",
     "./3rd-party/cJSON/cJSON.c",
     "./3rd-party/stb.c",
@@ -217,23 +225,25 @@ libgame_deps = [
     "./3rd-party/tiny-regex-c/re.c",
     "./3rd-party/hash.c"
 ]
+soloud_c = "./3rd-party/soloud/src/c_api/soloud_c.cpp"
+
+libgame_objs = [gen_obj_name(src) for src in libgame_src]
+libgame_objs_str = ""
+for obj in libgame_objs:
+    libgame_objs_str = libgame_objs_str + obj + " "
+
 
 def libgame_windows():
-    for src in libgame_deps:
+    for src in libgame_src:
         yield compile_source(src)
 
-    objs = [gen_obj_name(src) for src in libgame_deps]
-    objs_str = ""
-    for obj in objs:
-        objs_str = objs_str + obj + " "
-
     lflags = f"-Wl,--whole-archive {glfw_static} {cimgui_static} {physfs_static} -Wl,--no-whole-archive -Wl,--export-all -lgdi32 -lwinmm -lole32 -luuid"
-    cmd = f"{cxx} -o {libgame_dynamic} {objs_str} -shared {lflags}"
+    cmd = f"{cxx} -o {libgame_dynamic} {libgame_objs_str} -shared {lflags}"
     yield {
         'basename': "libgame.dll",
         'actions': [cmd],
         'targets': [libgame_dynamic],
-        'file_dep': objs + [glfw_static, cimgui_static, physfs_static],
+        'file_dep': libgame_objs + [glfw_static, cimgui_static, physfs_static],
     }
 
 def libgame_linux():
@@ -247,12 +257,25 @@ def task_libgame():
     else:
         raise UnsupportedPlatform
 
+runtime_libs = [libgame_dynamic, glfw_dynamic, cimgui_dynamic, physfs_dynamic, soloud_dynamic]
+runtime_targets = [f"./build/{os.path.split(lib)[1]}" for lib in runtime_libs]
 def task_runtime():
-    deps = [libgame_dynamic, glfw_dynamic, cimgui_dynamic, physfs_dynamic, soloud_dynamic]
     def mkcopy(lib):
         return f"cp $(realpath {lib}) ./build/"
-    copy_libs = [mkcopy(lib) for lib in deps]
+    copy_libs = [mkcopy(lib) for lib in runtime_libs]
     return {
         'actions': ["mkdir -p ./build"] + copy_libs,
-        'file_dep': deps,
+        'file_dep': runtime_libs,
+        'targets': runtime_targets
+    }
+
+def task_dist():
+    scopes_cmd = "scopes ./src/boot.sc -silent"
+    cmd = f"{cxx} -g {cflags} -o ./bin/{exename} {libgame_objs_str} {soloud_c} ./build/game.o {lflags_aot}" 
+    pkg_path = "./dist.zip"
+    pkg_cmd = f"zip -r {pkg_path} ./bin ./data"
+    return {
+        'actions': [scopes_cmd, cmd, pkg_cmd],
+        'targets': ["./build/game.o", pkg_path],
+        'file_dep': runtime_targets + [soloud_c]
     }
