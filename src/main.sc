@@ -459,6 +459,106 @@ fn draw ()
 
     'apply main-camera
 
+# COLLIDER DEBUG DRAWING
+# ================================================================================
+struct 2DVertex plain
+    position : vec2
+    color : vec4
+
+global debug-gizmos : (renderer.Mesh 2DVertex u16)
+
+fn gizmo-vshader ()
+    using import glsl
+    buffer vertices :
+        struct VertexArray plain
+            data : (array 2DVertex)
+
+    out vcolor : vec4
+        location = 0
+
+    uniform transform : mat4
+
+    vcolor = ((vertices.data @ gl_VertexID) . color)
+    let vertex = ((vertices.data @ gl_VertexID) . position)
+    gl_Position = transform * (vec4 vertex 0 1)
+
+fn gizmo-fshader ()
+    using import glsl
+    in vcolor : vec4
+        location = 0
+    out fcolor : vec4
+        location = 0
+
+    fcolor = vcolor
+
+global gizmo-shader : renderer.GPUShaderProgram
+
+fn draw-colliders ()
+    'clear debug-gizmos.attribute-data
+    'clear debug-gizmos.index-data
+
+    import .collision
+
+    fn draw-collider (obj color)
+        let aabb = obj.aabb
+        let aabb-min aabb-max =
+            floor (imply aabb.min vec2)
+            floor (imply aabb.max vec2)
+        local points =
+            # 3 - 2
+            # |   |
+            # 0 - 1
+            arrayof vec2
+                aabb-min
+                vec2 aabb-max.x aabb-min.y
+                aabb-max
+                vec2 aabb-min.x aabb-max.y
+                aabb-min
+
+        let vertex-offset = (countof debug-gizmos.attribute-data)
+        for i in (range ((countof points) - 1))
+            this-point := points @ i
+            next-point := points @ (i + 1)
+
+            dir := (normalize (next-point - this-point))
+            perp := (math.rotate dir (pi / 2))
+
+            inline make-vertex (pos)
+                2DVertex pos color
+            'append debug-gizmos.attribute-data (make-vertex this-point)
+            'append debug-gizmos.attribute-data (make-vertex (this-point + perp))
+            'append debug-gizmos.attribute-data (make-vertex next-point)
+            'append debug-gizmos.attribute-data (make-vertex (next-point + perp))
+
+        for i in (range ((countof points) - 1))
+            let segment-start = (vertex-offset + (i * 4))
+            let left right left-e right-e =
+                segment-start
+                segment-start + 1
+                segment-start + 2
+                segment-start + 3
+            'append debug-gizmos.index-data (left as u16)
+            'append debug-gizmos.index-data (right as u16)
+            'append debug-gizmos.index-data (right-e as u16)
+            'append debug-gizmos.index-data (right-e as u16)
+            'append debug-gizmos.index-data (left-e as u16)
+            'append debug-gizmos.index-data (left as u16)
+    # polyline algorithm
+    for obj in collision.objects
+        draw-collider obj (vec4 1 1 1 0.25)
+    for trigger in collision.triggers
+        draw-collider trigger.collider (vec4 1 0 0 0.25)
+
+    'update debug-gizmos
+
+    local prev-shader : i32
+    gl.GetIntegerv gl.GL_CURRENT_PROGRAM &prev-shader
+    gl.UseProgram gizmo-shader
+    'apply main-camera
+    'draw debug-gizmos
+    gl.UseProgram (prev-shader as u32)
+# /COLLIDER DEBUG DRAWING
+
 fn main (argc argv)
     static-if config.AOT_MODE?
         raising Nothing
@@ -498,6 +598,9 @@ fn main (argc argv)
     ig.impl.Glfw_InitForOpenGL main-window true
     ig.impl.OpenGL3_Init null
 
+    gizmo-shader = (renderer.GPUShaderProgram gizmo-vshader gizmo-fshader)
+    debug-gizmos = ((renderer.Mesh 2DVertex u16) 128)
+
     start-game;
 
     local last-time = (glfw.GetTime)
@@ -533,6 +636,9 @@ fn main (argc argv)
         renderer.begin;
         draw;
         renderer.submit;
+
+        if show-colliders?
+            draw-colliders;
         renderer.present;
 
         ig.impl.OpenGL3_NewFrame;
