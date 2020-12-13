@@ -49,7 +49,8 @@ physfs_dynamic = ""
 
 libgame_dynamic = ""
 
-lflags_aot = f"-L. -l:{soloud_static} -l:{cimgui_static} -l:{glfw_static} -l:{physfs_static} -lpthread -lm"
+lflags_common = "-lpthread -lm"
+lflags_aot = f"-L. -l:{soloud_static} -l:{cimgui_static} -l:{glfw_static} -l:{physfs_static}"
 
 operating_system = platform.system()
 is_windows = operating_system.startswith("MINGW")
@@ -58,7 +59,7 @@ if is_windows:
     make = "mingw32-make"
     cc = "x86_64-w64-mingw32-gcc"
     cxx = "x86_64-w64-mingw32-g++"
-    lflags_aot = lflags_aot + " -lgdi32 -lwinmm -lole32 -luuid"
+    lflags_common = lflags_common + " -lgdi32 -lwinmm -lole32 -luuid"
     exename = "game.exe"
 
     genie_url = "https://github.com/bkaradzic/bx/raw/master/tools/bin/windows/genie.exe"
@@ -75,14 +76,14 @@ elif "Linux" in operating_system:
     make = "make"
     cc = "gcc"
     cxx = "g++"
-    lflags_aot = lflags_aot + " -ldl -lX11 -lasound"
+    lflags_common = lflags_common + " -ldl -lX11 -lasound"
     exename = "game"
 
     genie_url = "https://github.com/bkaradzic/bx/raw/master/tools/bin/linux/genie"
     genie_name = "genie"
     soloud_dynamic = f"{soloud_dir}/lib/libsoloud_x64.so"
     cimgui_dynamic = f"{cimgui_dir}/cimgui.so"
-    glfw_dynamic = f"{glfw_build}/src/libglfw3.so"
+    glfw_dynamic = f"{glfw_build}/src/libglfw.so"
     physfs_dynamic = f"{physfs_build}/libphysfs.so"
     libgame_dynamic = "./3rd-party/libgame.so"
 
@@ -121,6 +122,7 @@ def download_soloud_dll():
 def build_soloud_so():
     build_dir = f"{soloud_dir}/build"
     backends = "--with-portaudio --with-nosound"
+    genie_path = f"./3rd-party/{genie_name}"
     genie_cmd = f"{genie_path} --file={build_dir}/genie.lua {backends} --platform=x64 gmake"
     make_cmd = f"make -C {build_dir}/gmake config=release64 SoloudDynamic"
     return {
@@ -229,7 +231,7 @@ def libgame_windows():
     for src in libgame_src:
         yield compile_source(src)
 
-    lflags = f"-Wl,--whole-archive {glfw_static} {cimgui_static} {physfs_static} -Wl,--no-whole-archive -Wl,--export-all -lgdi32 -lwinmm -lole32 -luuid"
+    lflags = f"-Wl,--whole-archive {glfw_static} {cimgui_static} {physfs_static} -Wl,--no-whole-archive -Wl,--export-all {lflags_common}"
     cmd = f"{cxx} -o {libgame_dynamic} {libgame_objs_str} -shared {lflags}"
     yield {
         'basename': "libgame.dll",
@@ -239,7 +241,17 @@ def libgame_windows():
     }
 
 def libgame_linux():
-    return {}
+    for src in libgame_src:
+        yield compile_source(src)
+
+    lflags = f"-Wl,-E {lflags_common}"
+    cmd = f"{cxx} -o {libgame_dynamic} {libgame_objs_str} -shared {lflags}"
+    yield {
+        'basename': "libgame.so",
+        'actions': [cmd],
+        'targets': [libgame_dynamic],
+        'file_dep': libgame_objs,
+    }
 
 def task_libgame():
     if is_windows:
@@ -253,7 +265,7 @@ runtime_libs = [libgame_dynamic, glfw_dynamic, cimgui_dynamic, physfs_dynamic, s
 runtime_targets = [f"./build/{os.path.split(lib)[1]}" for lib in runtime_libs]
 def task_runtime():
     def mkcopy(lib):
-        return f"cp $(realpath {lib}) ./build/"
+        return f"cp $(realpath {lib}) ./build/{os.path.split(lib)[1]}"
     copy_libs = [mkcopy(lib) for lib in runtime_libs]
     return {
         'actions': ["mkdir -p ./build"] + copy_libs,
@@ -263,7 +275,8 @@ def task_runtime():
 
 def task_dist():
     scopes_cmd = "scopes ./src/boot.sc -silent"
-    cmd = f"{cxx} -g {cflags} -o ./bin/{exename} {libgame_objs_str} {soloud_c} ./build/game.o {lflags_aot}" 
+    lflags = f"{lflags_common} {lflags_aot}"
+    cmd = f"{cxx} -g {cflags} -o ./bin/{exename} {libgame_objs_str} {soloud_c} ./build/game.o {lflags}" 
     pkg_path = "./dist.zip"
     libgcc = "/mingw64/bin/libgcc_s_seh-1.dll"
     libstdcpp = "/mingw64/bin/libstdc++-6.dll"
@@ -289,5 +302,6 @@ def task_launch():
     cmd = "scopes ./src/boot.sc"
     return {
             'actions': [LongRunning(cmd)],
-            'file_dep': runtime_targets
+            'file_dep': runtime_targets,
+            'uptodate': [False]
         }
