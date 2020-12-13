@@ -91,11 +91,11 @@ inline filter-argv ()
     _ argc argv
 
 using import .main
-C.stdlib.system "mkdir -p ../bin"
+C.stdlib.system "mkdir -p ../build"
 compile-object
     default-target-triple
     compiler-file-kind-object
-    module-dir .. "/../bin/game.o"
+    module-dir .. "/../build/game.o"
     do
         let main = (static-typify main i32 (mutable@ rawstring))
         locals;
