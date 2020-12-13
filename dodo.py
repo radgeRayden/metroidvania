@@ -284,5 +284,10 @@ def task_dist():
         'file_dep': runtime_targets + [soloud_c]
     }
 
-# def task_clean():
-#     return {}
+def task_fclean():
+    objs = libgame_objs_str + f"{soloud_dir}/src/c_api/soloud_c.o"
+    rm_cmd = f"rm -rf {objs} ./build ./bin {glfw_build} {physfs_build} {soloud_dir}/build/gmake ./dist.zip"
+    cimgui_cmd = f"cd {cimgui_dir}; {make} clean"
+    return {
+        'actions': [rm_cmd, cimgui_cmd]
+    }
