@@ -491,6 +491,7 @@ fn gizmo-fshader ()
 
 global gizmo-shader : renderer.GPUShaderProgram
 
+global debug-selected-entity : i32 -1
 fn draw-colliders ()
     'clear debug-gizmos.attribute-data
     'clear debug-gizmos.index-data
@@ -543,7 +544,12 @@ fn draw-colliders ()
             'append debug-gizmos.index-data (left as u16)
     # polyline algorithm
     for obj in collision.objects
-        draw-collider obj (vec4 1 1 1 0.25)
+        let color =
+            if (obj.id == (debug-selected-entity as u32))
+                vec4 0 1 0 1
+            else
+                vec4 1 1 1 0.25
+        draw-collider obj color
     for trigger in collision.triggers
         draw-collider trigger.collider (vec4 1 0 0 0.25)
 
@@ -673,10 +679,9 @@ fn main (argc argv)
                 for i ent in (enumerate current-scene.entities)
                     using import .radlib.stringtools
 
-                    global selected : i32 -1
-                    let selected? = (selected == i)
+                    let selected? = (debug-selected-entity == i)
                     if (ig.SelectableBool (format "%d %s" ent.id (tocstr ent.tag)) selected? 0 (vec2 300 20))
-                        selected = i
+                        debug-selected-entity = i
                     if selected?
                         ig.Begin (tocstr ent.tag) null 0
                         # position in tiles
