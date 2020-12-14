@@ -1,5 +1,6 @@
 using import .radlib.core-extensions
 using import .radlib.stringtools
+let reflection = (import .radlib.reflection)
 
 using import .common
 import .renderer
@@ -15,17 +16,6 @@ using import String
 using import Map
 using import Array
 using import Rc
-
-spice has-symbol? (T sym)
-    """"Checks for the existence of a symbol in a type at compile time.
-    T as:= type
-    sym as:= Symbol
-    try
-        let sym = ('@ T sym)
-        `true
-    else
-        `false
-run-stage;
 
 let EntityId = u32
 
@@ -129,7 +119,7 @@ struct EntityList
                     'apply super-component
                         inline (ft component)
                             let T = (elementof ft.Type 0)
-                            static-if (has-symbol? T callback-name)
+                            static-if (reflection.has-symbol? T callback-name)
                                 callback-name component ent source (unpack payload)
 
             for ev in events
