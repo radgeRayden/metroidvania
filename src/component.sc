@@ -20,6 +20,8 @@ typedef ComponentBase < Struct
         ;
     fn update (...)
         ;
+    fn post-update (...)
+        ;
     fn draw (...)
         ;
     fn destroy (...)
@@ -116,7 +118,7 @@ do
         fn init (self owner)
             self._hitbox = (copy ('get-component owner 'Hitbox))
 
-        fn update (self owner dt)
+        fn post-update (self owner dt)
             if (self.hp < 0)
                 # TODO: trigger death event
                 ;
@@ -237,6 +239,10 @@ class Component
     inline update (self owner dt)
         'apply self
             (T self) -> ('update self owner dt)
+
+    inline post-update (self owner dt)
+        'apply self
+            (T self) -> ('post-update self owner dt)
 
     inline draw (self owner)
         'apply self

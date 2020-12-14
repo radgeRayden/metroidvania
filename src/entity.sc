@@ -116,6 +116,10 @@ struct EntityList
             for name component in ent.components
                 'update component ent dt
 
+        for ent in self
+            for name component in ent.components
+                'post-update component ent dt
+
         using event-system
         inline fire-events (evtype callback-name)
             let events = (poll-events evtype)
