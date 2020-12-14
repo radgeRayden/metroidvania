@@ -236,29 +236,12 @@ using import .radlib.class
 class Component
     use components
 
-    inline init (self owner)
-        'apply self
-            (T self) -> ('init self owner)
-
-    inline update (self owner dt)
-        'apply self
-            (T self) -> ('update self owner dt)
-
-    inline post-update (self owner dt)
-        'apply self
-            (T self) -> ('post-update self owner dt)
-
-    inline draw (self owner)
-        'apply self
-            (T self) -> ('draw self owner)
-
-    inline destroy (self owner)
-        'apply self
-            (T self) -> ('destroy self owner)
-
-    inline display-ui (self owner)
-        'apply self
-            (T self) -> ('display-ui self owner)
+    method init (self owner)
+    method update (self owner dt)
+    method post-update (self owner dt)
+    method draw (self owner)
+    method destroy (self owner)
+    method display-ui (self owner)
 
 'append Component.__typecall
     inline... (cls : type)
