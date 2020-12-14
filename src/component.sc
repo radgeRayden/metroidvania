@@ -27,6 +27,10 @@ typedef ComponentBase < Struct
     fn destroy (...)
         ;
 
+    # for imgui integration
+    fn display-ui (...)
+        ;
+
 # COMPONENT DEFINITIONS
 # ================================================================================
 enum Component
@@ -251,6 +255,10 @@ class Component
     inline destroy (self owner)
         'apply self
             (T self) -> ('destroy self owner)
+
+    inline display-ui (self owner)
+        'apply self
+            (T self) -> ('display-ui self owner)
 
 'append Component.__typecall
     inline... (cls : type)

@@ -699,6 +699,8 @@ fn main (argc argv)
                             else
                                 "N/A" as rawstring
                         ig.Text "grounded?: %s" grounded?
+                        for k c in ent.components
+                            'display-ui c
                         ig.End;
 
                 ig.End;
