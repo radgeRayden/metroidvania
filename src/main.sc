@@ -691,7 +691,14 @@ fn main (argc argv)
                         ig.Text "position: %.3f %.3f (%d %d)" ent.position.x ent.position.y
                             \ tile-p.x tile-p.y
                         ig.Text "velocity: %.3f %.3f" (unpack (ent.velocity * step-size))
-                        ig.Text "grounded?: %s" (tocstr ent.grounded?)
+                        let grounded? =
+                            if ('has-component? ent 'ActionPuppet)
+                                let c = ('get-component ent 'ActionPuppet)
+                                tocstr
+                                    (c as component.components.ActionPuppet) . grounded?
+                            else
+                                "N/A" as rawstring
+                        ig.Text "grounded?: %s" grounded?
                         ig.End;
 
                 ig.End;

@@ -195,6 +195,8 @@ fn init-archetypes ()
                         components.Hitbox
                             size = hitbox-size
                             collider = (Rc.wrap (collision.Collider))
+                        components.ActionPuppet
+                            hp = 10
                         components.PlayerController;
 
     set-archetype EntityKind.Ducky
@@ -213,8 +215,9 @@ fn init-archetypes ()
                             size = hitbox-size
                             collider = (Rc.wrap (collision.Collider))
                             trigger? = false
-                        components.DuckyBehaviour
-                            hp = 3
+                        components.ActionPuppet
+                            hp = 2
+                        components.DuckyBehaviour;
 
     set-archetype EntityKind.Skeleton
         fn ()
