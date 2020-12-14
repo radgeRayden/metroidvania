@@ -491,7 +491,7 @@ fn gizmo-fshader ()
 
 global gizmo-shader : renderer.GPUShaderProgram
 
-global debug-selected-entity : i32 -1
+global debug-selected-entity : u32 -1
 fn draw-colliders ()
     'clear debug-gizmos.attribute-data
     'clear debug-gizmos.index-data
@@ -674,14 +674,16 @@ fn main (argc argv)
             if (ig.Button "Gamepad State" debug-button-size)
                 show-gamepad-buttons? = true
 
+            global entity-list-idx : i32 -1
             if show-entity-list?
                 ig.Begin "Entity List" &show-entity-list? 0
                 for i ent in (enumerate current-scene.entities)
                     using import .radlib.stringtools
 
-                    let selected? = (debug-selected-entity == i)
+                    let selected? = (entity-list-idx == i)
                     if (ig.SelectableBool (format "%d %s" ent.id (tocstr ent.tag)) selected? 0 (vec2 300 20))
-                        debug-selected-entity = i
+                        entity-list-idx = i
+                        debug-selected-entity = ent.id
                     if selected?
                         ig.Begin (tocstr ent.tag) null 0
                         # position in tiles
