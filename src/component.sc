@@ -20,9 +20,15 @@ typedef ComponentBase < Struct
         ;
     fn update (...)
         ;
+    fn post-update (...)
+        ;
     fn draw (...)
         ;
     fn destroy (...)
+        ;
+
+    # for imgui integration
+    fn display-ui (...)
         ;
 
 # COMPONENT DEFINITIONS
@@ -104,68 +110,103 @@ do
 
         fn on-trigger-exit (self owner other args...)
             ;
+
+    struct ActionPuppet < ComponentBase
+        velocity : vec2
+        hp : i32
+        gravity-factor : f32 = 1.0
+        grounded? : bool
+
+        _hitbox : (Rc Component)
+
+        fn init (self owner)
+            self._hitbox = (copy ('get-component owner 'Hitbox))
+
+        fn post-update (self owner dt)
+            if (self.hp < 0)
+                # TODO: trigger death event
+                ;
+            hitbox := self._hitbox as Hitbox
+
+            let yvel = self.velocity.y
+            let xvel = self.velocity.x
+
+            # apply gravity
+            if ((deref self.grounded?) and (yvel <= 0))
+                yvel = 0
+            else
+                yvel = (clamp (yvel + (config.GRAVITY * self.gravity-factor * dt)) -100. 200.)
+
+            # perform collision aware movement
+            hitbox := (self._hitbox as Hitbox)
+            'try-move hitbox.collider
+                owner.position + self.velocity * dt
+
+            owner.position = hitbox.collider.Position
+
+            local probe =
+                collision.Collider
+                    id = owner.id
+                    aabb =
+                        typeinit
+                            min = (hitbox.collider.aabb.min + 0.1)
+                            max = (hitbox.collider.aabb.max - 0.1)
+            probe.aabb = ('project probe.aabb (probe.Position - (vec2 0 1)))
+            self.grounded? =
+                collision.test-intersection probe
             ;
+
+        fn on-collision (self owner source normal contact ...)
+            let normal contact =
+                'extract normal 'Direction
+                'extract contact 'Position
+
+            if (normal.y > 0)
+                self.velocity.y = 0
+            if (normal.x != 0)
+                self.velocity.x = 0
+
 
     # mockup of enemy AI
     struct DuckyBehaviour < ComponentBase
-        hp : i32
-        grounded? : bool
-        velocity : vec2
-        _collider : (Rc collision.Collider)
+        _puppet : (Rc Component)
 
         fn init (self owner)
-            hitbox := ('get-component owner 'Hitbox) as Hitbox
-            self._collider = (copy hitbox.collider)
+            self._puppet = (copy ('get-component owner 'ActionPuppet))
+            ;
 
         fn update (self owner dt)
+            puppet := self._puppet as ActionPuppet
             # copied from boot.update
-            let yvel = self.velocity.y
-            let xvel = self.velocity.x
+            let yvel = puppet.velocity.y
+            let xvel = puppet.velocity.x
             # apply gravity
-            if ((deref self.grounded?) and (yvel <= 0))
+            if ((deref puppet.grounded?) and (yvel <= 0))
                 yvel = -1
             else
                 yvel = (clamp (yvel + (config.GRAVITY * dt)) -100. 200.)
-
-            # NOTE: perhaps it is confusing to have the position in the entity.
-            let pos = (owner.position + self.velocity * dt)
-
-            # copied from player-move
-            let col = ('try-move self._collider pos)
-            try
-                let col = ('unwrap col)
-                if (col.normal.y < 0)
-                    self.grounded? = true
-                elseif (col.normal.y > 0)
-                    self.velocity.y = 0
-                elseif (col.normal != 0)
-                    self.velocity.x = 0
-            else
-                self.grounded? = false
-                ;
-            owner.position = self._collider.Position
             ;
 
     struct PlayerController < ComponentBase
-        _dummy : i32
-        _hitbox : (Rc Component)
+        _puppet : (Rc Component)
 
         let JumpForce = 120.
         let Speed = 40.
         let Acceleration = 180.
 
         fn init (self owner)
-            self._hitbox = (copy ('get-component owner 'Hitbox))
+            self._puppet = (copy ('get-component owner 'ActionPuppet))
             ;
 
         fn update (self owner dt)
+            puppet := self._puppet as ActionPuppet
             if (input.pressed? 'A)
-                if owner.grounded?
-                    owner.velocity.y = JumpForce
-                    owner.grounded? = false
+                if puppet.grounded?
+                    puppet.velocity.y = JumpForce
+                    puppet.grounded? = false
 
-            let yvel = owner.velocity.y
-            let xvel = owner.velocity.x
+            let yvel = puppet.velocity.y
+            let xvel = puppet.velocity.x
             if (input.down? 'Left)
                 if (xvel > 0)
                     xvel = 0
@@ -181,40 +222,7 @@ do
                     xvel = 0
                 else
                     xvel = new-xvel
-
-            # apply gravity
-            if ((deref owner.grounded?) and (yvel <= 0))
-                yvel = 0
-            else
-                yvel = (clamp (yvel + (config.GRAVITY * dt)) -100. 200.)
-
-            hitbox := (self._hitbox as Hitbox)
-            'try-move hitbox.collider
-                owner.position + owner.velocity * dt
-
-            owner.position = hitbox.collider.Position
-
-            local probe =
-                collision.Collider
-                    id = owner.id
-                    aabb =
-                        typeinit
-                            min = (hitbox.collider.aabb.min + 0.1)
-                            max = (hitbox.collider.aabb.max - 0.1)
-            probe.aabb = ('project probe.aabb (probe.Position - (vec2 0 1)))
-            owner.grounded? =
-                collision.test-intersection probe
             ;
-
-        fn on-collision (self owner source normal contact ...)
-            let normal contact =
-                'extract normal 'Direction
-                'extract contact 'Position
-
-            if (normal.y > 0)
-                owner.velocity.y = 0
-            if (normal.x != 0)
-                owner.velocity.x = 0
 
     locals;
 
@@ -228,21 +236,12 @@ using import .radlib.class
 class Component
     use components
 
-    inline init (self owner)
-        'apply self
-            (T self) -> ('init self owner)
-
-    inline update (self owner dt)
-        'apply self
-            (T self) -> ('update self owner dt)
-
-    inline draw (self owner)
-        'apply self
-            (T self) -> ('draw self owner)
-
-    inline destroy (self owner)
-        'apply self
-            (T self) -> ('destroy self owner)
+    method init (self owner)
+    method update (self owner dt)
+    method post-update (self owner dt)
+    method draw (self owner)
+    method destroy (self owner)
+    method display-ui (self owner)
 
 'append Component.__typecall
     inline... (cls : type)

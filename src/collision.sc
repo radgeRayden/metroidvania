@@ -217,10 +217,29 @@ fn test-intersection (collider)
 
     false
 
+typedef CollisionMask <: u32
+    inline in-layer? (self l)
+        (self & (1 << l)) == 1
+    inline with-layer (self layer v)
+        this-type
+            ? v
+                self | (1:u32 << layer)
+                self & (~ (1:u32 << layer))
+
+    inline... __typecall (cls, value : u32)
+        bitcast value this-type
+    case (cls layers...)
+        va-lfold (this-type 0:u32)
+            inline (__ next computed)
+                'with-layer computed next true
+            layers...
+    case (cls)
+        this-type 0:u32
 
 struct Collider
     id : u32
     aabb : c2.AABB
+    mask : CollisionMask
 
     let Position =
         property

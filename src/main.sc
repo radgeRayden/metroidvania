@@ -491,6 +491,7 @@ fn gizmo-fshader ()
 
 global gizmo-shader : renderer.GPUShaderProgram
 
+global debug-selected-entity : u32 -1
 fn draw-colliders ()
     'clear debug-gizmos.attribute-data
     'clear debug-gizmos.index-data
@@ -543,7 +544,12 @@ fn draw-colliders ()
             'append debug-gizmos.index-data (left as u16)
     # polyline algorithm
     for obj in collision.objects
-        draw-collider obj (vec4 1 1 1 0.25)
+        let color =
+            if (obj.id == (debug-selected-entity as u32))
+                vec4 0 1 0 1
+            else
+                vec4 1 1 1 0.25
+        draw-collider obj color
     for trigger in collision.triggers
         draw-collider trigger.collider (vec4 1 0 0 0.25)
 
@@ -668,15 +674,16 @@ fn main (argc argv)
             if (ig.Button "Gamepad State" debug-button-size)
                 show-gamepad-buttons? = true
 
+            global entity-list-idx : i32 -1
             if show-entity-list?
                 ig.Begin "Entity List" &show-entity-list? 0
                 for i ent in (enumerate current-scene.entities)
                     using import .radlib.stringtools
 
-                    global selected : i32 -1
-                    let selected? = (selected == i)
+                    let selected? = (entity-list-idx == i)
                     if (ig.SelectableBool (format "%d %s" ent.id (tocstr ent.tag)) selected? 0 (vec2 300 20))
-                        selected = i
+                        entity-list-idx = i
+                        debug-selected-entity = ent.id
                     if selected?
                         ig.Begin (tocstr ent.tag) null 0
                         # position in tiles
@@ -691,7 +698,16 @@ fn main (argc argv)
                         ig.Text "position: %.3f %.3f (%d %d)" ent.position.x ent.position.y
                             \ tile-p.x tile-p.y
                         ig.Text "velocity: %.3f %.3f" (unpack (ent.velocity * step-size))
-                        ig.Text "grounded?: %s" (tocstr ent.grounded?)
+                        let grounded? =
+                            if ('has-component? ent 'ActionPuppet)
+                                let c = ('get-component ent 'ActionPuppet)
+                                tocstr
+                                    (c as component.components.ActionPuppet) . grounded?
+                            else
+                                "N/A" as rawstring
+                        ig.Text "grounded?: %s" grounded?
+                        for k c in ent.components
+                            'display-ui c
                         ig.End;
 
                 ig.End;
