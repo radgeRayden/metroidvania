@@ -649,17 +649,17 @@ fn main (argc argv)
         ig.impl.Glfw_NewFrame;
         ig.NewFrame;
 
-        let flags = ig.ImGuiWindowFlags_
-        ig.SetNextWindowPos (vec2 10 10) ig.ImGuiCond_.ImGuiCond_Always (vec2 0 0)
+        let flags = ig.ImGuiWindowFlags
+        ig.SetNextWindowPos (vec2 10 10) ig.ImGuiCond.Always (vec2 0 0)
         ig.Begin "version" null
-            | flags.ImGuiWindowFlags_NoDecoration
-                flags.ImGuiWindowFlags_NoBackground
+            | flags.NoDecoration
+                flags.NoBackground
         ig.Text (config.GAME_VERSION as rawstring)
         ig.End;
 
         if show-debug-info?
-            ig.SetNextWindowPos (vec2 (window-width - 320) 5) ig.ImGuiCond_.ImGuiCond_FirstUseEver (vec2 0 0)
-            ig.SetNextWindowCollapsed true ig.ImGuiCond_.ImGuiCond_FirstUseEver
+            ig.SetNextWindowPos (vec2 (window-width - 320) 5) ig.ImGuiCond.FirstUseEver (vec2 0 0)
+            ig.SetNextWindowCollapsed true ig.ImGuiCond.FirstUseEver
             ig.Begin "Debug Info" null 0
 
             global show-entity-list? : bool
@@ -713,9 +713,9 @@ fn main (argc argv)
                 ig.End;
 
             if show-perf-stats?
-                ig.SetNextWindowPos (vec2 (window-width - 100) (window-height - 100)) ig.ImGuiCond_.ImGuiCond_FirstUseEver (vec2 0 0)
+                ig.SetNextWindowPos (vec2 (window-width - 100) (window-height - 100)) ig.ImGuiCond.FirstUseEver (vec2 0 0)
                 ig.Begin "Performance" &show-perf-stats?
-                    flags.ImGuiWindowFlags_NoTitleBar | flags.ImGuiWindowFlags_NoResize | flags.ImGuiWindowFlags_NoBackground
+                    flags.NoTitleBar | flags.NoResize | flags.NoBackground
                 ig.Text "avg fps: %.3f" avg-fps
                 ig.End;
 
