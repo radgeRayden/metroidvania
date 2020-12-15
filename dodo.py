@@ -319,8 +319,9 @@ def task_fclean():
     objs = libgame_objs_str + f"{soloud_dir}/src/c_api/soloud_c.o"
     rm_cmd = f"rm -rf {objs} ./build ./bin {glfw_build} {physfs_build} {soloud_dir}/build/gmake ./dist.zip"
     cimgui_cmd = f"cd {cimgui_dir}; {make} clean"
+    rm_lib_cmds = [f"rm -f {lib}" for lib in runtime_libs]
     return {
-        'actions': [rm_cmd, cimgui_cmd]
+        'actions': [rm_cmd, cimgui_cmd] + rm_lib_cmds
     }
 
 def task_launch():
