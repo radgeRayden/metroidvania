@@ -61,5 +61,16 @@ define-scope cimgui
             extern 'ImGui_ImplGlfw_Shutdown      (function void)
         let Glfw_NewFrame =
             extern 'ImGui_ImplGlfw_NewFrame      (function void)
+    
+    for k v in header.const
+        let T = ('typeof v)
+        if (T < CEnum)
+            k :=  k as Symbol as string
+            let match? s e = ('match? "^.+_" k)
+            if match?
+                let name = (rslice k e)
+                'set-symbol T (Symbol name) 
+                    spice-quote
+                        bitcast [((sc_const_int_extract v) as i32)] T
 
-sanitize-scope cimgui "^ig" "^Im"
+sanitize-scope cimgui "^ig" "^Im(?!.+_)" "_$"
