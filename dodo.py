@@ -87,7 +87,7 @@ elif "Linux" in operating_system:
     physfs_dynamic = f"{physfs_build}/libphysfs.so"
     libgame_dynamic = "./3rd-party/libgame.so"
 
-    soloud_backends = "--with-portaudio"
+    soloud_backends = "--with-miniaudio --with-portaudio"
 else:
     raise UnsupportedPlatform
 
@@ -121,9 +121,8 @@ def download_soloud_dll():
 
 def build_soloud_so():
     build_dir = f"{soloud_dir}/build"
-    backends = "--with-portaudio --with-nosound"
     genie_path = f"./3rd-party/{genie_name}"
-    genie_cmd = f"{genie_path} --file={build_dir}/genie.lua {backends} --platform=x64 gmake"
+    genie_cmd = f"{genie_path} --file={build_dir}/genie.lua {soloud_backends} --platform=x64 gmake"
     make_cmd = f"make -C {build_dir}/gmake config=release64 SoloudDynamic"
     return {
         'basename': "soloud_so",
