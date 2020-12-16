@@ -18,6 +18,19 @@ import .config
 import .math
 import .io
 
+spice patch-shader (shader patch)
+    shader as:= string
+    patch as:= string
+    let match? start end = ('match? "^#version \\d\\d\\d\\n" shader)
+    if match?
+        let head = (lslice shader end)
+        let tail = (rslice shader end)
+        let result = (.. head patch tail)
+        `result
+    else
+        error "unrecognized shader input"
+run-stage;
+
 # LOW LEVEL BASE
 # ================================================================================
 fn init-gl ()
@@ -74,7 +87,7 @@ fn init-gl ()
             default
                 ;
 
-            io.log "%s %s %s %s %s %s %s %s"
+            io.log "%s %s %s %s %s %s %s %s\n"
                 "source:" as rawstring
                 (gl-debug-source source) as rawstring
                 "| type:" as rawstring
@@ -429,13 +442,19 @@ typedef GPUShaderProgram <:: u32
     case (cls handle)
         bitcast handle this-type
     case (cls vs fs)
+        # TODO: move this out of here, maybe we need a variant that takes strings
+        let vsource =
+            patch-shader
+                static-compile-glsl 420 'vertex (static-typify vs)
+                "#extension GL_ARB_shader_storage_buffer_object : require\n"
         let vertex-module =
             compile-shader
-                (static-compile-glsl 450 'vertex (static-typify vs)) as rawstring
+                vsource as rawstring
                 gl.GL_VERTEX_SHADER
+        fsource := (static-compile-glsl 420 'fragment (static-typify fs)) as rawstring
         let fragment-module =
             compile-shader
-                (static-compile-glsl 450 'fragment (static-typify fs)) as rawstring
+                fsource
                 gl.GL_FRAGMENT_SHADER
 
         let program = (link-program vertex-module fragment-module)
