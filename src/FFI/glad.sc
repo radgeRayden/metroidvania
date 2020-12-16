@@ -6,7 +6,7 @@ define-scope glad
     let header =
         include
             options
-                .. "-I" module-dir "/glad/include"
+                .. "-I" module-dir "/../../3rd-party/glad/include"
             "glad/glad.h"
     using header.extern
     using header.typedef

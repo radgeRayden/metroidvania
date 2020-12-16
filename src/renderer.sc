@@ -35,44 +35,41 @@ fn init-gl ()
         fn openGL-error-callback (source _type id severity _length message user-param)
             inline gl-debug-source (source)
                 match source
-                case gl.GL_DEBUG_SOURCE_API                ("API" as rawstring)
-                case gl.GL_DEBUG_SOURCE_WINDOW_SYSTEM      ("Window System" as rawstring)
-                case gl.GL_DEBUG_SOURCE_SHADER_COMPILER    ("Shader Compiler" as rawstring)
-                case gl.GL_DEBUG_SOURCE_THIRD_PARTY        ("Third Party" as rawstring)
-                case gl.GL_DEBUG_SOURCE_APPLICATION        ("Application" as rawstring)
-                case gl.GL_DEBUG_SOURCE_OTHER              ("Other" as rawstring)
+                case gl.GL_DEBUG_SOURCE_API_ARB                ("API" as rawstring)
+                case gl.GL_DEBUG_SOURCE_WINDOW_SYSTEM_ARB      ("Window System" as rawstring)
+                case gl.GL_DEBUG_SOURCE_SHADER_COMPILER_ARB    ("Shader Compiler" as rawstring)
+                case gl.GL_DEBUG_SOURCE_THIRD_PARTY_ARB        ("Third Party" as rawstring)
+                case gl.GL_DEBUG_SOURCE_APPLICATION_ARB        ("Application" as rawstring)
+                case gl.GL_DEBUG_SOURCE_OTHER_ARB              ("Other" as rawstring)
                 default                                    ("?" as rawstring)
 
             inline gl-debug-type (type_)
                 match type_
-                case gl.GL_DEBUG_TYPE_ERROR                ("Error" as rawstring)
-                case gl.GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR  ("Deprecated" as rawstring)
-                case gl.GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR   ("Undefined Behavior" as rawstring)
-                case gl.GL_DEBUG_TYPE_PORTABILITY          ("Portability" as rawstring)
-                case gl.GL_DEBUG_TYPE_PERFORMANCE          ("Performance" as rawstring)
-                case gl.GL_DEBUG_TYPE_OTHER                ("Other" as rawstring)
+                case gl.GL_DEBUG_TYPE_ERROR_ARB                ("Error" as rawstring)
+                case gl.GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB  ("Deprecated" as rawstring)
+                case gl.GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB   ("Undefined Behavior" as rawstring)
+                case gl.GL_DEBUG_TYPE_PORTABILITY_ARB          ("Portability" as rawstring)
+                case gl.GL_DEBUG_TYPE_PERFORMANCE_ARB          ("Performance" as rawstring)
+                case gl.GL_DEBUG_TYPE_OTHER_ARB                ("Other" as rawstring)
                 default                                    ("?" as rawstring)
 
             inline gl-debug-severity (severity)
                 match severity
-                case gl.GL_DEBUG_SEVERITY_HIGH             ("High" as rawstring)
-                case gl.GL_DEBUG_SEVERITY_MEDIUM           ("Medium" as rawstring)
-                case gl.GL_DEBUG_SEVERITY_LOW              ("Low" as rawstring)
-                case gl.GL_DEBUG_SEVERITY_NOTIFICATION     ("Notification" as rawstring)
+                case gl.GL_DEBUG_SEVERITY_HIGH_ARB             ("High" as rawstring)
+                case gl.GL_DEBUG_SEVERITY_MEDIUM_ARB           ("Medium" as rawstring)
+                case gl.GL_DEBUG_SEVERITY_LOW_ARB              ("Low" as rawstring)
+                # case gl.GL_DEBUG_SEVERITY_NOTIFICATION_ARB     ("Notification" as rawstring)
                 default                                    ("?" as rawstring)
 
             using OpenGLDebugLevel
             match severity
 
-            case gl.GL_DEBUG_SEVERITY_HIGH
-            case gl.GL_DEBUG_SEVERITY_MEDIUM
+            case gl.GL_DEBUG_SEVERITY_HIGH_ARB
+            case gl.GL_DEBUG_SEVERITY_MEDIUM_ARB
                 static-if (log-level < MEDIUM)
                     return;
-            case gl.GL_DEBUG_SEVERITY_LOW
+            case gl.GL_DEBUG_SEVERITY_LOW_ARB
                 static-if (log-level < LOW)
-                    return;
-            case gl.GL_DEBUG_SEVERITY_NOTIFICATION
-                static-if (log-level < NOTIFICATION)
                     return;
             default
                 ;
@@ -88,16 +85,17 @@ fn init-gl ()
                 message as rawstring
             ;
 
-    gl.Enable gl.GL_DEBUG_OUTPUT
+    # gl.Enable gl.GL_DEBUG_OUTPUT
     gl.Enable gl.GL_BLEND
     gl.BlendFunc gl.GL_SRC_ALPHA gl.GL_ONE_MINUS_SRC_ALPHA
     # gl.Enable gl.GL_MULTISAMPLE
     gl.Enable gl.GL_FRAMEBUFFER_SRGB
     # TODO: add some colors to this
-    gl.DebugMessageCallback (make-openGL-debug-callback OpenGLDebugLevel.LOW) null
+    gl.DebugMessageCallbackARB (make-openGL-debug-callback OpenGLDebugLevel.LOW) null
     local VAO : gl.GLuint
     gl.GenVertexArrays 1 &VAO
     gl.BindVertexArray VAO
+    io.log "renderer: %s %s\n" (gl.GetString gl.GL_RENDERER) (gl.GetString gl.GL_VERSION)
 
 typedef+ ImageData
     fn load-image-data (filename)

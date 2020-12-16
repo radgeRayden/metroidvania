@@ -579,7 +579,7 @@ fn main (argc argv)
     glfw.WindowHint glfw.GLFW_DOUBLEBUFFER true
     glfw.WindowHint glfw.GLFW_OPENGL_FORWARD_COMPAT true
     glfw.WindowHint glfw.GLFW_CONTEXT_VERSION_MAJOR 4
-    glfw.WindowHint glfw.GLFW_CONTEXT_VERSION_MINOR 5
+    glfw.WindowHint glfw.GLFW_CONTEXT_VERSION_MINOR 2
     glfw.WindowHint glfw.GLFW_OPENGL_DEBUG_CONTEXT true
     glfw.WindowHint glfw.GLFW_OPENGL_PROFILE glfw.GLFW_OPENGL_CORE_PROFILE
     # glfw.WindowHint glfw.GLFW_SAMPLES 4
