@@ -22,6 +22,7 @@ inline log (fmt ...)
                     v
             ...
     C.printf fmt ...
+    ; # discard result
 
 do 
     let log
