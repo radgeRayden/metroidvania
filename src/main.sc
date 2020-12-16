@@ -576,7 +576,8 @@ fn main (argc argv)
                 io.log "OpenGL is not available on this system.\n"
             case glfw.GLFW_VERSION_UNAVAILABLE
                 io.log "The minimum required OpenGL version of 4.2 is not available.\n"
-            ;
+            default
+                ;
 
     glfw.Init;
     glfw.WindowHint glfw.GLFW_CLIENT_API glfw.GLFW_OPENGL_API
