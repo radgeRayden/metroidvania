@@ -23,6 +23,7 @@ using import .common
 import .config
 using renderer
 using import .strings
+import .io
 
 let C = (import .radlib.libc)
 
@@ -569,10 +570,13 @@ fn main (argc argv)
     filesystem.init argv
     glfw.SetErrorCallback
         fn "glfw-error" (error-code message)
-            static-if config.AOT_MODE?
-                assert false message
-            else
-                assert false (string message)
+            io.log "GLFW error: %s\n" message
+            switch error-code
+            case glfw.GLFW_API_UNAVAILABLE
+                io.log "OpenGL is not available on this system.\n"
+            case glfw.GLFW_VERSION_UNAVAILABLE
+                io.log "The minimum required OpenGL version of 4.2 is not available.\n"
+            ;
 
     glfw.Init;
     glfw.WindowHint glfw.GLFW_CLIENT_API glfw.GLFW_OPENGL_API
