@@ -1,7 +1,5 @@
 using import .radlib.core-extensions
-using import .radlib.stringtools
 
-using import enum
 using import struct
 using import glm
 using import Array
@@ -9,7 +7,6 @@ using import Rc
 using import Map
 using import String
 using import itertools
-using import Option
 
 import .math
 import .entity
@@ -21,17 +18,11 @@ import .sound
 import .input
 using import .common
 import .config
-using renderer
 using import .strings
 import .io
 
-let C = (import .radlib.libc)
-
 let glfw = (import .FFI.glfw)
-let gl = (import .FFI.glad)
-let stbi = (import .FFI.stbi)
 let cjson = (import .FFI.cjson)
-let c2 = (import .FFI.c2)
 let ig = (import .FFI.imgui)
 
 inline json-array->generator (arr)
@@ -183,6 +174,7 @@ struct Scene
 
             let tile-width tile-height = tileset-obj.tile-width tileset-obj.tile-height
 
+            from renderer let SpriteBatch
             'clear renderer.background-layers
             'append renderer.background-layers
                 SpriteBatch tileset-obj.image tile-width tile-height
@@ -556,6 +548,7 @@ fn draw-colliders ()
 
     'update debug-gizmos
 
+    let gl = (import .FFI.glad)
     local prev-shader : i32
     gl.GetIntegerv gl.GL_CURRENT_PROGRAM &prev-shader
     gl.UseProgram gizmo-shader
