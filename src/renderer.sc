@@ -281,16 +281,10 @@ struct ArrayTexture2D
     _layer-count : u32
 
     # NOTE: the layer count is inferred.
-    inline... __typecall (cls, filenames : (Array String), layer-width, layer-height)
-        assert ((countof filenames) > 0)
+    inline... __typecall (cls, images : (Array ImageData), layer-width, layer-height)
         local handle : u32
         # TODO: accomodate more mip levels
         let mip-count = 1
-        # NOTE: to deduce the layer count, it's easier to load all images in memory at once.
-        local images : (Array ImageData)
-        for file in filenames
-            'append images (ImageData file)
-
         let layer-count =
             fold (layer-count = 0:usize) for img-data in images
                 assert (((img-data.width % layer-width) == 0) and ((img-data.height % layer-height) == 0))
@@ -347,6 +341,14 @@ struct ArrayTexture2D
             _layer-width = layer-width
             _layer-height = layer-height
             _layer-count = (layer-count as u32)
+
+    case (cls, filenames : (Array String), layer-width, layer-height)
+        assert ((countof filenames) > 0)
+        # NOTE: to deduce the layer count, it's easier to load all images in memory at once.
+        local images : (Array ImageData)
+        for file in filenames
+            'append images (ImageData file)
+        this-function cls images layer-width layer-height
 
     case (cls, filename : String, layer-width, layer-height)
         local filenames : (Array String)
