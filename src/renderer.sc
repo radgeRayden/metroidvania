@@ -32,6 +32,8 @@ spice patch-shader (shader patch)
         error "unrecognized shader input"
 run-stage;
 
+global world-transform : mat4
+
 # LOW LEVEL BASE
 # ================================================================================
 fn init-gl ()
@@ -729,6 +731,12 @@ fn begin ()
 
 fn submit ()
     gl.UseProgram game-shader
+    gl.UniformMatrix4fv
+        gl.GetUniformLocation game-shader "transform"
+        1
+        false
+        (&local world-transform) as (pointer f32)
+
     for layer in background-layers
         'update layer.sprites
         'draw layer
@@ -781,11 +789,7 @@ fn present ()
         gl.GL_NEAREST
 
 fn set-world-transform (transform)
-    gl.UniformMatrix4fv
-        gl.GetUniformLocation game-shader "transform"
-        1
-        false
-        (&local transform) as (pointer f32)
+    world-transform = transform
 
 do
     let
