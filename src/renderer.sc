@@ -32,7 +32,13 @@ spice patch-shader (shader patch)
         error "unrecognized shader input"
 run-stage;
 
+# MODULE STATE 1
+# ================================================================================
 global world-transform : mat4
+global main-render-target : u32
+global fb-color-attachment : u32
+global fb-depth-attachment : u32
+global main-window : (mutable@ glfw.window)
 
 # LOW LEVEL BASE
 # ================================================================================
@@ -508,8 +514,39 @@ struct GeometryBatch
 
         # untextured vertices
         super-type.__typecall cls
-            vertices = ((Mesh Vertex2D u16) 128)
+            mesh = ((Mesh Vertex2D u16) 128)
             image = (blank-texture)
+
+    fn add-polyline (self points color)
+        self._dirty? = true
+        let vertex-offset = (countof self.mesh.attribute-data)
+        for i in (range ((countof points) - 1))
+            this-point := points @ i
+            next-point := points @ (i + 1)
+
+            dir := (normalize (next-point - this-point))
+            perp := (math.rotate dir (pi / 2))
+
+            inline make-vertex (pos)
+                Vertex2D pos color
+            'append self.mesh.attribute-data (make-vertex this-point)
+            'append self.mesh.attribute-data (make-vertex (this-point + perp))
+            'append self.mesh.attribute-data (make-vertex next-point)
+            'append self.mesh.attribute-data (make-vertex (next-point + perp))
+
+        for i in (range ((countof points) - 1))
+            let segment-start = (vertex-offset + (i * 4))
+            let left right left-e right-e =
+                segment-start
+                segment-start + 1
+                segment-start + 2
+                segment-start + 3
+            'append self.mesh.index-data (left as u16)
+            'append self.mesh.index-data (right as u16)
+            'append self.mesh.index-data (right-e as u16)
+            'append self.mesh.index-data (right-e as u16)
+            'append self.mesh.index-data (left-e as u16)
+            'append self.mesh.index-data (left as u16)
 
     fn clear (self)
         'clear self.mesh.attribute-data
@@ -517,12 +554,17 @@ struct GeometryBatch
 
     fn draw (self)
         gl.UseProgram geometry-batch-shader
+        gl.UniformMatrix4fv
+            gl.GetUniformLocation geometry-batch-shader "transform"
+            1
+            false
+            (&local world-transform) as (pointer f32)
         if self._dirty?
             'update self.mesh
             self._dirty? = false
         gl.BindTextures 0 1
             &local (storagecast (view self.image._handle))
-        'draw self.sprites
+        'draw self.mesh
         ;
 
 # SHADER DEFINITIONS
@@ -609,20 +651,12 @@ fn geometry-fshader ()
     uniform tex : sampler2DArray
     fcolor = vcolor * (texture tex vtexcoords)
 
-# INTERNAL MODULE STATE
+# MODULE STATE 2
 # ================================================================================
 global sprite-metadata : (Map String (Array Sprite))
 global background-layers : (Array SpriteBatch 4)
 global sprite-layers : (Array SpriteBatch 4)
-
-global main-render-target : u32
-global fb-color-attachment : GPUTexture 0
-global fb-depth-attachment : GPUTexture 0
-
-global main-window : (mutable@ glfw.window)
-
 global game-shader : GPUShaderProgram 0
-global world-transform : mat4
 
 # INTERFACE
 # ================================================================================

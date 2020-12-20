@@ -7,6 +7,7 @@ using import Rc
 using import Map
 using import String
 using import itertools
+using import Option
 
 import .math
 import .entity
@@ -452,46 +453,13 @@ fn draw ()
 
 # COLLIDER DEBUG DRAWING
 # ================================================================================
-struct 2DVertex plain
-    position : vec2
-    color : vec4
-
-global debug-gizmos : (renderer.Mesh 2DVertex u16)
-
-fn gizmo-vshader ()
-    using import glsl
-    buffer vertices :
-        struct VertexArray plain
-            data : (array 2DVertex)
-
-    out vcolor : vec4
-        location = 0
-
-    uniform transform : mat4
-
-    vcolor = ((vertices.data @ gl_VertexID) . color)
-    let vertex = ((vertices.data @ gl_VertexID) . position)
-    gl_Position = transform * (vec4 vertex 0 1)
-
-fn gizmo-fshader ()
-    using import glsl
-    in vcolor : vec4
-        location = 0
-    out fcolor : vec4
-        location = 0
-
-    fcolor = vcolor
-
-global gizmo-shader : renderer.GPUShaderProgram
-
+global debug-gizmos : (Option renderer.GeometryBatch)
 global debug-selected-entity : u32 -1
 fn draw-colliders ()
-    'clear debug-gizmos.attribute-data
-    'clear debug-gizmos.index-data
-
+    let batch = ('force-unwrap debug-gizmos)
     import .collision
 
-    fn draw-collider (obj color)
+    fn draw-collider (batch obj color)
         let aabb = obj.aabb
         let aabb-min aabb-max =
             floor (imply aabb.min vec2)
@@ -507,54 +475,21 @@ fn draw-colliders ()
                 vec2 aabb-min.x aabb-max.y
                 aabb-min
 
-        let vertex-offset = (countof debug-gizmos.attribute-data)
-        for i in (range ((countof points) - 1))
-            this-point := points @ i
-            next-point := points @ (i + 1)
+        'add-polyline batch points color
 
-            dir := (normalize (next-point - this-point))
-            perp := (math.rotate dir (pi / 2))
-
-            inline make-vertex (pos)
-                2DVertex pos color
-            'append debug-gizmos.attribute-data (make-vertex this-point)
-            'append debug-gizmos.attribute-data (make-vertex (this-point + perp))
-            'append debug-gizmos.attribute-data (make-vertex next-point)
-            'append debug-gizmos.attribute-data (make-vertex (next-point + perp))
-
-        for i in (range ((countof points) - 1))
-            let segment-start = (vertex-offset + (i * 4))
-            let left right left-e right-e =
-                segment-start
-                segment-start + 1
-                segment-start + 2
-                segment-start + 3
-            'append debug-gizmos.index-data (left as u16)
-            'append debug-gizmos.index-data (right as u16)
-            'append debug-gizmos.index-data (right-e as u16)
-            'append debug-gizmos.index-data (right-e as u16)
-            'append debug-gizmos.index-data (left-e as u16)
-            'append debug-gizmos.index-data (left as u16)
-    # polyline algorithm
+    'clear batch
     for obj in collision.objects
         let color =
             if (obj.id == (debug-selected-entity as u32))
                 vec4 0 1 0 1
             else
                 vec4 1 1 1 0.25
-        draw-collider obj color
+        draw-collider batch obj color
     for trigger in collision.triggers
-        draw-collider trigger.collider (vec4 1 0 0 0.25)
+        draw-collider batch trigger.collider (vec4 1 0 0 0.25)
 
-    'update debug-gizmos
-
-    let gl = (import .FFI.glad)
-    local prev-shader : i32
-    gl.GetIntegerv gl.GL_CURRENT_PROGRAM &prev-shader
-    gl.UseProgram gizmo-shader
     'apply main-camera
-    'draw debug-gizmos
-    gl.UseProgram (prev-shader as u32)
+    'draw batch
 # /COLLIDER DEBUG DRAWING
 
 fn main (argc argv)
@@ -600,8 +535,7 @@ fn main (argc argv)
     ig.impl.Glfw_InitForOpenGL main-window true
     ig.impl.OpenGL3_Init null
 
-    gizmo-shader = (renderer.GPUShaderProgram gizmo-vshader gizmo-fshader)
-    debug-gizmos = ((renderer.Mesh 2DVertex u16) 128)
+    debug-gizmos = (renderer.GeometryBatch)
 
     start-game;
 
