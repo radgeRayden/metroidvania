@@ -6,6 +6,7 @@ using import String
 using import Rc
 using import Map
 using import glm
+using import Option
 
 let gl = (import .FFI.glad)
 let cjson = (import .FFI.cjson)
@@ -470,6 +471,58 @@ typedef GPUShaderProgram <:: u32
     inline __drop (self)
         gl.DeleteProgram (storagecast (view self))
 
+global geometry-batch-shader : GPUShaderProgram 0
+struct GeometryBatch
+    mesh : (Mesh Vertex2D u16)
+    image : (Rc ArrayTexture2D)
+    _dirty? : bool
+
+    # TODO: for now we only handle the untextured case.
+    inline... __typecall (cls)
+        fn blank-texture ()
+            global blank-texture : (Option (Rc ArrayTexture2D))
+            let image =
+                try
+                    copy ('unwrap blank-texture)
+                else
+                    local data : (Array u8)
+                    'append data 255:u8
+                    'append data 255:u8
+                    'append data 255:u8
+                    'append data 255:u8
+                    let imgdata =
+                        Struct.__typecall ImageData
+                            data = (deref data)
+                            width = 1
+                            height = 1
+                            channels = 4
+                    local imgdatas : (Array ImageData)
+                    'append imgdatas imgdata
+                    let array-texture = (ArrayTexture2D imgdatas 1 1)
+
+                    let result = (Rc.wrap array-texture)
+                    blank-texture = (copy result)
+                    result
+
+        # untextured vertices
+        super-type.__typecall cls
+            vertices = ((Mesh Vertex2D u16) 128)
+            image = (blank-texture)
+
+    fn clear (self)
+        'clear self.mesh.attribute-data
+        'clear self.mesh.index-data
+
+    fn draw (self)
+        gl.UseProgram geometry-batch-shader
+        if self._dirty?
+            'update self.mesh
+            self._dirty? = false
+        gl.BindTextures 0 1
+            &local (storagecast (view self.image._handle))
+        'draw self.sprites
+        ;
+
 # SHADER DEFINITIONS
 # ================================================================================
 fn sprite-vertex-shader ()
@@ -522,6 +575,37 @@ fn sprite-fragment-shader ()
 
     uniform sprite-tex : sampler2DArray
     fcolor = (texture sprite-tex vtexcoord)
+
+fn geometry-vshader ()
+    using import glsl
+    buffer vertices :
+        struct VertexArray plain
+            data : (array Vertex2D)
+
+    out vcolor : vec4
+        location = 0
+    out vtexcoords : vec3
+        location = 1
+
+    uniform transform : mat4
+
+    attr := vertices.data @ gl_VertexID
+
+    vcolor = attr.color
+    vtexcoords = attr.texcoords
+    gl_Position = transform * (vec4 attr.position 0 1)
+
+fn geometry-fshader ()
+    using import glsl
+    in vcolor : vec4
+        location = 0
+    in vtexcoords : vec3
+        location = 1
+    out fcolor : vec4
+        location = 0
+
+    uniform tex : sampler2DArray
+    fcolor = vcolor * (texture tex vtexcoords)
 
 # INTERNAL MODULE STATE
 # ================================================================================
@@ -629,6 +713,7 @@ fn init (window)
     let fbo-status = (gl.CheckNamedFramebufferStatus main-render-target gl.GL_FRAMEBUFFER)
     assert (fbo-status == gl.GL_FRAMEBUFFER_COMPLETE) "failed creating main render target"
 
+    geometry-batch-shader = (GPUShaderProgram geometry-vshader geometry-fshader)
     game-shader = (GPUShaderProgram sprite-vertex-shader sprite-fragment-shader)
     gl.UseProgram game-shader
 
@@ -643,6 +728,7 @@ fn begin ()
 
 
 fn submit ()
+    gl.UseProgram game-shader
     for layer in background-layers
         'update layer.sprites
         'draw layer
@@ -707,6 +793,7 @@ do
         Mesh
         ArrayTexture2D
         SpriteBatch
+        GeometryBatch
         GPUShaderProgram
         GPUTexture
 
