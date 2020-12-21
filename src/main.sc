@@ -431,8 +431,9 @@ fn keybind-handler (window _key scancode action mods)
 
 fn update (dt)
     using component
-    let yvel = player.velocity.y
-    let xvel = player.velocity.x
+    let puppet = (('get-component player 'ActionPuppet) as components.ActionPuppet)
+    let yvel = puppet.velocity.y
+    let xvel = puppet.velocity.x
     player-sprite := ('get-component player 'Sprite) as components.Sprite
     let sprite = player-sprite.sprite
     if (xvel != 0)
