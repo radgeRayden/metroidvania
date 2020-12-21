@@ -45,7 +45,7 @@ struct Event
         local arr : (array EventPayload 4)
         for i el in (enumerate self.payload)
             arr @ i = (copy el)
-        this-type (copy self.target) (copy self.target) arr
+        this-type (copy self.source) (copy self.target) arr
 
 enum EventType plain
     Collision
