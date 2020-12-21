@@ -191,6 +191,7 @@ fn init-archetypes ()
                             collider = (Rc.wrap (collision.Collider))
                         components.ActionPuppet
                             hp = 10
+                            max-hp = 10
                         components.PlayerController;
 
     set-archetype EntityKind.Ducky

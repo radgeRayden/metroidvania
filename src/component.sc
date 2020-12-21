@@ -114,6 +114,8 @@ do
     struct ActionPuppet < ComponentBase
         velocity : vec2
         hp : i32
+        max-hp : i32
+        damage-cooldown : f32
         gravity-factor : f32 = 1.0
         grounded? : bool
 
@@ -121,6 +123,11 @@ do
 
         fn init (self owner)
             self._hitbox = (copy ('get-component owner 'Hitbox))
+
+        fn update (self owner dt)
+            let cooldown = self.damage-cooldown
+            cooldown = (clamp (cooldown - dt) 0. 1.)
+            ;
 
         fn post-update (self owner dt)
             if (self.hp < 0)
@@ -223,6 +230,14 @@ do
                 else
                     xvel = new-xvel
             ;
+
+        fn on-collision (self owner source normal contact ...)
+            puppet := self._puppet as ActionPuppet
+            if (source.tag == common.EntityKind.Ducky)
+                if (puppet.damage-cooldown == 0)
+                    puppet.hp -= 3
+                    puppet.damage-cooldown = 1
+
 
     locals;
 

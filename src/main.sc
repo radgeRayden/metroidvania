@@ -284,6 +284,9 @@ struct Camera plain
     fn world->screen (self world)
         world - self.position
 
+    fn screen->world (self screen)
+        self.position + screen
+
     fn set-bounds (self scene-offset scene-size)
         self._bounds =
             vec4
@@ -493,6 +496,40 @@ fn draw-colliders ()
     'draw batch
 # /COLLIDER DEBUG DRAWING
 
+global HUD-primitives : (Option renderer.GeometryBatch)
+fn draw-HUD ()
+    let HUD = ('force-unwrap HUD-primitives)
+    using component
+    puppet := ('get-component player 'ActionPuppet) as components.ActionPuppet
+    let screen = config.INTERNAL_RESOLUTION
+    let padding-bottom = 7
+    let padding-left = 5
+    let padding-right = 5
+
+    max-width := screen.x - padding-left - padding-right
+    bar-height := 10
+    bar-width := max-width * puppet.hp / puppet.max-hp
+
+    local points =
+        arrayof vec2
+            # 3 - 2
+            # |   |
+            # 0 - 1
+            # FIXME: this is stupid and I should add a transform stack instead
+            va-map
+                inline (v)
+                    'screen->world main-camera v
+                _
+                    vec2 padding-left padding-bottom
+                    vec2 (padding-left + bar-width) padding-bottom
+                    vec2 (padding-left + bar-width) (padding-bottom + bar-height)
+                    vec2 padding-left (padding-bottom + bar-height)
+                    vec2 padding-left padding-bottom
+    'clear HUD
+    'add-polyline HUD points (vec4 1 0 0 1)
+    'apply main-camera
+    'draw HUD
+
 fn main (argc argv)
     static-if config.AOT_MODE?
         raising Nothing
@@ -537,6 +574,7 @@ fn main (argc argv)
     ig.impl.OpenGL3_Init null
 
     debug-gizmos = (renderer.GeometryBatch)
+    HUD-primitives = (renderer.GeometryBatch)
 
     start-game;
 
@@ -573,6 +611,8 @@ fn main (argc argv)
         renderer.begin;
         draw;
         renderer.submit;
+
+        draw-HUD;
 
         if show-colliders?
             draw-colliders;
