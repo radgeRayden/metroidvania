@@ -81,7 +81,7 @@ struct EntityList
     fn purge (self)
         """"Removes all dead entities.
         # iterate backwards so our deletions don't affect results
-        loop (i = ((countof self._entities) - 1))
+        for i in (rrange ((countof self._entities) - 1))
             let ent = (self._entities @ i)
             let id = (deref ent.id) # will change after the swap!
             if (not ent.alive?)
@@ -90,11 +90,6 @@ struct EntityList
                 'swap self._entities i ((countof self._entities) - 1)
                 'pop self._entities
                 'discard self._entity-lookup id
-
-            if (i == 0)
-                break;
-            else
-                i - 1
 
     fn init (self)
         for ent in self
