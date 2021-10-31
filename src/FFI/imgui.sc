@@ -72,11 +72,15 @@ define-scope cimgui
                 'set-symbol T (Symbol name)
                     spice-quote
                         bitcast [((sc_const_int_extract v) as i32)] T
-                'set-symbol T '__imply
-                    spice-quote
-                        inline (lhsT rhsT)
-                            static-if ((rhsT < integer) and ((bitcountof rhsT) >= 32))
-                                inline (self)
-                                    bitcast self rhsT
+
+    for k v in header.typedef
+        let T = (v as type)
+        if (T < CEnum)
+            'set-symbol T '__imply
+                spice-quote
+                    inline (lhsT rhsT)
+                        static-if ((rhsT < integer) and ((bitcountof rhsT) >= 32))
+                            inline (self)
+                                bitcast self rhsT
 
 sanitize-scope cimgui "^ig" "^Im(?!.+_)" "_$"
