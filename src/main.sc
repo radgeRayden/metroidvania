@@ -625,8 +625,10 @@ fn main (argc argv)
         let flags = ig.ImGuiWindowFlags
         ig.SetNextWindowPos (vec2 10 10) ig.ImGuiCond.Always (vec2 0 0)
         ig.Begin "version" null
-            | flags.NoDecoration
-                flags.NoBackground
+            as
+                | flags.NoDecoration
+                    flags.NoBackground
+                i32
         ig.Text (config.GAME_VERSION as rawstring)
         ig.End;
 
@@ -688,7 +690,7 @@ fn main (argc argv)
             if show-perf-stats?
                 ig.SetNextWindowPos (vec2 (window-width - 100) (window-height - 100)) ig.ImGuiCond.FirstUseEver (vec2 0 0)
                 ig.Begin "Performance" &show-perf-stats?
-                    flags.NoTitleBar | flags.NoResize | flags.NoBackground
+                    (flags.NoTitleBar | flags.NoResize | flags.NoBackground) as i32
                 ig.Text "avg fps: %.3f" avg-fps
                 ig.End;
 

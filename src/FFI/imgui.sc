@@ -69,8 +69,14 @@ define-scope cimgui
             let match? s e = ('match? "^.+_" k)
             if match?
                 let name = (rslice k e)
-                'set-symbol T (Symbol name) 
+                'set-symbol T (Symbol name)
                     spice-quote
                         bitcast [((sc_const_int_extract v) as i32)] T
+                'set-symbol T '__imply
+                    spice-quote
+                        inline (lhsT rhsT)
+                            static-if ((rhsT < integer) and ((bitcountof rhsT) >= 32))
+                                inline (self)
+                                    bitcast self rhsT
 
 sanitize-scope cimgui "^ig" "^Im(?!.+_)" "_$"
